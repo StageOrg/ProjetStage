@@ -9,6 +9,7 @@ export default function NouvelEtudiantStep2() {
     nom: "",       
     prenom: "",    
     contact: "",   
+    sexe: "",      // NOUVEAU CHAMP
     date_naissance: "", 
     lieu_naiss: "", 
     autre_prenom: "",
@@ -19,13 +20,15 @@ export default function NouvelEtudiantStep2() {
   const [erreurs, setErreurs] = useState({});
   const [champsModifies, setChampsModifies] = useState({});
   const [chargement, setChargement] = useState(false);
+  const [isAncienEtudiant, setIsAncienEtudiant] = useState(false);
   const router = useRouter();
 
-  // Configuration des champs requis
+  // Configuration des champs requis (SEXE AJOUTÉ)
   const champsRequis = {
     nom: { required: true },
     prenom: { required: true },
     contact: { required: true },
+    sexe: { required: true },      // NOUVEAU
     date_naissance: { required: true },
     lieu_naiss: { required: true },
     autre_prenom: { required: false },
@@ -33,24 +36,47 @@ export default function NouvelEtudiantStep2() {
     photo: { required: false }
   };
 
-  // Chargement des données sauvegardées
+  // Chargement des données sauvegardées + support anciens étudiants
   useEffect(() => {
-    const donneesSauvegardees = localStorage.getItem("inscription_step2");
-    if (donneesSauvegardees) {
-      const parsed = JSON.parse(donneesSauvegardees);
+    // Vérifier le type d'inscription
+    const typeInscription = JSON.parse(localStorage.getItem("type_inscription") || "{}");
+    const isAncien = typeInscription.typeEtudiant === "ancien";
+    setIsAncienEtudiant(isAncien);
+
+    if (isAncien) {
+      // Pré-remplir avec les données de l'ancien étudiant
+      const ancienEtudiantInfo = JSON.parse(localStorage.getItem("ancien_etudiant_info") || "{}");
       setFormulaire(prev => ({
         ...prev,
-        nom: parsed.nom || "",       
-        prenom: parsed.prenom || "",    
-        contact: parsed.contact || "",   
-        date_naissance: parsed.date_naissance || "", 
-        lieu_naiss: parsed.lieu_naiss || "", 
-        autre_prenom: parsed.autre_prenom || "",
-        num_carte: parsed.num_carte || "",
-        photo: null,
+        nom: ancienEtudiantInfo.nom || "",
+        prenom: ancienEtudiantInfo.prenom || "",
+        contact: ancienEtudiantInfo.telephone || "",
+        sexe: ancienEtudiantInfo.sexe || "",
+        date_naissance: ancienEtudiantInfo.date_naiss || "",
+        lieu_naiss: ancienEtudiantInfo.lieu_naiss || "",
+        autre_prenom: ancienEtudiantInfo.autre_prenom || "",
+        num_carte: ancienEtudiantInfo.num_carte || "",
       }));
-      if (parsed.photoBase64) {
-        setApercu(parsed.photoBase64);
+    } else {
+      // Charger les données sauvegardées normalement
+      const donneesSauvegardees = localStorage.getItem("inscription_step2");
+      if (donneesSauvegardees) {
+        const parsed = JSON.parse(donneesSauvegardees);
+        setFormulaire(prev => ({
+          ...prev,
+          nom: parsed.nom || "",       
+          prenom: parsed.prenom || "",    
+          contact: parsed.contact || "",   
+          sexe: parsed.sexe || "",        // NOUVEAU
+          date_naissance: parsed.date_naissance || "", 
+          lieu_naiss: parsed.lieu_naiss || "", 
+          autre_prenom: parsed.autre_prenom || "",
+          num_carte: parsed.num_carte || "",
+          photo: null,
+        }));
+        if (parsed.photoBase64) {
+          setApercu(parsed.photoBase64);
+        }
       }
     }
   }, []);
@@ -89,13 +115,16 @@ export default function NouvelEtudiantStep2() {
       const resultatBase64 = lecteur.result;
       setApercu(resultatBase64);
       
-      // Sauvegarde dans localStorage
-      const donneesExistantes = JSON.parse(localStorage.getItem("inscription_step2") || "{}");
-      localStorage.setItem("inscription_step2", JSON.stringify({
-        ...donneesExistantes,
+      // CORRECTION : Sauvegarde après FileReader
+      const donneesCompletes = {
+        ...formulaire,  // Inclure TOUS les champs actuels
+        sexe: formulaire.sexe,  // S'assurer que le sexe est inclus
         photoNom: fichier.name,
         photoBase64: resultatBase64,
-      }));
+        photoTaille: fichier.size,
+        photoType: fichier.type
+      };
+      localStorage.setItem("inscription_step2", JSON.stringify(donneesCompletes));
     };
     lecteur.readAsDataURL(fichier);
 
@@ -130,27 +159,39 @@ export default function NouvelEtudiantStep2() {
     setChargement(true);
 
     try {
-      // Récupérer les données de l'étape 1
-      const donneesEtape1 = JSON.parse(localStorage.getItem("inscription_step1") || "{}");
-      
-      // Combiner toutes les données dans localStorage
-      const donneesCompletes = {
-        // Étape 1
-        email: donneesEtape1.email,
-        username: donneesEtape1.username,
-        password: donneesEtape1.password,
-        password_confirmation: donneesEtape1.password_confirmation,
-        
-        // Étape 2
-        ...formulaire,
-        photoNom: formulaire.photo?.name,
-        photoBase64: apercu
-      };
+      let donneesCompletes;
 
-      // Sauvegarder toutes les données pour l'étape finale
+      if (isAncienEtudiant) {
+        // Pour ancien étudiant, pas besoin des données étape 1
+        donneesCompletes = {
+          // Pas d'étape 1 car déjà authentifié
+          // Étape 2 - données personnelles mises à jour
+          ...formulaire,
+          photoNom: formulaire.photo?.name,
+          photoBase64: apercu
+        };
+      } else {
+        // Pour nouveau étudiant, récupérer les données de l'étape 1
+        const donneesEtape1 = JSON.parse(localStorage.getItem("inscription_step1") || "{}");
+        
+        donneesCompletes = {
+          // Étape 1
+          email: donneesEtape1.email,
+          username: donneesEtape1.username,
+          password: donneesEtape1.password,
+          password_confirmation: donneesEtape1.password_confirmation,
+          
+          // Étape 2
+          ...formulaire,
+          photoNom: formulaire.photo?.name,
+          photoBase64: apercu
+        };
+      }
+
+      // Sauvegarder toutes les données pour l'étape suivante
       localStorage.setItem("inscription_step2", JSON.stringify(donneesCompletes));
       
-      // Naviguer vers l'étape 3 (pas de création utilisateur ici)
+      // Naviguer vers l'étape 3
       router.push('/etudiant/inscription/etape-3');
       
     } catch (error) {
@@ -163,9 +204,14 @@ export default function NouvelEtudiantStep2() {
 
   return (
     <form onSubmit={soumettreFormulaire} className="bg-white backdrop-blur-md px-8 py-10 w-full max-w-4xl flex flex-col gap-6 border border-gray-300 rounded-lg shadow-lg mx-auto">
-      <h2 className="text-2xl font-bold text-center text-blue-800 mb-4">Informations personnelles</h2>
+      <h2 className="text-2xl font-bold text-center text-blue-800 mb-4">
+        {isAncienEtudiant ? "Mise à jour de vos informations" : "Informations personnelles"}
+      </h2>
       <p className="text-center text-sm text-gray-600 mb-4">
-        📝 Vos données sont sauvegardées temporairement. Le compte sera créé à la dernière étape.
+        {isAncienEtudiant ? 
+          "✏️ Vérifiez et modifiez vos informations si nécessaire" :
+          "📝 Vos données sont sauvegardées temporairement. Le compte sera créé à la dernière étape."
+        }
       </p>
       
       {/* Photo de profil */}
@@ -239,29 +285,55 @@ export default function NouvelEtudiantStep2() {
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Autre prénom (optionnel)</label>
             <input
-              name="autre_prenom" value={formulaire.autre_prenom} onChange={gererChangement} type="text"
+              name="autre_prenom" 
+              value={formulaire.autre_prenom} 
+              onChange={gererChangement} 
+              type="text"
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              placeholder="prénom restant" />
+              placeholder="prénom restant" 
+            />
           </div>
 
-          {/* Numéro de carte (optionnel) */}
+          {/* Numéro de carte */}
           <div>
             <label className="block text-gray-700 font-semibold mb-2">
-              Numéro de carte (optionnel)
+              Numéro de carte {isAncienEtudiant ? "(non modifiable)" : "(optionnel)"}
             </label>
             <input
               name="num_carte"
               value={formulaire.num_carte}
               onChange={gererChangement}
               type="text"
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              placeholder="Ex:523456"/>
+              disabled={isAncienEtudiant}
+              className={`w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${
+                isAncienEtudiant ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+              placeholder="Ex:523456"
+            />
             {erreurs.num_carte && <p className="text-red-500 text-sm mt-1">{erreurs.num_carte}</p>}
           </div>
         </div>
 
         {/* Colonne droite */}
         <div className="space-y-6">
+          {/* NOUVEAU : Champ Sexe */}
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Sexe*</label>
+            <select
+              name="sexe"
+              value={formulaire.sexe}
+              onChange={gererChangement}
+              className={`w-full px-4 py-2 rounded-lg border ${
+                erreurs.sexe ? 'border-red-500' : 'border-gray-300'
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+            >
+              <option value="">Sélectionner</option>
+              <option value="M">Masculin</option>
+              <option value="F">Féminin</option>
+            </select>
+            {erreurs.sexe && <p className="text-red-500 text-sm mt-1">{erreurs.sexe}</p>}
+          </div>
+
           {/* Champ Contact */}
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Téléphone*</label>
@@ -273,7 +345,8 @@ export default function NouvelEtudiantStep2() {
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.contact ? 'border-red-500' : 'border-gray-300'
               } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
-              placeholder="Numéro de téléphone"/>
+              placeholder="Numéro de téléphone"
+            />
             {erreurs.contact && <p className="text-red-500 text-sm mt-1">{erreurs.contact}</p>}
           </div>
 
@@ -288,7 +361,8 @@ export default function NouvelEtudiantStep2() {
               max={calculerDateMinimale()}
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.date_naissance ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}/>
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+            />
             {erreurs.date_naissance && <p className="text-red-500 text-sm mt-1">{erreurs.date_naissance}</p>}
           </div>
 
@@ -303,7 +377,8 @@ export default function NouvelEtudiantStep2() {
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.lieu_naiss ? 'border-red-500' : 'border-gray-300'
               } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
-              placeholder="Ex: Lomé, Togo"/>
+              placeholder="Ex: Lomé, Togo"
+            />
             {erreurs.lieu_naiss && <p className="text-red-500 text-sm mt-1">{erreurs.lieu_naiss}</p>}
           </div>
         </div>
@@ -311,13 +386,17 @@ export default function NouvelEtudiantStep2() {
 
       {/* Boutons d'action */}
       <div className="flex justify-between mt-6 gap-4">
-        <Link href="/etudiant/inscription/etape-1" className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center">
+        <Link 
+          href={isAncienEtudiant ? "/etudiant/inscription/ancien-etape-1" : "/etudiant/inscription/etape-1"} 
+          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center"
+        >
           Retour
         </Link>
         <button 
           type="submit" 
           disabled={chargement}
-          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50">
+          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50"
+        >
           {chargement ? "Sauvegarde..." : "Suivant"}
         </button>
       </div>

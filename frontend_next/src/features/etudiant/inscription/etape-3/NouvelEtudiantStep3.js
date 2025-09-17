@@ -22,10 +22,17 @@ export default function NouvelEtudiantStep3() {
   const [filtredAnnees, setFiltredAnnees] = useState([]);
   const [erreurs, setErreurs] = useState({});
   const [loading, setLoading] = useState(false);
+  const [isAncienEtudiant, setIsAncienEtudiant] = useState(false);
+  const [derniereInscription, setDerniereInscription] = useState(null);
   const router = useRouter();
 
-  // Charger les options depuis l'API
+  // Charger les options depuis l'API + support anciens étudiants
   useEffect(() => {
+    // Vérifier le type d'inscription
+    const typeInscription = JSON.parse(localStorage.getItem("type_inscription") || "{}");
+    const isAncien = typeInscription.typeEtudiant === "ancien";
+    setIsAncienEtudiant(isAncien);
+
     const fetchOptions = async () => {
       setLoading(true);
       try {
@@ -40,6 +47,12 @@ export default function NouvelEtudiantStep3() {
           filieres: filieresRes.data,
           annees: anneesRes.data,
         });
+
+        // Si ancien étudiant, récupérer sa dernière inscription
+        if (isAncien) {
+          await recupererDerniereInscription(typeInscription.numCarteExistant);
+        }
+
       } catch (err) {
         console.error("Erreur lors du chargement des options :", err);
         setErreurs({ formulaire: "Erreur lors du chargement des options." });
@@ -47,14 +60,51 @@ export default function NouvelEtudiantStep3() {
         setLoading(false);
       }
     };
+
     fetchOptions();
 
-    // Charger les données sauvegardées
-    const savedData = localStorage.getItem("inscription_step3");
-    if (savedData) {
-      setFormulaire(JSON.parse(savedData));
+    // Charger les données sauvegardées (pour nouveaux étudiants)
+    if (!isAncien) {
+      const savedData = localStorage.getItem("inscription_step3");
+      if (savedData) {
+        setFormulaire(JSON.parse(savedData));
+      }
     }
   }, [router]);
+
+  // Récupérer la dernière inscription d'un ancien étudiant
+  const recupererDerniereInscription = async (numCarte) => {
+    try {
+      // Récupérer les inscriptions de l'étudiant
+      const response = await api.get(`/inscription/inscription/?etudiant__num_carte=${numCarte}&ordering=-date`);
+      const inscriptions = response.data.results || response.data;
+
+      if (inscriptions && inscriptions.length > 0) {
+        const derniereInscr = inscriptions[0];
+        setDerniereInscription(derniereInscr);
+        
+        // Pré-remplir avec les données de la dernière inscription
+        const parcoursInfo = options.parcours.find(p => p.id === derniereInscr.parcours) || 
+                           await api.get(`/inscription/parcours/${derniereInscr.parcours}/`).then(res => res.data);
+        const filiereInfo = options.filieres.find(f => f.id === derniereInscr.filiere) ||
+                           await api.get(`/inscription/filiere/${derniereInscr.filiere}/`).then(res => res.data);
+        const anneeInfo = options.annees.find(a => a.id === derniereInscr.annee_etude) ||
+                         await api.get(`/inscription/annee-etude/${derniereInscr.annee_etude}/`).then(res => res.data);
+
+        setFormulaire({
+          parcours_id: derniereInscr.parcours.toString(),
+          filiere_id: derniereInscr.filiere.toString(),
+          annee_etude_id: derniereInscr.annee_etude.toString(),
+          parcours_libelle: parcoursInfo?.libelle || "",
+          filiere_nom: filiereInfo?.nom || "",
+          annee_etude_libelle: anneeInfo?.libelle || "",
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la dernière inscription:", error);
+      // Ce n'est pas critique, on continue sans pré-remplir
+    }
+  };
 
   // Filtrer les filières et années quand le parcours change
   useEffect(() => {
@@ -128,8 +178,23 @@ export default function NouvelEtudiantStep3() {
       className="bg-white mx-auto backdrop-blur-md px-8 py-10 w-full max-w-lg flex flex-col gap-6 shadow-xl border border-gray-300 rounded-lg animate-fade-in"
     >
       <h2 className="text-2xl font-bold text-center mb-6">
-        Sélection des informations pédagogiques
+        {isAncienEtudiant ? "Confirmation de votre parcours" : "Sélection des informations pédagogiques"}
       </h2>
+
+      {/* Affichage de la dernière inscription pour anciens étudiants */}
+      {isAncienEtudiant && derniereInscription && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <h3 className="font-semibold text-blue-800 mb-2">📚 Dernière inscription :</h3>
+          <div className="text-sm text-blue-700 space-y-1">
+            <p><strong>Filière :</strong> {formulaire.filiere_nom}</p>
+            <p><strong>Parcours :</strong> {formulaire.parcours_libelle}</p>
+            <p><strong>Année :</strong> {formulaire.annee_etude_libelle}</p>
+          </div>
+          <p className="text-xs text-blue-600 mt-2">
+            💡 Vous pouvez modifier ces informations si vous changez de parcours
+          </p>
+        </div>
+      )}
 
       {erreurs.formulaire && (
         <p className="text-red-500 text-center">{erreurs.formulaire}</p>
