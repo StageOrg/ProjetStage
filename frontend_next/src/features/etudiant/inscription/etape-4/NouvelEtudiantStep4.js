@@ -8,7 +8,10 @@ import api from "@/services/api";
 
 export default function NouvelEtudiantStep4() {
   const [ues, setUes] = useState([]);
+  const [uesGroupedBySemester, setUesGroupedBySemester] = useState({});
   const [selectedUEs, setSelectedUEs] = useState({});
+  const [typeInscription, setTypeInscription] = useState(null);
+  const [ancienEtudiantData, setAncienEtudiantData] = useState(null);
   const [infosPedagogiques, setInfosPedagogiques] = useState({
     parcours_id: null,
     filiere_id: null,
@@ -24,7 +27,46 @@ export default function NouvelEtudiantStep4() {
   // Charger les données des étapes précédentes
   useEffect(() => {
     const loadAllData = () => {
-      // Vérifier que toutes les données sont présentes
+      // Vérifier le type d'inscription
+      const typeData = localStorage.getItem("type_inscription");
+      if (typeData) {
+        const parsedType = JSON.parse(typeData);
+        setTypeInscription(parsedType);
+        
+        if (parsedType.typeEtudiant === 'ancien') {
+          // Charger les données de l'ancien étudiant
+          const ancienData = localStorage.getItem("ancien_etudiant_complet");
+          if (ancienData) {
+            const parsedAncien = JSON.parse(ancienData);
+            setAncienEtudiantData(parsedAncien);
+            
+            // Pour les anciens étudiants, utiliser leurs données existantes
+            if (parsedAncien.prochaine_annee) {
+              const mockStep3 = {
+                parcours_id: parsedAncien.derniere_inscription.parcours.id,
+                filiere_id: parsedAncien.derniere_inscription.filiere.id,
+                annee_etude_id: parsedAncien.prochaine_annee.id,
+                parcours_libelle: parsedAncien.derniere_inscription.parcours.libelle,
+                filiere_nom: parsedAncien.derniere_inscription.filiere.nom,
+                annee_etude_libelle: parsedAncien.prochaine_annee.libelle,
+              };
+              setInfosPedagogiques(mockStep3);
+              fetchUEsForAncienEtudiant(mockStep3, parsedAncien);
+            } else {
+              // Cas où l'ancien étudiant doit choisir son parcours
+              const step3Data = localStorage.getItem("inscription_step3");
+              if (step3Data) {
+                const parsedStep3 = JSON.parse(step3Data);
+                setInfosPedagogiques(parsedStep3);
+                fetchUEs(parsedStep3);
+              }
+            }
+            return;
+          }
+        }
+      }
+
+      // Pour les nouveaux étudiants - logique normale
       const step1Data = localStorage.getItem("inscription_step1");
       const step2Data = localStorage.getItem("inscription_step2");
       const step3Data = localStorage.getItem("inscription_step3");
@@ -39,32 +81,69 @@ export default function NouvelEtudiantStep4() {
       setInfosPedagogiques(parsedStep3);
       
       // Charger les UEs pour cette configuration
-      fetchUEs({
-        parcours: parsedStep3.parcours_id,
-        filiere: parsedStep3.filiere_id,
-        annee_etude: parsedStep3.annee_etude_id,
-      });
+      fetchUEs(parsedStep3);
     };
     
     loadAllData();
   }, [router]);
 
-  // Récupérer les UEs depuis l'API (sans authentification)
+  // Récupérer les UEs depuis l'API (pour nouveaux étudiants)
   const fetchUEs = async (params) => {
     setLoading(true);
     try {
       const response = await inscriptionService.getUEs({
-        parcours: params.parcours,
-        filiere: params.filiere,
-        annee_etude: params.annee_etude,
+        parcours: params.parcours_id,
+        filiere: params.filiere_id,
+        annee_etude: params.annee_etude_id,
       });
       setUes(response);
+      groupUEsBySemester(response);
     } catch (err) {
       setError("Erreur lors de la récupération des UEs.");
       console.error("Erreur dans fetchUEs:", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Récupérer les UEs pour ancien étudiant (inclut les UE disponibles)
+  const fetchUEsForAncienEtudiant = async (params, ancienData) => {
+    setLoading(true);
+    try {
+      console.log("🔍 Debug - Données ancien étudiant:", ancienData);
+      console.log("🔍 Debug - Prochaine année:", ancienData.prochaine_annee);
+      console.log("🔍 Debug - UEs disponibles dans les données:", ancienData.ues_disponibles);
+      
+      // Utiliser directement les UE disponibles retournées par l'API
+      const uesDisponibles = ancienData.ues_disponibles || [];
+      
+      if (uesDisponibles.length === 0) {
+        console.warn("⚠️ Aucune UE disponible pour cet ancien étudiant");
+        setError("Aucune UE disponible pour votre inscription. Contactez l'administration.");
+      }
+      
+      console.log(`✅ ${uesDisponibles.length} UE(s) disponible(s) pour l'ancien étudiant`);
+      setUes(uesDisponibles);
+      groupUEsBySemester(uesDisponibles);
+    } catch (err) {
+      setError("Erreur lors de la récupération des UEs.");
+      console.error("Erreur dans fetchUEsForAncienEtudiant:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Grouper les UEs par semestre
+  const groupUEsBySemester = (uesArray) => {
+    const grouped = {};
+    uesArray.forEach(ue => {
+      const semestreLibelle = ue.semestre?.libelle || "Sans semestre";
+      if (!grouped[semestreLibelle]) {
+        grouped[semestreLibelle] = [];
+      }
+      grouped[semestreLibelle].push(ue);
+    });
+    setUesGroupedBySemester(grouped);
   };
 
   // Gérer la sélection des UEs
@@ -86,9 +165,8 @@ export default function NouvelEtudiantStep4() {
     return new File([byteArray], filename, { type: mimeType });
   };
 
-  // Création atomique complète : Utilisateur + Étudiant + Inscription
+  // Création complète pour nouveaux étudiants
   const createCompleteRegistration = async (allData, selectedUEIds) => {
-    // Préparer FormData pour l'étudiant
     const formData = new FormData();
     
     // Données utilisateur (étape 1)
@@ -155,7 +233,26 @@ export default function NouvelEtudiantStep4() {
     };
   };
 
-  // Soumettre l'inscription complète
+  // Inscription pour ancien étudiant (seulement création inscription)
+  const createInscriptionForAncienEtudiant = async (selectedUEIds) => {
+    // LOGIQUE SIMPLIFIÉE: Un ancien étudiant a TOUJOURS une inscription précédente
+    if (!ancienEtudiantData.prochaine_annee?.id) {
+      throw new Error("Impossible de déterminer la prochaine année d'étude pour cet ancien étudiant");
+    }
+    
+    const inscriptionData = {
+      etudiant_id: ancienEtudiantData.etudiant.id,
+      prochaine_annee_id: ancienEtudiantData.prochaine_annee.id,
+      ues_selectionnees: selectedUEIds
+    };
+
+    console.log("Données envoyées pour ancien étudiant:", inscriptionData);
+
+    const response = await inscriptionService.inscriptionAncienEtudiant(inscriptionData);
+    return response;
+  };
+
+  // Soumettre l'inscription
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -184,42 +281,72 @@ export default function NouvelEtudiantStep4() {
     }
 
     try {
-      // Récupérer toutes les données des étapes
-      const step1Data = JSON.parse(localStorage.getItem("inscription_step1"));
-      const step2Data = JSON.parse(localStorage.getItem("inscription_step2"));
-      const step3Data = JSON.parse(localStorage.getItem("inscription_step3"));
+      let result;
 
-      const allData = {
-        step1: step1Data,
-        step2: step2Data,
-        step3: step3Data
-      };
+      if (typeInscription?.typeEtudiant === 'ancien') {
+        // Pour les anciens étudiants : seulement créer l'inscription
+        console.log("🔄 Création inscription pour ancien étudiant...");
+        result = await createInscriptionForAncienEtudiant(selectedUEIds);
+        console.log("✅ Inscription ancien étudiant réussie:", result);
+      } else {
+        // Pour les nouveaux étudiants : processus complet
+        const step1Data = JSON.parse(localStorage.getItem("inscription_step1"));
+        const step2Data = JSON.parse(localStorage.getItem("inscription_step2"));
+        const step3Data = JSON.parse(localStorage.getItem("inscription_step3"));
 
-      console.log("🚀 Début de la création atomique...");
-      
-      // Créer tout en une fois
-      const result = await createCompleteRegistration(allData, selectedUEIds);
-      
-      console.log("✅ Inscription complète réussie:", result);
+        const allData = {
+          step1: step1Data,
+          step2: step2Data,
+          step3: step3Data
+        };
+
+        console.log("🚀 Début de la création complète...");
+        result = await createCompleteRegistration(allData, selectedUEIds);
+        console.log("✅ Inscription complète réussie:", result);
+      }
 
       // Nettoyer le localStorage
       localStorage.removeItem("inscription_step1");
       localStorage.removeItem("inscription_step2");
       localStorage.removeItem("inscription_step3");
+      localStorage.removeItem("type_inscription");
+      localStorage.removeItem("ancien_etudiant_complet");
 
       // Rediriger vers la page de confirmation
-      alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");      
+      alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");
+      router.push('/');
           
+    } catch (err) {
+      console.error("Erreur lors de l'inscription:", err);
       
       // Gestion spécifique des erreurs
       if (err.response?.status === 400) {
-        const errors = err.response.data;
-        if (errors.username) {
+        const errorData = err.response.data;
+        
+        // Cas spécial: Étudiant déjà inscrit cette année
+        if (errorData.error && errorData.error.includes("déjà inscrit")) {
+          setError(`${errorData.error}`);
+          
+          // Afficher les détails de l'inscription existante si disponibles
+          if (errorData.details) {
+            const details = errorData.details;
+            setError(prev => prev + `\n\nDétails de votre inscription actuelle:\n` +
+              `- Numéro: ${details.numero_inscription}\n` +
+              `- Parcours: ${details.parcours}\n` +
+              `- Filière: ${details.filiere}\n` +
+              `- Année d'étude: ${details.annee_etude}`
+            );
+          }
+          return; // Sortir ici pour ce cas spécial
+        }
+        
+        // Autres erreurs 400
+        if (errorData.username) {
           setError("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre.");
-        } else if (errors.email) {
+        } else if (errorData.email) {
           setError("Cette adresse email est déjà utilisée.");
         } else {
-          setError("Erreur de validation des données. Vérifiez vos informations.");
+          setError(errorData.error || "Erreur de validation des données. Vérifiez vos informations.");
         }
       } else {
         setError("Erreur lors de la finalisation de l'inscription. Veuillez réessayer.");
@@ -237,10 +364,10 @@ export default function NouvelEtudiantStep4() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-8 rounded-xl shadow-lg w-full max-w-4xl"
+      className="bg-white p-8 rounded-xl shadow-lg w-full max-w-6xl mx-auto"
     >
       <h2 className="text-2xl font-bold text-center mb-6">
-        Finalisation de l'inscription
+        {typeInscription?.typeEtudiant === 'ancien' ? 'Sélection de vos UE' : 'Finalisation de l\'inscription'}
       </h2>
 
       {error && (
@@ -252,64 +379,97 @@ export default function NouvelEtudiantStep4() {
         </div>
       )}
 
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-        <h3 className="text-lg font-semibold mb-3 text-blue-800">📋 Récapitulatif de votre inscription</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <p><strong>Filière:</strong> {infosPedagogiques.filiere_nom}</p>
-          <p><strong>Parcours:</strong> {infosPedagogiques.parcours_libelle}</p>
-          <p><strong>Année:</strong> {infosPedagogiques.annee_etude_libelle}</p>
+      {/* Message spécial pour les anciens étudiants */}
+      {typeInscription?.typeEtudiant === 'ancien' && ancienEtudiantData && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold text-blue-800 mb-2">Inscription pour l'année suivante</h3>
+          <p className="text-blue-700 text-sm mb-2">
+            Vous vous inscrivez en <strong>{ancienEtudiantData.prochaine_annee?.libelle}</strong> pour 
+            le parcours <strong>{ancienEtudiantData.derniere_inscription?.parcours.libelle}</strong>.
+          </p>
+          <p className="text-blue-600 text-xs">
+            Les UE affichées sont celles que vous n'avez pas encore validées.
+          </p>
         </div>
-      </div>
+      )}
+
+      {/* Récapitulatif normal pour nouveaux étudiants */}
+      {typeInscription?.typeEtudiant !== 'ancien' && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3 text-blue-800">📋 Récapitulatif de votre inscription</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <p><strong>Filière:</strong> {infosPedagogiques.filiere_nom}</p>
+            <p><strong>Parcours:</strong> {infosPedagogiques.parcours_libelle}</p>
+            <p><strong>Année:</strong> {infosPedagogiques.annee_etude_libelle}</p>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 text-center">
         <p className="text-lg font-semibold">
           Crédits sélectionnés: <span className={totalCreditsSelectionnes > 30 ? "text-red-600" : "text-green-600"}>{totalCreditsSelectionnes}/30</span>
         </p>
-        {totalCreditsSelectionnes > 70 && (
-          <p className="text-red-500 text-sm">⚠️ Le total des crédits ne peut pas dépasser 70</p>
+        {totalCreditsSelectionnes > 30 && (
+          <p className="text-red-500 text-sm">⚠️ Le total des crédits ne peut pas dépasser 30</p>
         )}
       </div>
 
-      {/* Tableau des UEs */}
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">Sélection</th>
-              <th className="border p-2">Code UE</th>
-              <th className="border p-2">Libellé</th>
-              <th className="border p-2">Crédits</th>
-              <th className="border p-2">Semestre</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ues.map((ue) => (
-              <tr key={ue.id} className="hover:bg-gray-50">
-                <td className="border p-2 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedUEs[ue.id] || false}
-                    onChange={() => handleCheckboxChange(ue.id)}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                </td>
-                <td className="border p-2">{ue.code}</td>
-                <td className="border p-2">{ue.libelle}</td>
-                <td className="border p-2 text-center">{ue.nbre_credit}</td>
-                <td className="border p-2 text-center">
-                  {ue.semestre?.libelle || "N/A"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Affichage des UEs par semestre */}
+      <div className="mb-6">
+        {Object.keys(uesGroupedBySemester).length === 0 ? (
+          <div className="text-center text-gray-500 mb-6">
+            Aucune UE disponible pour ces critères.
+          </div>
+        ) : (
+          Object.entries(uesGroupedBySemester).map(([semestre, uesSemestre]) => (
+            <div key={semestre} className="mb-8">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 bg-gray-100 p-3 rounded-lg">
+                📚 {semestre} ({uesSemestre.length} UE{uesSemestre.length > 1 ? 's' : ''})
+              </h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-300 p-3 text-left">Sélection</th>
+                      <th className="border border-gray-300 p-3 text-left">Code UE</th>
+                      <th className="border border-gray-300 p-3 text-left">Libellé</th>
+                      <th className="border border-gray-300 p-3 text-center">Crédits</th>
+                      <th className="border border-gray-300 p-3 text-left">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {uesSemestre.map((ue) => (
+                      <tr key={ue.id} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 p-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedUEs[ue.id] || false}
+                            onChange={() => handleCheckboxChange(ue.id)}
+                            className="w-5 h-5 accent-blue-600"
+                          />
+                        </td>
+                        <td className="border border-gray-300 p-3 font-mono text-sm">
+                          {ue.code}
+                        </td>
+                        <td className="border border-gray-300 p-3 font-medium">
+                          {ue.libelle}
+                        </td>
+                        <td className="border border-gray-300 p-3 text-center font-semibold">
+                          {ue.nbre_credit}
+                        </td>
+                        <td className="border border-gray-300 p-3 text-sm text-gray-600">
+                          {ue.description || "Aucune description"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
       </div>
-
-      {ues.length === 0 && (
-        <div className="text-center text-gray-500 mb-6">
-          Aucune UE disponible pour ces critères.
-        </div>
-      )}
 
       {/* Boutons d'action */}
       <div className="flex justify-between mt-6 gap-4">
@@ -324,7 +484,7 @@ export default function NouvelEtudiantStep4() {
           disabled={loading || ues.length === 0}
           className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Enregistrement..." : "Finaliser l'inscription"}
+          {loading ? "Enregistrement..." : (typeInscription?.typeEtudiant === 'ancien' ? 'Confirmer inscription' : 'Finaliser inscription')}
         </button>
       </div>
     </form>

@@ -32,11 +32,13 @@ class Filiere(models.Model):
     def __str__(self):
         return self.nom
 
+# Migration à créer pour ajouter est_active
 class AnneeAcademique(models.Model):
     libelle = models.CharField(max_length=9, unique=True)
-
+    est_active = models.BooleanField(default=False)
+    
     def __str__(self):
-        return self.libelle 
+        return self.libelle
 
 class Semestre (models.Model):
     libelle = models.CharField(max_length=50)

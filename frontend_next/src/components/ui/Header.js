@@ -46,7 +46,7 @@ export default function Header() {
     {
       label: "Étudiant",
       children: [
-        { label: "Inscriptions", href: "/etudiant/inscription/etape-1" },
+        { label: "Inscriptions", href: "/etudiant/inscription/etape-0" },
         {
           label: "Données personnelles",
           protected: true,

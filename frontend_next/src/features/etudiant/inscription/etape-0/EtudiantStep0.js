@@ -2,9 +2,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import api from "@/services/api";
+import inscriptionService from "@/services/inscriptionService";
 
-export default function EtudiantStep0() {
+export default function NouvelEtudiantStep0() {
   const [typeEtudiant, setTypeEtudiant] = useState("");
   const [numCarte, setNumCarte] = useState("");
   const [erreurs, setErreurs] = useState({});
@@ -18,7 +18,6 @@ export default function EtudiantStep0() {
       setNumCarte("");
     }
   };
-
   const verifierAncienEtudiant = async () => {
     if (!numCarte.trim()) {
       setErreurs({ numCarte: "Veuillez saisir votre numéro de carte" });
@@ -27,35 +26,44 @@ export default function EtudiantStep0() {
 
     setChargement(true);
     try {
-      // Vérifier si l'étudiant existe dans la base
-      const response = await api.get(`/utilisateurs/etudiants/?num_carte=${numCarte}`);
-      const etudiants = response.data.results || response.data;
+      // Utiliser le nouvel endpoint pour récupérer TOUTES les informations
+      const response = await inscriptionService.verifierAncienEtudiant(numCarte.trim());
       
-      if (etudiants && etudiants.length > 0) {
-        const etudiant = etudiants[0];
+      if (response.existe) {
+        // Sauvegarder TOUTES les informations de l'ancien étudiant
+        localStorage.setItem("ancien_etudiant_complet", JSON.stringify({
+          etudiant: response.etudiant,
+          derniere_inscription: response.derniere_inscription,
+          prochaine_annee: response.prochaine_annee,
+          ues_disponibles: response.ues_disponibles,
+          ues_validees: response.ues_validees
+        }));
         
-        // Sauvegarder les infos de l'ancien étudiant
-        localStorage.setItem("ancien_etudiant_info", JSON.stringify({
-          id: etudiant.id,
-          num_carte: etudiant.num_carte,
-          nom: etudiant.utilisateur?.last_name || etudiant.last_name,
-          prenom: etudiant.utilisateur?.first_name || etudiant.first_name,
-          email: etudiant.utilisateur?.email || etudiant.email,
-          telephone: etudiant.utilisateur?.telephone || etudiant.telephone,
-          sexe: etudiant.utilisateur?.sexe || etudiant.sexe,
-          autre_prenom: etudiant.autre_prenom,
-          date_naiss: etudiant.date_naiss,
-          lieu_naiss: etudiant.lieu_naiss,
+        // Marquer comme ancien étudiant vérifié
+        localStorage.setItem("type_inscription", JSON.stringify({
+          typeEtudiant: 'ancien',
+          numCarteExistant: numCarte.trim(),
+          ancienEtudiantVerifie: true
         }));
         
         return true;
       } else {
-        setErreurs({ numCarte: "Numéro de carte non trouvé dans nos registres" });
+        setErreurs({ numCarte: response.message || "Numéro de carte non trouvé dans nos registres" });
         return false;
       }
     } catch (error) {
       console.error("Erreur de vérification:", error);
-      setErreurs({ numCarte: "Erreur lors de la vérification. Réessayez." });
+      
+      // Gestion plus précise des erreurs
+      if (error.message) {
+        setErreurs({ numCarte: error.message });
+      } else if (error.response?.status === 404) {
+        setErreurs({ numCarte: "Numéro de carte non trouvé dans nos registres" });
+      } else if (error.response?.status === 400) {
+        setErreurs({ numCarte: "Numéro de carte invalide" });
+      } else {
+        setErreurs({ numCarte: "Erreur lors de la vérification. Réessayez." });
+      }
       return false;
     } finally {
       setChargement(false);
@@ -68,21 +76,22 @@ export default function EtudiantStep0() {
       return;
     }
 
-    // Sauvegarder le type d'étudiant choisi
-    localStorage.setItem("type_inscription", JSON.stringify({
-      typeEtudiant,
-      numCarteExistant: typeEtudiant === 'ancien' ? numCarte : null
-    }));
-
     if (typeEtudiant === 'ancien') {
       const isValid = await verifierAncienEtudiant();
       if (!isValid) return;
       
       // Rediriger vers étape 1 spéciale pour anciens étudiants
-      router.push('/etudiant/inscription/ancien-etape-1');
+      router.push('/etudiant/inscription/etape-1');
     } else {
       // Nettoyer les anciennes données au cas où
+      localStorage.removeItem("ancien_etudiant_complet");
       localStorage.removeItem("ancien_etudiant_info");
+      
+      // Sauvegarder le type d'étudiant choisi
+      localStorage.setItem("type_inscription", JSON.stringify({
+        typeEtudiant: 'nouveau',
+        numCarteExistant: null
+      }));
       
       // Rediriger vers le processus normal (étape 1 actuelle)
       router.push('/etudiant/inscription/etape-1');
@@ -202,3 +211,5 @@ export default function EtudiantStep0() {
     </div>
   );
 }
+// Fonction de test à ajouter temporairement dans votre composant Step0
+

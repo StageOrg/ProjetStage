@@ -1,5 +1,6 @@
-// frontend/services/authService.js
+"use client";
 import api from "./api"; 
+
 const TokenStorage = {
   getAccess: () => localStorage.getItem("access"),
   getRefresh: () => localStorage.getItem("refresh"),
@@ -13,12 +14,8 @@ const TokenStorage = {
   },
 };
 
-/* ---------------------------
-  Interceptor : ajoute Authorization automatiquement
-  et gère le refresh quand on reçoit 401.
----------------------------- */
 let isRefreshing = false;
-let refreshQueue = []; // queue des requêtes en attendant le refresh
+let refreshQueue = [];
 
 function processQueue(error, token = null) {
   refreshQueue.forEach(prom => {
@@ -38,7 +35,6 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // Si 401 et que ce n'est pas la requête refresh elle-même
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = TokenStorage.getRefresh();
@@ -48,7 +44,6 @@ api.interceptors.response.use(
       }
 
       if (isRefreshing) {
-        // attendre la fin d'un refresh en cours
         return new Promise((resolve, reject) => {
           refreshQueue.push({ resolve, reject });
         }).then((token) => {
@@ -78,36 +73,20 @@ api.interceptors.response.use(
   }
 );
 
-/* ---------------------------
-  Fonctions exportées
----------------------------- */
-
 export const authAPI = {
-  /**
-   * login(username, password)
-   * attend { access, refresh } en retour
-   */
   login: async (username, password) => {
+    // ici on envoie les bons noms de champs
     const res = await api.post("auth/login/", { username, password });
     const { access, refresh, user } = res.data;
     TokenStorage.setTokens({ access, refresh });
     return { access, refresh, user };
   },
 
-  /**
-   * register(userPayload)
-   * envoie toutes les données d'inscription (utilisateur + profil) à l'endpoint /auth/register/
-   * ex: { username, email, password, role, num_carte, date_naiss, ... }
-   */
   register: async (userPayload) => {
     const res = await api.post("auth/register/", userPayload);
     return res.data;
   },
 
-  /**
-   * refresh()
-   * rafraîchit manuellement le token si besoin
-   */
   refresh: async () => {
     const refresh = TokenStorage.getRefresh();
     if (!refresh) throw new Error("Pas de refresh token");
@@ -117,39 +96,22 @@ export const authAPI = {
     return res.data;
   },
 
-  /**
-   * logout()
-   * - supprime les tokens côté client
-   * - (optionnel) appeler un endpoint pour invalider le refresh côté backend si tu l'as implémenté
-   */
   logout: async (callBackendInvalidate = false) => {
     const refresh = TokenStorage.getRefresh();
     TokenStorage.clear();
     if (callBackendInvalidate && refresh) {
       try {
         await api.post("auth/logout/", { refresh });
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
   },
 
-  /**
-   * getProfile()
-   * récupère /utilisateurs/me/ (ou l'endpoint profil que tu as)
-   */
   getProfile: async () => {
-    const res = await api.get("/utilisateurs/etudiants/me/");
+    const res = await api.get("utilisateurs/me/");
     return res.data;
   },
 
-  /**
-   * utilitaire pour récupérer l'api instance (utile si tu veux faire d'autres appels)
-   */
   apiInstance: () => api,
 };
 
-/* Optionnel : auto-refresh périodique (ex: avant expiration)
-   Tu peux mettre un setInterval pour appeler refresh() si tu veux.
-*/
 export default authAPI;

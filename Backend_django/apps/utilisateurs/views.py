@@ -41,6 +41,8 @@ class UtilisateurViewSet(viewsets.ModelViewSet):
         
 
 # ----- ETUDIANT -----
+# apps/utilisateurs/views.py - Section EtudiantViewSet corrigée
+
 class EtudiantViewSet(viewsets.ModelViewSet):
     queryset = Etudiant.objects.all().order_by('utilisateur__last_name')
     serializer_class = EtudiantSerializer
@@ -58,49 +60,41 @@ class EtudiantViewSet(viewsets.ModelViewSet):
     def me(self, request):
         """Endpoint pour récupérer/modifier le profil de l'étudiant connecté"""
         try:
+            # S'assurer que l'utilisateur a bien un profil étudiant
+            if not hasattr(request.user, 'etudiant'):
+                return Response({"error": "Profil étudiant non trouvé"}, status=404)
+                
             instance = request.user.etudiant
             
             if request.method == 'GET':
+                # Utiliser select_related pour optimiser les requêtes
+                instance = Etudiant.objects.select_related('utilisateur').prefetch_related('inscriptions__parcours', 'inscriptions__filiere', 'inscriptions__annee_etude').get(pk=instance.pk)
                 serializer = self.get_serializer(instance)
                 return Response(serializer.data)
                 
             elif request.method == 'PUT':
-                # Séparer les données utilisateur et étudiant
-                data = request.data.copy()
-                utilisateur_data = {}
-                etudiant_data = {}
-                
-                # Champs utilisateur modifiables
-                modifiable_user_fields = ['email', 'telephone', 'first_name', 'last_name']
-                for field in modifiable_user_fields:
-                    if field in data:
-                        utilisateur_data[field] = data.pop(field)
-                
-                # Champs étudiant modifiables (limités)
-                modifiable_etudiant_fields = ['autre_prenom', 'photo']
-                for field in modifiable_etudiant_fields:
-                    if field in data:
-                        etudiant_data[field] = data[field]
-                
-                # Mise à jour utilisateur
-                if utilisateur_data:
-                    for attr, value in utilisateur_data.items():
-                        setattr(instance.utilisateur, attr, value)
-                    instance.utilisateur.save()
-                
-                # Mise à jour étudiant
-                if etudiant_data:
-                    for attr, value in etudiant_data.items():
-                        setattr(instance, attr, value)
-                    instance.save()
-                
-                serializer = self.get_serializer(instance)
-                return Response(serializer.data)
+                # Mise à jour avec le serializer complet
+                serializer = self.get_serializer(instance, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    
+                    # Recharger l'instance pour récupérer les données mises à jour
+                    instance.refresh_from_db()
+                    instance.utilisateur.refresh_from_db()
+                    
+                    # Retourner les données mises à jour
+                    updated_instance = Etudiant.objects.select_related('utilisateur').prefetch_related('inscriptions__parcours', 'inscriptions__filiere', 'inscriptions__annee_etude').get(pk=instance.pk)
+                    response_serializer = self.get_serializer(updated_instance)
+                    
+                    return Response(response_serializer.data, status=200)
+                else:
+                    return Response(serializer.errors, status=400)
                 
         except Etudiant.DoesNotExist:
             return Response({"error": "Profil étudiant non trouvé"}, status=404)
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            print(f"Erreur dans EtudiantViewSet.me: {str(e)}")  # Pour le debug
+            return Response({"error": f"Erreur serveur: {str(e)}"}, status=500)
     
     
     # ----- PROFESSEUR -----

@@ -3,10 +3,10 @@
 import api from "@/services/api";
 
 const etudiantService = {
-  // ✅ Fonction principale - pas de changement
+  //  Fonction principale - 
   getAllEtudiants: async (filters = {}) => {
     try {
-      console.log("🔍 Recherche étudiants avec filtres:", filters);
+      console.log("Recherche étudiants avec filtres:", filters);
       
       // Nettoyer les paramètres vides
       const cleanFilters = {};
@@ -20,30 +20,30 @@ const etudiantService = {
         params: cleanFilters 
       });
       
-      console.log("✅ Étudiants reçus:", response.data);
+      console.log(" Étudiants reçus:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Erreur getAllEtudiants:", error);
+      console.error(" Erreur getAllEtudiants:", error);
       throw error;
     }
   },
 
-  // ✅ NOUVEAU : Récupère parcours avec relations
+  //  NOUVEAU : Récupère parcours avec relations
   getParcoursAvecRelations: async () => {
     try {
-      console.log("📊 Chargement parcours avec relations...");
-      // ✅ CORRECTION : URL dans inscription/ pas utilisateurs/
+      console.log("Chargement parcours avec relations...");
+      //  CORRECTION : URL dans inscription/ pas utilisateurs/
       const response = await api.get("/inscription/parcours-relations/");
-      console.log("✅ Parcours avec relations:", response.data);
+      console.log("Parcours avec relations:", response.data);
       return response.data.parcours || [];
     } catch (error) {
-      console.error("❌ Erreur getParcoursAvecRelations:", error);
+      console.error(" Erreur getParcoursAvecRelations:", error);
       // Fallback vers l'ancienne méthode
       return await this.getParcours();
     }
   },
 
-  // ✅ Garder les méthodes existantes pour compatibilité
+  //  Garder les méthodes existantes pour compatibilité
   getParcours: async () => {
     try {
       const response = await api.get("/inscription/parcours/");
@@ -78,7 +78,7 @@ const etudiantService = {
     }
   },
 
-  // ✅ Actions CRUD - gardées simples
+  //  Actions CRUD 
   deleteEtudiant: async (id) => {
     try {
       await api.delete(`/utilisateurs/etudiants/${id}/`);

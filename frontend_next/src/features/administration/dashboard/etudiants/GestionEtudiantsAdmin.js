@@ -16,7 +16,7 @@ export default function GestionEtudiantsAdmin() {
 
   const [pagination, setPagination] = useState({
     count: 0,
-total_pages: 1,
+    total_pages: 1,
   });
 
   //  États pour filtres dépendants

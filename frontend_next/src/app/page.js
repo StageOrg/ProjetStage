@@ -5,7 +5,7 @@ import Footer from "@/components/ui/Footer.js";
 
 export default function Home() {
   return (
-    <div className=" font-sans mt-0">
+    <div className=" font-sans mt-0 ">
       
       {/* HeroSlider avec les images défilantes */}
       <HeroSlider />

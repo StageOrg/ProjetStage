@@ -6,8 +6,9 @@ import { FaTachometerAlt, FaUserGraduate, FaChalkboardTeacher, FaBook, FaClipboa
 const links = [
   { href: "/administration/dashboard/tableau-de-bord", label: "Tableau de bord", icon: <FaTachometerAlt /> },
   { href: "/administration/dashboard/etudiants", label: "Gestion étudiants", icon: <FaUserGraduate /> },
-  { href: "/administration/dashboard/enseignants", label: "Gestion personnels", icon: <FaChalkboardTeacher /> },
-  { href: "/administration/dashboard/ues", label: "Gestion UEs", icon: <FaBook /> },
+  { href: "/administration/dashboard/enseignants", label: "Gestion enseignants", icon: <FaChalkboardTeacher /> },
+  { href: "/administration/dashboard/gestion-ue", label: "Gestion UEs", icon: <FaBook /> },
+  { href: "/administration/dashboard/affectation-ue", label: "Affectations d'UE ", icon: <FaProjectDiagram /> },
   { href: "/administration/dashboard/notes", label: "Gestion notes", icon: <FaClipboardList /> },
   { href: "/administration/dashboard/statistiques", label: "Statistiques", icon: <FaChartBar /> },
 ];
