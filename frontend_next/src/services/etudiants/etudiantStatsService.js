@@ -1,54 +1,14 @@
-// frontend_next/src/services/etudiants/etudiantDashboardService.js
+// frontend_next/src/services/etudiants/etudiantStatsService.js
 import { authAPI } from "@/services/authService";
 import api from "@/services/api";
 
-const etudiantDashboardService = {
-  // Récupérer les données complètes de l'étudiant connecté
-  getMyCompleteData: async () => {
-    try {
-      const response = await authAPI.apiInstance().get("/utilisateurs/etudiants/me/");
-      return response.data;
-    } catch (error) {
-      console.error("Erreur récupération données étudiant:", error);
-      throw error;
-    }
-  },
-
-  // Nouvelle méthode pour mettre à jour les données de l'étudiant
-  updateMyData: async (dataToSend) => {
-    try {
-      console.log('Données envoyées pour mise à jour:', dataToSend);
-      
-      let response;
-      if (dataToSend instanceof FormData) {
-        // Si c'est du FormData (avec photo), utiliser multipart/form-data
-        response = await authAPI.apiInstance().put("/utilisateurs/etudiants/me/", dataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-      } else {
-        // Si c'est un objet JSON simple
-        response = await authAPI.apiInstance().put("/utilisateurs/etudiants/me/", dataToSend);
-      }
-      
-      console.log('Réponse de mise à jour:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Erreur mise à jour données étudiant:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", error.response.data);
-      }
-      throw error;
-    }
-  },
-
+const etudiantStatsService = {
   // Récupérer les UEs avec les notes de l'étudiant
   getMyUEsWithNotes: async () => {
     try {
       // 1. Récupérer les données de l'étudiant
-      const etudiantData = await authAPI.apiInstance().get("/utilisateurs/etudiants/me/");
-      const etudiantId = etudiantData.data.id;
+      const etudiantData = await etudiantStatsService.getMyCompleteData();
+      const etudiantId = etudiantData.id;
 
       // 2. Récupérer ses inscriptions
       const inscriptionsResponse = await api.get("/inscription/inscription/", {
@@ -151,35 +111,32 @@ const etudiantDashboardService = {
   // Calculer les statistiques complètes de l'étudiant
   calculateMyStats: async () => {
     try {
-      const uesWithNotes = await etudiantDashboardService.getMyUEsWithNotes();
+      const uesWithNotes = await etudiantStatsService.getMyUEsWithNotes();
 
       let totalCredits = 0;
       let creditsObtenus = 0;
-      let totalNotes = 0;
-      let nombreNotesValides = 0;
+      let weightedSum = 0; // Somme des (note × crédits)
       let uesValidees = 0;
 
       uesWithNotes.forEach((ue) => {
         totalCredits += ue.credits;
-        if (ue.moyenne !== null) {
-          totalNotes += ue.moyenne;
-          nombreNotesValides++;
-          if (ue.moyenne >= 10) {
-            uesValidees++;
-            creditsObtenus += ue.credits;
-          }
+        const note = ue.moyenne !== null ? ue.moyenne : 0; // Note = 0 si aucune note
+        weightedSum += note * ue.credits; // Produit note × crédits
+        if (ue.moyenne !== null && ue.moyenne >= 10) {
+          uesValidees++;
+          creditsObtenus += ue.credits;
         }
       });
 
-      const moyenneGenerale = nombreNotesValides > 0 ? totalNotes / nombreNotesValides : 0;
-      const progressionPourcentage = totalCredits > 0 ? (creditsObtenus / totalCredits) * 100 : 0;
+      const moyenneGenerale = totalCredits > 0 ? Math.round((weightedSum / totalCredits) * 100) / 100 : 0;
+      const progressionPourcentage = totalCredits > 0 ? Math.round((creditsObtenus / totalCredits) * 100) : 0;
 
       return {
         uesValidees,
         creditsObtenus,
         totalCredits,
-        moyenneGenerale: Math.round(moyenneGenerale * 100) / 100,
-        progressionPourcentage: Math.round(progressionPourcentage),
+        moyenneGenerale,
+        progressionPourcentage,
         nombreUEsInscrites: uesWithNotes.length,
         nombreUEsAvecNotes: uesWithNotes.filter((ue) => ue.moyenne !== null).length,
         rang: null, // À implémenter plus tard
@@ -198,6 +155,43 @@ const etudiantDashboardService = {
       };
     }
   },
+
+  // Récupérer les données complètes de l'étudiant (nécessaire pour getMyUEsWithNotes)
+  getMyCompleteData: async () => {
+    try {
+      const response = await authAPI.apiInstance().get("/utilisateurs/etudiants/me/");
+      console.log("Réponse brute de l'API:", response.data);
+      
+      // Traiter les données pour s'assurer qu'elles sont complètes
+      const data = response.data;
+      
+      // S'assurer que les champs vides sont bien définis
+      const processedData = {
+        ...data,
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        email: data.email || '',
+        telephone: data.telephone || '',
+        sexe: data.sexe || '',
+        autre_prenom: data.autre_prenom || '',
+        num_carte: data.num_carte || '',
+        lieu_naiss: data.lieu_naiss || '',
+        parcours_info: data.parcours_info || 'Non spécifié',
+        filiere_info: data.filiere_info || 'Non spécifié',
+        annee_etude_info: data.annee_etude_info || 'Non spécifié',
+        photo: data.photo || null,
+        is_validated: data.is_validated || false,
+        date_naiss: data.date_naiss || null
+      };
+      
+      console.log("Données traitées:", processedData);
+      return processedData;
+    } catch (error) {
+      console.error("Erreur récupération données étudiant:", error);
+      console.error("Détails de l'erreur:", error.response?.data);
+      throw error;
+    }
+  },
 };
 
-export default etudiantDashboardService;
+export default etudiantStatsService;

@@ -3,7 +3,6 @@ import { authAPI } from "@/services/authService";
 import api from "@/services/api";
 
 const etudiantNotesService = {
-  // Récupérer les données complètes de l'étudiant connecté
   getMyCompleteData: async () => {
     try {
       const response = await authAPI.apiInstance().get("/utilisateurs/etudiants/me/");
@@ -14,14 +13,11 @@ const etudiantNotesService = {
     }
   },
 
-  // Récupérer les UEs avec toutes les informations détaillées (notes, semestre, validation)
   getMyUEsWithNotes: async () => {
     try {
-      // 1. Récupérer les données de l'étudiant
       const etudiantData = await etudiantNotesService.getMyCompleteData();
       const etudiantId = etudiantData.id;
 
-      // 2. Récupérer ses inscriptions avec toutes les relations
       const inscriptionsResponse = await api.get("/inscription/inscription/", {
         params: { etudiant: etudiantId },
       });
@@ -31,30 +27,24 @@ const etudiantNotesService = {
         throw new Error("Aucune inscription trouvée pour cet étudiant");
       }
 
-      // 3. Pour chaque inscription, récupérer les UEs avec leurs détails complets
       const uesWithCompleteData = [];
-      
+
       for (const inscription of inscriptions) {
         if (inscription.ues && inscription.ues.length > 0) {
           for (const ueId of inscription.ues) {
             try {
-              // Récupérer les détails complets de l'UE
               const ueResponse = await api.get(`/notes/ues/${ueId}/`);
               const ue = ueResponse.data;
 
-              // Récupérer les informations du semestre depuis l'année d'étude
               const anneeEtudeResponse = await api.get(`/inscription/annee-etude/${inscription.annee_etude}/`);
               const anneeEtudeData = anneeEtudeResponse.data;
               
-              // Récupérer les semestres liés à cette année d'étude
               let semestreInfo = "Non spécifié";
               if (anneeEtudeData.semestre && anneeEtudeData.semestre.length > 0) {
-                // Prendre le premier semestre (ou vous pouvez ajuster selon votre logique)
                 const semestreResponse = await api.get(`/inscription/semestre/${anneeEtudeData.semestre[0]}/`);
                 semestreInfo = semestreResponse.data.libelle;
               }
 
-              // Récupérer les notes de cette UE
               let notesData = null;
               let moyenneUE = null;
               let notesParEvaluation = [];
@@ -64,7 +54,6 @@ const etudiantNotesService = {
                 const notesResponse = await api.get(`/notes/ues/${ueId}/notes/`);
                 notesData = notesResponse.data;
 
-                // Trouver les notes de cet étudiant
                 const etudiantNotes = notesData.etudiants?.find((e) => e.id === etudiantId);
 
                 if (etudiantNotes && notesData.evaluations) {
@@ -72,27 +61,24 @@ const etudiantNotesService = {
                   let poidsTotal = 0;
                   let hasNotes = false;
 
-                  notesData.evaluations.forEach((evaluation) => {
+                  notesParEvaluation = notesData.evaluations.map((evaluation) => {
                     const noteValue = etudiantNotes.notes[evaluation.id.toString()];
-                    notesParEvaluation.push({
-                      id: evaluation.id,
-                      type: evaluation.type,
-                      poids: evaluation.poids,
-                      note: noteValue,
-                    });
-
                     if (noteValue !== null && noteValue !== undefined) {
                       sommeNotesPonderees += noteValue * evaluation.poids;
                       poidsTotal += evaluation.poids;
                       hasNotes = true;
                     }
+                    return {
+                      id: evaluation.id,
+                      type: evaluation.type,
+                      poids: evaluation.poids,
+                      note: noteValue,
+                    };
                   });
 
                   if (poidsTotal > 0 && hasNotes) {
                     moyenneUE = Math.round((sommeNotesPonderees / poidsTotal) * 100) / 100;
                     statutValidation = moyenneUE >= 10 ? "Validé" : "Non Validé";
-                  } else {
-                    statutValidation = "En cours";
                   }
                 }
               } catch (notesError) {
@@ -100,7 +86,6 @@ const etudiantNotesService = {
                 statutValidation = "Aucune note";
               }
 
-              // Calculer les crédits validés
               const creditTotal = parseInt(ue.nbre_credit) || 0;
               const creditValide = (moyenneUE !== null && moyenneUE >= 10) ? creditTotal : 0;
 
@@ -116,48 +101,26 @@ const etudiantNotesService = {
                 notes: notesParEvaluation,
                 moyenne: moyenneUE,
                 statut: statutValidation,
-                // Informations additionnelles
                 parcours: inscription.parcours,
                 filiere: inscription.filiere,
                 annee_etude: inscription.annee_etude,
                 annee_academique: inscription.anneeAcademique
               });
-
             } catch (ueError) {
               console.error(`Erreur récupération UE ${ueId}:`, ueError);
-              // Ajouter l'UE même avec des données partielles
-              try {
-                const ueResponse = await api.get(`/notes/ues/${ueId}/`);
-                const ue = ueResponse.data;
-                uesWithCompleteData.push({
-                  id: ue.id,
-                  code: ue.code,
-                  libelle: ue.libelle,
-                  credits: parseInt(ue.nbre_credit) || 0,
-                  creditValide: 0,
-                  composite: ue.composite,
-                  description: ue.description || "",
-                  semestre: "Non spécifié",
-                  notes: [],
-                  moyenne: null,
-                  statut: "Erreur de chargement",
-                });
-              } catch (fallbackError) {
-                console.error(`Impossible de récupérer l'UE ${ueId}:`, fallbackError);
-              }
             }
           }
         }
       }
 
-      return uesWithCompleteData;
+      // Filtrer pour ne garder que les UEs avec notes disponibles
+      return uesWithCompleteData.filter(ue => ue.moyenne !== null);
     } catch (error) {
       console.error("Erreur récupération UEs avec notes complètes:", error);
       throw error;
     }
   },
 
-  // Récupérer seulement les UEs sans les notes (fallback)
   getMyUEsOnly: async () => {
     try {
       const etudiantData = await etudiantNotesService.getMyCompleteData();
@@ -208,7 +171,6 @@ const etudiantNotesService = {
     }
   },
 
-  // Calculer les statistiques complètes
   calculateMyStats: async () => {
     try {
       const uesWithNotes = await etudiantNotesService.getMyUEsWithNotes();
@@ -221,13 +183,11 @@ const etudiantNotesService = {
       let uesEnCours = 0;
       let uesNonValidees = 0;
 
-      // Statistiques par semestre
       const statsBySemestre = {};
 
       uesWithNotes.forEach((ue) => {
         totalCredits += ue.credits;
         
-        // Stats par semestre
         if (!statsBySemestre[ue.semestre]) {
           statsBySemestre[ue.semestre] = {
             totalCredits: 0,
@@ -257,14 +217,9 @@ const etudiantNotesService = {
           } else {
             uesNonValidees++;
           }
-        } else {
-          if (ue.statut === "En cours") {
-            uesEnCours++;
-          }
         }
       });
 
-      // Calculer la moyenne pour chaque semestre
       Object.keys(statsBySemestre).forEach(semestre => {
         const stats = statsBySemestre[semestre];
         if (stats.nombreNotesValides > 0) {
@@ -287,7 +242,7 @@ const etudiantNotesService = {
           progressionPourcentage,
           nombreUEsInscrites: uesWithNotes.length,
           nombreUEsAvecNotes: uesWithNotes.filter((ue) => ue.moyenne !== null).length,
-          rang: null, // À implémenter plus tard
+          rang: null,
         },
         parSemestre: statsBySemestre
       };
@@ -311,21 +266,17 @@ const etudiantNotesService = {
     }
   },
 
-  // Récupérer le détail d'une UE spécifique avec ses notes
   getUEDetails: async (ueId) => {
     try {
       const etudiantData = await etudiantNotesService.getMyCompleteData();
       const etudiantId = etudiantData.id;
 
-      // Récupérer les détails de l'UE
       const ueResponse = await api.get(`/notes/ues/${ueId}/`);
       const ue = ueResponse.data;
 
-      // Récupérer les notes détaillées
       const notesResponse = await api.get(`/notes/ues/${ueId}/notes/`);
       const notesData = notesResponse.data;
 
-      // Trouver les notes de l'étudiant
       const etudiantNotes = notesData.etudiants?.find((e) => e.id === etudiantId);
 
       let evaluationsDetails = [];
@@ -337,12 +288,10 @@ const etudiantNotesService = {
 
         evaluationsDetails = notesData.evaluations.map((evaluation) => {
           const noteValue = etudiantNotes.notes[evaluation.id.toString()];
-          
           if (noteValue !== null && noteValue !== undefined) {
             sommeNotesPonderees += noteValue * evaluation.poids;
             poidsTotal += evaluation.poids;
           }
-
           return {
             id: evaluation.id,
             type: evaluation.type,

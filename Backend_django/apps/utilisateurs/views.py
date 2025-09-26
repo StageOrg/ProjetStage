@@ -56,7 +56,7 @@ class EtudiantViewSet(viewsets.ModelViewSet):
         return super().get_queryset()
 
     @action(detail=False, methods=['get', 'put'], 
-        permission_classes=[IsAuthenticated])
+    permission_classes=[IsAuthenticated])
     def me(self, request):
         """Endpoint pour récupérer/modifier le profil de l'étudiant connecté"""
         try:
@@ -68,36 +68,55 @@ class EtudiantViewSet(viewsets.ModelViewSet):
             
             if request.method == 'GET':
                 # Utiliser select_related pour optimiser les requêtes
-                instance = Etudiant.objects.select_related('utilisateur').prefetch_related('inscriptions__parcours', 'inscriptions__filiere', 'inscriptions__annee_etude').get(pk=instance.pk)
+                instance = Etudiant.objects.select_related(
+                    'utilisateur'
+                ).prefetch_related(
+                    'inscriptions__parcours', 
+                    'inscriptions__filiere', 
+                    'inscriptions__annee_etude'
+                ).get(pk=instance.pk)
                 serializer = self.get_serializer(instance)
                 return Response(serializer.data)
                 
             elif request.method == 'PUT':
+                print(f"Données reçues: {request.data}")  # Debug
+                
                 # Mise à jour avec le serializer complet
                 serializer = self.get_serializer(instance, data=request.data, partial=True)
+                
                 if serializer.is_valid():
-                    serializer.save()
+                    print(f"Données validées: {serializer.validated_data}")  # Debug
                     
-                    # Recharger l'instance pour récupérer les données mises à jour
-                    instance.refresh_from_db()
-                    instance.utilisateur.refresh_from_db()
+                    # Sauvegarder les modifications
+                    updated_instance = serializer.save()
+                    
+                    print(f"Instance mise à jour: {updated_instance}")  # Debug
+                    
+                    # Recharger l'instance avec toutes les relations pour la réponse
+                    fresh_instance = Etudiant.objects.select_related(
+                        'utilisateur'
+                    ).prefetch_related(
+                        'inscriptions__parcours', 
+                        'inscriptions__filiere', 
+                        'inscriptions__annee_etude'
+                    ).get(pk=updated_instance.pk)
                     
                     # Retourner les données mises à jour
-                    updated_instance = Etudiant.objects.select_related('utilisateur').prefetch_related('inscriptions__parcours', 'inscriptions__filiere', 'inscriptions__annee_etude').get(pk=instance.pk)
-                    response_serializer = self.get_serializer(updated_instance)
-                    
+                    response_serializer = self.get_serializer(fresh_instance)
                     return Response(response_serializer.data, status=200)
                 else:
+                    print(f"Erreurs de validation: {serializer.errors}")  # Debug
                     return Response(serializer.errors, status=400)
-                
+                    
         except Etudiant.DoesNotExist:
             return Response({"error": "Profil étudiant non trouvé"}, status=404)
         except Exception as e:
-            print(f"Erreur dans EtudiantViewSet.me: {str(e)}")  # Pour le debug
+            print(f"Erreur dans EtudiantViewSet.me: {str(e)}")  # Debug
+            import traceback
+            print(f"Traceback complet: {traceback.format_exc()}")  # Debug détaillé
             return Response({"error": f"Erreur serveur: {str(e)}"}, status=500)
-    
-    
-    # ----- PROFESSEUR -----
+        
+# ----- PROFESSEUR -----
 class ProfesseurViewSet(viewsets.ModelViewSet):
     queryset = Professeur.objects.all().order_by('utilisateur__last_name')
     serializer_class = ProfesseurSerializer

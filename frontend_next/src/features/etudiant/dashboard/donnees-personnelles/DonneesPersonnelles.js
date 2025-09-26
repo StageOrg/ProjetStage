@@ -52,6 +52,9 @@ export default function DonneesPersonnelles() {
   useEffect(() => {
     fetchStudentData();
   }, []);
+  useEffect(() => {
+  console.log('studentData après mise à jour:', studentData);
+}, [studentData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -121,7 +124,7 @@ export default function DonneesPersonnelles() {
       setPhotoPreview(null);
       
       // Notification de succès
-      alert('✅ Informations mises à jour avec succès !');
+      alert(' Informations mises à jour avec succès !');
       
     } catch (err) {
       console.error('Erreur mise à jour:', err);
@@ -252,8 +255,7 @@ export default function DonneesPersonnelles() {
                 </>
               ) : (
                 <>
-                  <FaTimesCircle className="text-orange-500" />
-                  <span className="text-orange-600 font-medium">En attente de validation</span>
+                  <span className="text-orange-600 font-medium">photo de profil</span>
                 </>
               )}
             </div>

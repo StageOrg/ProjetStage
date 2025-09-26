@@ -1,4 +1,5 @@
-"use client"
+// frontend_next/src/features/etudiant/dashboard/statistiques/NavbarRetourAccueil.js
+"use client";
 import { ArrowLeft, UserCircle } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from 'react';
@@ -6,54 +7,38 @@ import { useState, useEffect } from 'react';
 export default function NavbarRetourAccueil() {
   const router = useRouter();
   const [user, setUser] = useState({
-    nom: "",
-    prenom: "",
+    last_name: "",
+    first_name: "",
+    username: "",
     loading: true
   });
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // Récupérer le token d'authentification
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          console.warn('Aucun token trouvé');
-          setUser({ nom: "Utilisateur", prenom: "", loading: false });
-          return;
-        }
-
-        // Faire l'appel API pour récupérer les données utilisateur
-        const response = await fetch('/api/utilisateurs/etudiants/me/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUser({
-            nom: userData.last_name || "Nom",
-            prenom: userData.first_name || "Prénom",
-            loading: false
-          });
-        } else {
-          console.error('Erreur lors de la récupération des données utilisateur:', response.status);
-          setUser({ nom: "Utilisateur", prenom: "", loading: false });
-        }
-      } catch (error) {
-        console.error('Erreur réseau:', error);
-        setUser({ nom: "Utilisateur", prenom: "", loading: false });
-      }
-    };
-
-    fetchUserData();
+    // Récupérer les données utilisateur stockées après connexion
+    const storedUser = localStorage.getItem('userData');
+    
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser({
+        last_name: userData.last_name || "",
+        first_name: userData.first_name || "",
+        username: userData.username || "utilisateur",
+        loading: false
+      });
+    } else {
+      // Si pas de données stockées (cas rare, devrait être géré au login)
+      setUser({ last_name: "Utilisateur", first_name: "", username: "utilisateur", loading: false });
+    }
   }, []);
 
   const handleBack = () => {
     router.push("/");
   };
+
+  // Déterminer le nom à afficher (priorité : last_name first_name, sinon username)
+  const displayName = user.last_name || user.first_name 
+    ? `${user.last_name} ${user.first_name}`.trim() 
+    : user.username;
 
   return (
     <nav className="text-white flex justify-between items-center px-4 py-5 shadow-sm border-b border-blue-500 bg-blue-900">
@@ -75,12 +60,9 @@ export default function NavbarRetourAccueil() {
             </span>
           ) : (
             <span className="font-bold text-sm block uppercase tracking-wide">
-              {user.nom} {user.prenom}
+              {displayName}
             </span>
           )}
-        </div>
-        <div className="bg-white/15 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center border border-white/30 shadow-sm">
-          <UserCircle className="text-white w-4 h-4" />
         </div>
       </div>
     </nav>

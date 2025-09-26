@@ -69,6 +69,7 @@ class UtilisateurInfoSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'sexe', 'telephone']
         
 # -------- ETUDIANT --------     
+# Dans apps/utilisateurs/serializers.py - Version complètement corrigée
 
 class EtudiantSerializer(serializers.ModelSerializer):
     # Informations utilisateur (accessibles directement)
@@ -80,12 +81,12 @@ class EtudiantSerializer(serializers.ModelSerializer):
     sexe = serializers.CharField(source='utilisateur.sexe', read_only=False, allow_blank=True)               
     role = serializers.CharField(source='utilisateur.role', read_only=True)
     
-    # Informations étudiant - CORRECTION ICI
+    # Informations étudiant
     num_carte = serializers.CharField(read_only=True)
-    date_naiss = serializers.DateField(read_only=False, allow_null=True)  # Permettre modification
-    lieu_naiss = serializers.CharField(read_only=False, allow_blank=True, allow_null=True)  # Permettre modification
+    date_naiss = serializers.DateField(read_only=False, allow_null=True)
+    lieu_naiss = serializers.CharField(read_only=False, allow_blank=True, allow_null=True)
     autre_prenom = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    photo = serializers.ImageField(required=False, allow_null=True)  # S'assurer que la photo est incluse
+    photo = serializers.ImageField(required=False, allow_null=True)
     is_validated = serializers.BooleanField(read_only=True)
     
     # Informations d'inscription (read-only)
@@ -115,31 +116,25 @@ class EtudiantSerializer(serializers.ModelSerializer):
         return inscription.annee_etude.libelle if inscription and inscription.annee_etude else None
 
     def update(self, instance, validated_data):
-        # Extraire les données utilisateur qui commencent par 'utilisateur.'
-        utilisateur_data = {}
-        keys_to_remove = []
+        """
+        Méthode de mise à jour corrigée qui gère correctement 
+        les champs avec source='utilisateur.*'
+        """
+        # Extraire les données utilisateur si elles existent
+        utilisateur_data = validated_data.pop('utilisateur', None)
         
-        for key, value in validated_data.items():
-            if key.startswith('utilisateur.'):
-                field_name = key.replace('utilisateur.', '')
-                utilisateur_data[field_name] = value
-                keys_to_remove.append(key)
-        
-        # Supprimer les clés utilisateur de validated_data
-        for key in keys_to_remove:
-            validated_data.pop(key)
-        
-        # Mettre à jour l'utilisateur si nécessaire
+        # Mettre à jour l'utilisateur associé si nécessaire
         if utilisateur_data:
+            utilisateur = instance.utilisateur
             for attr, value in utilisateur_data.items():
-                setattr(instance.utilisateur, attr, value)
-            instance.utilisateur.save()
+                setattr(utilisateur, attr, value)
+            utilisateur.save()
         
-        # Mettre à jour l'étudiant
+        # Mettre à jour les champs spécifiques à l'étudiant
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        instance.save()
         
+        instance.save()
         return instance
 
     def to_representation(self, instance):
@@ -167,8 +162,7 @@ class EtudiantSerializer(serializers.ModelSerializer):
             representation['photo'] = None
         
         return representation
-
-
+        
 # -------- PROFESSEUR --------
 class ProfesseurSerializer(BaseProfilSerializer):
     role = serializers.CharField(default='professeur', read_only=True)

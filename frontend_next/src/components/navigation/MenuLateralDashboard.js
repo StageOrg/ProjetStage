@@ -19,13 +19,6 @@ const links = [
   },
   
   {
-    href: "/etudiant/dashboard/ues",
-    label: "Mes UEs",
-    icon: (
-      <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 20l9-5-9-5-9 5 9 5zm0 0v-5m0 5l-9-5m9 5l9-5" /></svg>
-    ),
-  },
-  {
     href: "/etudiant/dashboard/notes",
     label: "Notes",
     icon: (
@@ -33,7 +26,10 @@ const links = [
     ),
   },
 ];
-
+const handleLogout = () => {
+    localStorage.removeItem("authToken"); 
+    router.push("/login"); 
+  };
 export default function MenuLateralDashboard() {
   const pathname = usePathname();
   return (
@@ -52,8 +48,8 @@ export default function MenuLateralDashboard() {
                 href={link.href}
                 className={
                   (active
-                    ? "bg-blue-100 text-blue-900 font-bold shadow-md "
-                    : "text-gray-700 hover:bg-blue-50 hover:text-blue-900 ") +
+                    ? "bg-gray-100 text-gray-900 font-bold shadow-md "
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 ") +
                   "rounded-xl px-4 py-2 transition flex items-center gap-3"
                 }
               >
@@ -64,9 +60,12 @@ export default function MenuLateralDashboard() {
           })}
         </nav>
         <div className="mt-12 pt-8">
-          <button className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-2 rounded-xl shadow-lg transition-all">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-900 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-2 rounded-xl shadow-lg transition-all"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
-            Se déconnecter
+            Déconnexion
           </button>
         </div>
         <div className="text-xs text-gray-400 mt-8 text-center select-none">&copy; EPL {new Date().getFullYear()}</div>
