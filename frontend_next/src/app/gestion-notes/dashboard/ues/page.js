@@ -1,4 +1,4 @@
-import GestionUEs from "@/features/resp_notes/dashboard/ues/ue";
+import GestionUEs from "@/features/administration/dashboard/ues/ue";
 
 export default function PageUes() {
   return (

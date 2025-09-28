@@ -26,7 +26,7 @@ function ListeEtudiantsUE({ ueId }) {
         setEtudiants(res.etudiants);
         setEvaluations(res.evaluations);
         if (res.evaluations.length === 0) {
-          router.push(`/service-examen/notes/${ueId}/evaluations`);
+          router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`);
         }
       } catch (err) {
         console.error("Erreur récupération notes :", err);
@@ -64,9 +64,15 @@ function ListeEtudiantsUE({ ueId }) {
       console.error("Erreur lors de la sauvegarde :", err);
     }
   };
+//  Numero anonyme
+  const handleChangeNumeroAnonyme = (index, value) => {
+   const updated = [...etudiants];
+    updated[index].num_anonyme = value;
+    setEtudiants(updated);
+  };
 
 
-  // ✅ Calcul moyenne pondérée
+  //   Calcul moyenne pondérée
   const calculerMoyenne = (etu) => {
     let somme = 0;
     let totalPoids = 0;
@@ -79,7 +85,7 @@ function ListeEtudiantsUE({ ueId }) {
     return totalPoids > 0 ? (somme / totalPoids).toFixed(2) : "-";
   };
 
-  // ✅ Export Excel
+  //   Export Excel
   const exportExcel = () => {
     const data = etudiants.map((etu) => {
       const row = {
@@ -102,7 +108,7 @@ function ListeEtudiantsUE({ ueId }) {
     saveAs(new Blob([excelBuffer], { type: "application/octet-stream" }), "notes.xlsx");
   };
 
-  // ✅ Export PDF
+  //   Export PDF
   const exportPDF = () => {
     const body = [
       ["N° Carte", "Nom", "Prénom", "Sexe", ...evaluations.map((ev) => `${ev.type} (${ev.poids}%)`), "Moyenne"]
@@ -177,62 +183,98 @@ function ListeEtudiantsUE({ ueId }) {
       
       {/* Tableau */}
       <table className="w-full border-collapse border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border px-2 py-1">N° Carte</th>
-            <th className="border px-2 py-1">Nom</th>
-            <th className="border px-2 py-1">Prénom</th>
-            <th className="border px-2 py-1">Sexe</th>
-            {selectedEvaluation && (
-              <th className="border px-2 py-1 text-center">
-                {selectedEvaluation.type} ({selectedEvaluation.poids}%)
-              </th>
+  <thead>
+    <tr className="bg-gray-100">
+      {/* 🔹 Cas normal */}
+      {selectedEvaluation?.type !== "Examen" ? (
+        <>
+          <th className="border px-2 py-1">N° Carte</th>
+          <th className="border px-2 py-1">Nom</th>
+          <th className="border px-2 py-1">Prénom</th>
+          <th className="border px-2 py-1">Sexe</th>
+        </>
+      ) : (
+        /* 🔹 Cas examen anticipé */
+        <>
+          <th className="border px-2 py-1">Nom</th>
+          <th className="border px-2 py-1">Prénom</th>
+          <th className="border px-2 py-1">N° Anonyme</th>
+        </>
+      )}
+
+      {/*  Colonne de l’évaluation sélectionnée */}
+      {selectedEvaluation && (
+        <th className="border px-2 py-1 text-center">
+          {selectedEvaluation.type} ({selectedEvaluation.poids}%)
+        </th>
+      )}
+
+      {/*  Colonne moyenne */}
+      <th className="border px-2 py-1 text-center">Moyenne</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {etudiants.map((etu, index) => (
+      <tr key={etu.id} className="even:bg-gray-50">
+        {/* 🔹 Cas normal */}
+        {selectedEvaluation?.type !== "Examen" ? (
+          <>
+            <td className="border px-2 py-1 text-center">{etu.num_carte}</td>
+            <td className="border px-2 py-1">{etu.nom}</td>
+            <td className="border px-2 py-1">{etu.prenom}</td>
+            <td className="border px-2 py-1 text-center">{etu.sexe}</td>
+          </>
+        ) : (
+          /* Cas examen anticipé → saisie du numéro anonyme */
+          <>
+            <td className="border px-2 py-1 text-center">{etu.nom}</td>
+            <td className="border px-2 py-1 text-center">{etu.prenom}</td>
+            <td className="border px-2 py-1 text-center">
+              <input
+                type="text"
+                value={etu.num_anonyme || ""}
+                onChange={(e) => handleChangeNumeroAnonyme(index, e.target.value)}
+              className="w-24 text-center border rounded"
+            />
+          </td>
+          </>
+        )}
+
+        {/*  Colonne note (éditable comme avant) */}
+        {selectedEvaluation && (
+          <td className="border px-2 py-1 text-center cursor-pointer">
+            {editIndex === index ? (
+              <input
+                type="number"
+                min="0"
+                max="20"
+                value={editedData.note}
+                onChange={(e) => setEditedData({ note: e.target.value })}
+                onBlur={() => handleSave(index, etu)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSave(index, etu);
+                }}
+                autoFocus
+                className="w-16 text-center border rounded"
+              />
+            ) : (
+              <span onClick={() => handleEdit(index, etu)}>
+                {etu.notes[selectedEvaluation.id] ?? "-"}
+              </span>
             )}
-            <th className="border px-2 py-1 text-center">Moyenne</th>
-          </tr>
-        </thead>
-        <tbody>
-          {etudiants.map((etu, index) => (
-            <tr key={etu.id} className="even:bg-gray-50">
-              <td className="border px-2 py-1 text-center">{etu.num_carte}</td>
-              <td className="border px-2 py-1">{etu.nom}</td>
-              <td className="border px-2 py-1">{etu.prenom}</td>
-              <td className="border px-2 py-1 text-center">{etu.sexe}</td>
+          </td>
+        )}
 
-              {selectedEvaluation && (
-                <td className="border px-2 py-1 text-center cursor-pointer">
-                  {editIndex === index ? (
-                    <input
-                      type="number"
-                      min="0"
-                      max="20"
-                      value={editedData.note}
-                      onChange={(e) =>
-                        setEditedData({ note: e.target.value })
-                      }
-                      onBlur={() => handleSave(index, etu)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSave(index, etu);
-                      }}
-                      autoFocus
-                      className="w-16 text-center border rounded"
-                    />
-                  ) : (
-                    <span onClick={() => handleEdit(index, etu)}>
-                      {etu.notes[selectedEvaluation.id] ?? "-"}
-                    </span>
-                  )}
-                </td>
-              )}
+        {/*   Colonne moyenne */}
+        <td className="border px-2 py-1 text-center font-bold">
+          {calculerMoyenne(etu)}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
-              {/* ✅ Colonne moyenne */}
-              <td className="border px-2 py-1 text-center font-bold">
-                {calculerMoyenne(etu)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

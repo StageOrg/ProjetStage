@@ -51,7 +51,7 @@ function EvaluationUE({ ueId, onRetour }) {
         alert("Poids invalide.");
         return;
       }
-
+      console.log("Creating evaluation with type:", type, "poids:", poidsValue, "for UE ID:", ueId);
       const res = await EvaluationService.createEvaluation(type, poidsValue, ueId);
 
       setEvaluations((prev) =>
@@ -87,7 +87,7 @@ function EvaluationUE({ ueId, onRetour }) {
       if (onRetour) onRetour();
       else {
         alert("OK : somme = 100, retour à la saisie des notes.");
-       Router.push(`/enseignant/dashboard/cours/${ueId}/etudiants-inscrits`);
+       Router.push(`/service-examen/notes/${ueId}/etudiants-inscrits`);
       }
     } else {
       setError(`La somme des poids est ${Number(totalPoids.toFixed(2))}%. Elle doit être égale à 100%.`);
@@ -124,6 +124,7 @@ function EvaluationUE({ ueId, onRetour }) {
         >
           <option value="">-- Type --</option>
           <option value="Devoir">Devoir</option>
+          <option value="Examen anticipé">Examen anticipé</option>
           <option value="Examen">Examen</option>
           <option value="Projet">Projet</option>
         </select>

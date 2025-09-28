@@ -12,6 +12,7 @@ const EvaluationService = {
   },
 
  async createEvaluation(type, poids, ueId) {
+  console.log("Creating evaluation with type:", type, "poids:", poids, "for UE ID:", ueId);
     return await api.post(`/notes/evaluations/`, {
       ue: ueId,
       type,

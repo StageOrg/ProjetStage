@@ -4,9 +4,8 @@ import { usePathname } from "next/navigation";
 import { FaUser, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaUsers, FaChartBar, FaSignOutAlt, FaChalkboardTeacher } from "react-icons/fa";
 
 const links = [
+  { href: "/gestion-notes/dashboard/tableau-de-bord", label: "Tableau de bord", icon: <FaChartBar /> },
   { href: "/gestion-notes/dashboard/periodes-saisie-de-notes", label: "Periode de saisie", icon: <FaUser /> },
-  { href: "/gestion-notes/dashboard/ues", label: "Unités d'enseignement", icon: <FaChalkboardTeacher /> },
-  { href: "/gestion-notes/dashboard/affectation", label: "Affectations", icon: <FaProjectDiagram /> },
   { href: "/gestion-notes/dashboard/notes", label: "Notes", icon: <FaClipboardList /> },
   { href: "/gestion-notes/dashboard/listes-d-emmargement", label: "Listes d'emmargement", icon: <FaUsers /> },
 ];

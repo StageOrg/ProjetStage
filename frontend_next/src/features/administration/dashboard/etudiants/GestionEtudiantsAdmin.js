@@ -1,8 +1,18 @@
+<<<<<<< HEAD
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaSearch, FaFileExport, FaSync, FaEdit, FaTrash } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import etudiantService from "@/services/etudiants/GestionEtudiantAdminService";
+=======
+ import React from "react";
+import { FaUserGraduate } from "react-icons/fa";
+
+const etudiants = [
+  { nom: "Ekoué", prenom: "Afi Sandrine", email: "afi.sandrine@epl.tg", annee: "Licence 3", statut: "Actif" },
+  { nom: "Komi", prenom: "Kossi", email: "k.komi@epl.tg", annee: "Master 1", statut: "Inactif" },
+];
+>>>>>>> feature/notes
 
 export default function GestionEtudiantsAdmin() {
   const [etudiants, setEtudiants] = useState([]);
@@ -259,3 +269,5 @@ export default function GestionEtudiantsAdmin() {
     </div>
   );
 }
+
+ 

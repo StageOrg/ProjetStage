@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { FaTachometerAlt, FaSpinner, FaUsers, FaChalkboardTeacher, FaBook } from "react-icons/fa";
+<<<<<<< HEAD
 import DashboardService from "@/services/administration/administrationService";
+=======
+import DashboardService from "@/services/administrationService";
+>>>>>>> feature/notes
 
 // Hook personnalisé pour la récupération des données
 function useDashboardStats() {

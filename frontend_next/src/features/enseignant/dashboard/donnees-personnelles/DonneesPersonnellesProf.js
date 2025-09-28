@@ -1,51 +1,55 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaUser, FaSave, FaEdit, FaCamera, FaTimes } from "react-icons/fa";
 
 export default function DonneesPersonnellesProf() {
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({
-    nom: "Kossi",
-    prenom: "Kodjo",
-    email: "k.kodjo@epl.tg",
-    contact: "+228 90 11 22 33",
-    adresse: "Lomé, Togo",
-    sexe: "Masculin",
-    specialite: "Programmation Web",
-    grade: "Maître de Conférences",
-    photo: null 
-  });
-
+  const [formData, setFormData] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("/images/prof.png");
   const fileInputRef = useRef(null);
 
+  // Charger l'utilisateur depuis localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+
+      setFormData({
+        nom: user.last_name || "",
+        prenom: user.first_name || "",
+        email: user.email || "",
+        contact: user.telephone || "",
+        sexe: user.sexe || "Masculin",
+        photo: null,
+      });
+    }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Créer une URL temporaire pour la prévisualisation
       const previewUrl = URL.createObjectURL(file);
       setPhotoPreview(previewUrl);
-      
-      // Stocker le fichier dans formData
-      setFormData(prev => ({
+
+      setFormData((prev) => ({
         ...prev,
-        photo: file
+        photo: file,
       }));
     }
   };
 
   const removePhoto = () => {
     setPhotoPreview("/images/prof.png");
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      photo: null
+      photo: null,
     }));
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -54,34 +58,31 @@ export default function DonneesPersonnellesProf() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Créer un FormData pour l'envoi au serveur
+
     const formDataToSend = new FormData();
-    
-    // Ajouter tous les champs texte
     Object.entries(formData).forEach(([key, value]) => {
-      if (key !== 'photo' && value) {
+      if (key !== "photo" && value) {
         formDataToSend.append(key, value);
       }
     });
-    
-    // Ajouter la photo si elle existe
     if (formData.photo) {
-      formDataToSend.append('photo', formData.photo);
+      formDataToSend.append("photo", formData.photo);
     }
-    
-    // Ici vous pouvez envoyer formDataToSend à votre API
+
+    // 👉 Ici tu appelles ton API pour sauvegarder
     console.log("Données à envoyer:", Object.fromEntries(formDataToSend));
-    
+
     setEditMode(false);
   };
 
-  const toggleEditMode = () => {
-    setEditMode(!editMode);
-  };
+  const toggleEditMode = () => setEditMode(!editMode);
+
+  if (!formData) {
+    return <p className="text-center text-gray-500">Chargement...</p>;
+  }
 
   return (
-    <div className="bg-transparent  max-w-4xl mx-auto my-8">
+    <div className="bg-transparent max-w-4xl mx-auto my-8">
       <div className="flex justify-between items-center mb-8">
         <h2 className="flex items-center gap-3 text-2xl font-bold text-black">
           <FaUser className="text-black" /> Mes données personnelles
@@ -98,7 +99,10 @@ export default function DonneesPersonnellesProf() {
       </div>
 
       {editMode ? (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
           {/* Colonne photo */}
           <div className="md:col-span-1 flex flex-col items-center">
             <div className="relative mb-4">
@@ -117,7 +121,7 @@ export default function DonneesPersonnellesProf() {
                 </button>
               )}
             </div>
-            
+
             <label className="cursor-pointer bg-blue-100 text-blue-800 px-4 py-2 rounded-md hover:bg-blue-200 transition flex items-center gap-2">
               <FaCamera />
               Changer la photo
@@ -129,35 +133,42 @@ export default function DonneesPersonnellesProf() {
                 className="hidden"
               />
             </label>
-            
-            <p className="text-sm text-gray-500 mt-2 text-center">
-              Formats acceptés: JPG, PNG (max 2MB)
-            </p>
           </div>
 
           {/* Colonne données */}
           <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {Object.entries(formData).map(([key, value]) => {
-              if (key === 'photo') return null;
-              
+              if (key === "photo") return null;
+
               return (
-                <div key={key} className={key === 'adresse' || key === 'specialite' ? 'sm:col-span-2' : ''}>
+                <div
+                  key={key}
+                  className={
+                    key === "adresse" || key === "specialite" ? "sm:col-span-2" : ""
+                  }
+                >
                   <label className="block text-gray-600 text-sm mb-1 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                    {key.replace(/([A-Z])/g, " $1").trim()}
                   </label>
-                  {key === 'sexe' ? (
+                  {key === "sexe" ? (
                     <select
                       name={key}
                       value={value}
                       onChange={handleChange}
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="Masculin">Masculin</option>
-                      <option value="Féminin">Féminin</option>
+                      <option value="Masculin">M</option>
+                      <option value="Féminin">F</option>
                     </select>
                   ) : (
                     <input
-                      type={key === 'email' ? 'email' : key === 'contact' ? 'tel' : 'text'}
+                      type={
+                        key === "email"
+                          ? "email"
+                          : key === "contact"
+                          ? "tel"
+                          : "text"
+                      }
                       name={key}
                       value={value}
                       onChange={handleChange}
@@ -195,20 +206,22 @@ export default function DonneesPersonnellesProf() {
               className="w-40 h-40 rounded-full object-cover border-4 border-blue-200"
             />
           </div>
-          
+
           {/* Données en mode visualisation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-grow">
             {Object.entries(formData).map(([key, value]) => {
-              if (key === 'photo') return null;
-              
+              if (key === "photo") return null;
+
               return (
-                <div key={key} className={key === 'adresse' || key === 'specialite' ? 'sm:col-span-2' : ''}>
+                <div
+                  key={key}
+                  className={
+                    key === "adresse" || key === "specialite" ? "sm:col-span-2" : ""}
+                >
                   <div className="text-gray-500 text-sm capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                    {key.replace(/([A-Z])/g, " $1").trim()}
                   </div>
-                  <div className="font-bold text-lg text-black">
-                    {value}
-                  </div>
+                  <div className="font-bold text-lg text-black">{value}</div>
                 </div>
               );
             })}

@@ -3,43 +3,39 @@ from django.shortcuts import render
 # Create your views here.
 
 from rest_framework import viewsets
-from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie
+from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie, Anonymat
+from apps.inscription_pedagogique.models import Inscription
 from apps.authentification.permissions import IsAdminOrRespNotesOnly, IsProfesseur, IsResponsableNotes, IsOwnerOrReadOnlyForProf
-from .serializers import UESerializer,AffectationUeSerializer, EvaluationSerializer, NoteSerializer, ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, PeriodeSaisieSerializer
+from .serializers import UESerializer,AffectationUeSerializer, EvaluationSerializer, NoteSerializer, ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, PeriodeSaisieSerializer, AnonymatSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions
+from rest_framework import permissions 
 from apps.utilisateurs.models import Professeur, Etudiant
 from apps.utilisateurs.serializers import EtudiantSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 
 class UEViewSet(viewsets.ModelViewSet):
     queryset = UE.objects.all().order_by('code')
     serializer_class = UESerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['parcours', 'filiere', 'annee_etude', 'semestre']
-
     def get_permissions(self):
-    # Création , modification , suppression , seulement Responsable de notes
-        if self.action in ['create', 'update', 'destroy']:
+        user = self.request.user
+
+        if self.action in ['list' , 'create', 'update', 'destroy']:
             return [IsAdminOrRespNotesOnly()]
-    
-        # Accès spécial pour les professeurs (ils ne voient que leurs UEs)
+
         if self.action in ['list', 'partial_update']:
-            if hasattr(self.request.user, 'professeur'):
-                prof = self.request.user.professeur
-                ues = prof.ues.all().values_list('id', flat=True)
-                self.queryset = UE.objects.filter(id__in=ues)
+            if hasattr(user, 'professeur'):
                 return [IsProfesseur()]
-            return [IsAdminOrRespNotesOnly()]
-    
-        # Lecture ouverte (exemple: filtrage, récupération publique des UEs)
+            else:
+                return [permissions.IsAdminUser()]  # admin peut lister aussi
+
         if self.action in ['retrieve', 'filtrer']:
             return [permissions.AllowAny()]
-    
-        # Authentification par défaut pour le reste
+
         return [permissions.IsAuthenticated()]
-    
 
 
     def get_queryset(self):
@@ -47,10 +43,19 @@ class UEViewSet(viewsets.ModelViewSet):
         
         # Filtrage optionnel pour les professeurs
         if hasattr(self.request.user, 'professeur'):
-            return queryset.filter(professeurs=self.request.user.professeur)
+            return queryset.filter(professeur=self.request.user.professeur)
         
         return queryset
         
+# Récupération des étudiants inscrits à une UE donnée
+    """  @action(detail=True, methods=['get'])
+    def etudiantsInscrits(self, request, pk=None):
+        ue = self.get_object()
+        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue)
+        serializer = EtudiantSerializer(etudiantsInscrits, many=True)
+        return Response(serializer.data) """
+    
+   
 # Récupération des étudiants inscrits à une UE donnée
     @action(detail=True, methods=['get'])
     def etudiantsInscrits(self, request, pk=None):
@@ -58,6 +63,7 @@ class UEViewSet(viewsets.ModelViewSet):
         etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue)
         serializer = EtudiantSerializer(etudiantsInscrits, many=True)
         return Response(serializer.data)
+
     
     # Récupérer toutes les évaluations liées à une UE donnée
     @action(detail=True, methods=['get'], url_path='evaluations')
@@ -79,7 +85,7 @@ class UEViewSet(viewsets.ModelViewSet):
         """
         ue = self.get_object()
 
-        # toutes les évaluations liées à cette UE (ex: devoir, examen, projet…)
+        # toutes les évaluations liées à cette UE 
         evaluations = Evaluation.objects.filter(ue=ue)
 
         # tous les étudiants inscrits à cette UE
@@ -138,6 +144,27 @@ class UEViewSet(viewsets.ModelViewSet):
 class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
+    
+class AnonymatViewSet(viewsets.ModelViewSet):
+    queryset = Anonymat.objects.all()
+    serializer_class = AnonymatSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'destroy']:
+            return [IsProfesseur()]
+        elif self.action in ['list']:
+            if hasattr(self.request.user, 'professeur'):
+                return [IsProfesseur()]
+            return [IsProfesseur()]
+        return [permissions.IsAuthenticated()]
+    @action(detail=False, methods=['get'])
+    def by_ue(self, request):
+        ue_id = request.query_params.get("ue")
+        if not ue_id:
+            return Response({"error": "ue est requis"}, status=400)
+        anonymats = Anonymat.objects.filter(ue__id=ue_id)   
+        serializer = self.get_serializer(anonymats, many=True)
+        return Response(serializer.data)
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()

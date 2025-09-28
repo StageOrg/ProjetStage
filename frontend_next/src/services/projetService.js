@@ -12,6 +12,17 @@ const ProjetService = {
         }
     },
 
+    //Recuperer les projets d'un prof par son ID
+    getProjetsByProfId: async (profId) => {
+        try {
+            const response = await api.get(`/notes/projets/par-professeur/${profId}/`);
+            return response.data;
+        } catch (error) {
+            console.error(`Erreur lors de la récupération des projets du professeur ${profId}:`, error);
+            throw error;
+        }
+    },
+
     // Récupérer un projet par ID
     getProjetById: async (id) => {
         try {
