@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie
+from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, Anonymat
 from ..inscription_pedagogique.models import Inscription, Parcours, Filiere, AnneeEtude, Semestre
 from django.utils import timezone
 
@@ -16,6 +16,7 @@ class UESerializer(serializers.ModelSerializer):
         model = UE
         fields = '__all__'
         required_fields = ['libelle', 'code', 'nbre_credit', 'composite', 'parcours', 'filiere', 'annee_etude','semestre']
+        
     
 
 class EvaluationSerializer(serializers.ModelSerializer):
@@ -39,9 +40,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Seuls les professeurs peuvent créer une évaluation.")
 
         ue = validated_data.get('ue')
-        """ if ue.professeur != user.professeur:
-            raise serializers.ValidationError("Vous ne pouvez créer une évaluation que pour vos propres UE.")
- """
+  
        # validated_data['professeur'] = user.professeur
         return Evaluation.objects.create(**validated_data)
 
@@ -51,7 +50,11 @@ class EvaluationSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
+class AnonymatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anonymat
+        fields = '__all__'
+        required_fields = ['etudiant', 'ue', 'numero']
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -166,6 +169,8 @@ class PeriodeSaisieSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "La date de début ne peut pas être dans le passé."
                 )
+        return data
+    
     
 class AffectationUeSerializer(serializers.ModelSerializer):
     class Meta:

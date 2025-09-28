@@ -34,6 +34,7 @@ export default function Connexion() {
       // Sauvegarde du token dans localStorage
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
+      localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("user_role", data.user.role);
       console.log("Connexion réussie", data.user);
       // Redirection après connexion

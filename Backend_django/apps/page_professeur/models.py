@@ -23,6 +23,7 @@ class UE(models.Model):
 class Evaluation(models.Model):
     TYPE = [
         ('Devoir', 'Devoir'),
+        ('Examen anticipé', 'Examen anticipé'),
         ('Examen', 'Examen'),
         ('Projet', 'Projet'),
     ]
@@ -30,10 +31,21 @@ class Evaluation(models.Model):
     type = models.CharField(max_length=50, choices=TYPE)
     poids = models.FloatField()
 
+class Anonymat(models.Model):
+    etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")
+    ue = models.ForeignKey("UE", on_delete=models.CASCADE, related_name="anonymats")
+    numero = models.CharField(max_length=50, unique=True)
+
+    class Meta:
+        unique_together = ("etudiant", "ue") 
+    def __str__(self):
+        return f"{self.numero} ({self.etudiant} - {self.ue})"
+
 class Note(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='notes')
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='notes')
     note = models.FloatField()
+    
 
 class Projet(models.Model):
     professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE)

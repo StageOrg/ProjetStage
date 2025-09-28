@@ -1,7 +1,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AffectationUeViewSet, UEViewSet, EvaluationViewSet, NoteViewSet, ProjetViewSet, RechercheViewSet, ArticleViewSet, EncadrementViewSet, PeriodeSaisieViewSet
+from .views import AffectationUeViewSet, UEViewSet, EvaluationViewSet, NoteViewSet, ProjetViewSet, RechercheViewSet, ArticleViewSet, EncadrementViewSet, PeriodeSaisieViewSet, AnonymatViewSet
 
 router = DefaultRouter()
 router.register(r'ues', UEViewSet)
@@ -13,6 +13,7 @@ router.register(r'articles', ArticleViewSet)
 router.register(r'encadrements', EncadrementViewSet)
 router.register(r'affectations', AffectationUeViewSet, basename='affectation-ue')
 router.register(r'periodes', PeriodeSaisieViewSet, basename='periode-saisie')
+router.register(r'anonymats', AnonymatViewSet, basename='anonymat')
 
 
 urlpatterns = [

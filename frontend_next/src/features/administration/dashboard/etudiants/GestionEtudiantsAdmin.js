@@ -1,4 +1,4 @@
-import React from "react";
+ import React from "react";
 import { FaUserGraduate } from "react-icons/fa";
 
 const etudiants = [
@@ -39,3 +39,5 @@ export default function GestionEtudiantsAdmin() {
     </div>
   );
 }
+
+ 

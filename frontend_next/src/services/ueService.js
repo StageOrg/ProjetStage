@@ -23,11 +23,16 @@ const UEService = {
     const response = await api.get(`/notes/ues/${id}/`);
     return response.data;
   },
-  // 👉 Mise à jour partielle (description + liens)
+  // Mise à jour partielle (description + liens)
   updateUE: async (id, data) => {
     const response = await api.patch(`/notes/ues/${id}/`, data);
     return response.data;
   },
+  // Suppression d'une UE
+  deleteUE: async (id) => {
+    const response = await api.delete(`/notes/ues/${id}/`);
+    return response.data;
+  }
 };
 
 

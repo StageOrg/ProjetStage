@@ -65,6 +65,7 @@ export default function InfosUePublic({ ueId }) {
 
       {formData.description && (
         <div className="border p-3 rounded">
+          <h3 className="font-bold mb-2">Description de l'UE </h3>
           <p>{formData.description}</p>
         </div>
       )}
