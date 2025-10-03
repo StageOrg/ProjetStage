@@ -4,7 +4,7 @@ const PeriodeSaisieService = {
     getAll: async () => {
         try{ 
             const response = await api.get("notes/periodes/");
-            return response.data;
+            return response.data.results;
         }
         catch(error) {
             console.error("Erreur lors de la recuperation des periodes de saisie de notes");
@@ -16,7 +16,7 @@ const PeriodeSaisieService = {
         console.log("Creating periode with data:", { numero, date_debut, date_fin });
         try{
             const response = await api.post("notes/periodes/", { numero, date_debut, date_fin });
-            return response.data;
+            return response.data.results;
 
         }
         catch(error){

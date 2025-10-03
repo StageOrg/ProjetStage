@@ -136,7 +136,7 @@ const handleValidate = async ( ) => {
               </button>
 
               {/* Liste des UEs déjà affectées */}
-              {profUes.length > 0 ? (
+              {profUes?.length > 0 ? (
                 <ul className="list-disc ml-6 mb-4">
                   {profUes.map((ue) => (
                     <li key={ue.code}>{ue.libelle}</li>
@@ -165,12 +165,12 @@ const handleValidate = async ( ) => {
                               type="checkbox"
                               checked={selectedUEs.includes(ue.id)}
                               onChange={() => handleToggleUE(ue)}
-                              disabled={profUes.some((pu) => pu.id === ue.id)}
+                              disabled={(profUes ?? []).some((pu) => pu.id === ue.id)}
                             />
                           </td>
                           <td
                             className={`border p-2 ${
-                              profUes.some((pu) => pu.id === ue.id)
+                              (profUes ?? []).some((pu) => pu.id === ue.id)
                                 ? "text-gray-400 italic"
                                 : ""
                             }`}

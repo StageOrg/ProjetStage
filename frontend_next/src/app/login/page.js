@@ -28,6 +28,7 @@ export default function Connexion() {
   
   async function handleFormSubmit(valeurs) {
     console.log("Token:", localStorage.getItem('access_token'))
+    console.log("Form values:", valeurs);
     try {
       const data = await authAPI.login(valeurs.identifiant, valeurs.motdepasse);
 

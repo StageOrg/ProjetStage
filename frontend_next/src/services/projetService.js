@@ -5,7 +5,7 @@ const ProjetService = {
     getMesProjets: async () => {
         try {
             const response = await api.get("/notes/projets/");
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error("Erreur lors de la récupération de la liste des projets:", error);
             throw error;
@@ -16,7 +16,7 @@ const ProjetService = {
     getProjetsByProfId: async (profId) => {
         try {
             const response = await api.get(`/notes/projets/par-professeur/${profId}/`);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error(`Erreur lors de la récupération des projets du professeur ${profId}:`, error);
             throw error;
@@ -27,7 +27,7 @@ const ProjetService = {
     getProjetById: async (id) => {
         try {
             const response = await api.get(`/notes/projets/${id}/`);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error(`Erreur lors de la récupération du projet ${id}:`, error);
             throw error;

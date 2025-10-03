@@ -152,7 +152,7 @@ useEffect(() => {
   };
 
 //Filtres
-const filteredCourses = courses.filter((c) => {
+const filteredCourses = courses||[].filter((c) => {
   const filiereOk =
     !selectedFiliere ||
     trouverObjetParId(filieres, c.filiere)?.abbreviation === selectedFiliere;
@@ -171,8 +171,9 @@ const filteredCourses = courses.filter((c) => {
   return filiereOk && parcoursOk && semestreOk && anneeOk;
 });
 
+console.log("filteredCourses =>", filteredCourses);
 
-const sortedCourses = [...filteredCourses].sort((a, b) => {
+const sortedCourses = [...(filteredCourses.results || [])].sort((a, b) => {
     if (sortConfig.key) {
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -282,7 +283,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
                   Parcours:
                 </label>
                 <div className="border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto">
-                  {parcours.map((p) => (
+                  {parcours?.map((p) => (
                     <div key={p.id} className="flex items-center mb-1">
                       <input
                         type="checkbox"
@@ -305,7 +306,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
                   Filiere:
                 </label>
                 <div className="border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto">
-                  {filieres.map((f) => (
+                  {filieres?.map((f) => (
                     <div key={f.id} className="flex items-center mb-1">
                       <input
                         type="checkbox"
@@ -328,7 +329,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
                   Annee etude:
                 </label>
                 <div className="border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto">
-                  {anneesEtude.map((a) => (
+                  {anneesEtude?.map((a) => (
                     <div key={a.id} className="flex items-center mb-1">
                       <input
                         type="checkbox"
@@ -405,7 +406,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Filières</option>
-          {filieres.map((filiere, idx) => (
+          {filieres?.map((filiere, idx) => (
             <option key={idx} value={filiere.abbreviation}>
               {filiere.abbreviation}
             </option>
@@ -423,7 +424,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value=""> Parcours</option>
-          {parcours.map((parcours, idx) => (
+          {parcours?.map((parcours, idx) => (
             <option key={idx} value={parcours.libelle}>
               {parcours.libelle}
             </option>
@@ -441,7 +442,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Année d'étude</option>
-          {anneesEtude.map((annee, idx) => (
+          {anneesEtude?.map((annee, idx) => (
             <option key={idx} value={annee.libelle}>
               {annee.libelle}
             </option>
@@ -459,7 +460,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Semestre</option>
-          {semestres.map((semestre, idx) => (
+          {semestres || [].map((semestre, idx) => (
             <option key={idx} value={semestre.libelle}>
               {semestre.libelle}
             </option>

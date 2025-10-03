@@ -5,7 +5,7 @@ const EncadrementService = {
     getMesEncadrements: async () => {
         try {
             const response = await api.get("/notes/encadrements/");
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error("Erreur lors de la récupération de la liste des encadrements:", error);
             throw error;
@@ -16,7 +16,7 @@ const EncadrementService = {
     getEncadrementById: async (id) => {
         try {
             const response = await api.get(`/notes/encadrements/${id}/`);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error(`Erreur lors de la récupération de l'encadrement ${id}:`, error);
             throw error;
@@ -36,7 +36,7 @@ const EncadrementService = {
                 lien 
             };
             const response = await api.post("/notes/encadrements/", encadrementData);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error("Erreur lors de la création de l'encadrement:", error);
             throw error;
@@ -56,7 +56,7 @@ const EncadrementService = {
                 lien 
             };
             const response = await api.put(`/notes/encadrements/${id}/`, encadrementData);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error("Erreur lors de la mise à jour de l'encadrement:", error);
             throw error;
@@ -67,7 +67,7 @@ const EncadrementService = {
     delete: async (id) => {
         try {
             const response = await api.delete(`/notes/encadrements/${id}/`);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error("Erreur lors de la suppression de l'encadrement:", error);
             throw error;
@@ -76,7 +76,7 @@ const EncadrementService = {
     getEncadrementsByProfId: async (profId) => {
         try {
             const response = await api.get(`/notes/encadrements/par-professeur/${profId}/`);
-            return response.data;
+            return response.data.results;
         } catch (error) {
             console.error(`Erreur lors de la récupération des encadrements pour le professeur ${profId}:`, error);
             throw error;

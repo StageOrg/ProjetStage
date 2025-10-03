@@ -8,7 +8,7 @@ const inscriptionService = {
       console.log("Envoi requête GET UE avec params:", params);
       const response = await api.get("/notes/ues/filtrer/", { params });
       console.log("Réponse UE reçue:", response.data);
-      return response.data;
+      return response.data.results;
     } catch (error) {
       console.error("Erreur dans getUEs:", error);
       throw error;
@@ -21,7 +21,7 @@ const inscriptionService = {
       console.log("Envoi requête POST inscription:", data);
       const response = await api.post("inscription/inscription/", data);
       console.log("Réponse inscription reçue:", response.data);
-      return response.data;
+      return response.data.results;
     } catch (error) {
       console.error("Erreur dans createInscription:", error);
       throw error;
@@ -40,7 +40,7 @@ const inscriptionService = {
       
       const response = await api.get(`/inscription/verifier-ancien-etudiant/${numCarte.trim()}/`);
       console.log("Réponse vérification reçue:", response.data);
-      return response.data;
+      return response.data.results;
     } catch (error) {
       console.error("Erreur dans verifierAncienEtudiant:", error);
       
@@ -76,7 +76,7 @@ const inscriptionService = {
       console.log("Envoi requête POST inscription ancien étudiant:", data);
       const response = await api.post("/inscription/ancien-etudiant/", data);
       console.log("Réponse inscription ancien étudiant reçue:", response.data);
-      return response.data;
+      return response.data.results;
     } catch (error) {
       console.error("Erreur dans inscriptionAncienEtudiant:", error);
       throw error;

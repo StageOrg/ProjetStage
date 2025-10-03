@@ -8,11 +8,11 @@ const UEService = {
   }
     const response = await api.get(`/notes/ues/${ueId}/etudiantsInscrits/`);
     console.log("Données reçues du backend:", response.data);
-    return response.data;
+    return response.data.results;
   },
   getAllUE : async () => {
     const response = await api.get("/notes/ues/");
-    return response.data;
+    return response.data.results;
   },
   creerUE : async (libelle,code, nbre_credit,composite,parcours,filiere,annee_etude,semestre) => {
     const ueData = { libelle, code, nbre_credit, composite, parcours, filiere, annee_etude, semestre };
@@ -21,7 +21,7 @@ const UEService = {
   },
   getUEById: async (id) => {
     const response = await api.get(`/notes/ues/${id}/`);
-    return response.data;
+    return response.data.results;
   },
   // Mise à jour partielle (description + liens)
   updateUE: async (id, data) => {
