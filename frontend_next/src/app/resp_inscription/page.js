@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 export default function InscriptionRedirect() {
   const router = useRouter();
 
-  useEffect(() => {
+/*  useEffect(() => {
     router.push("/login");
-  }, [router]);
+  }, [router]);*/
 
   return null;
 }

@@ -1,7 +1,7 @@
 // patterns de validation
 export const validationPatterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Email standard
-  telephone: /^(\+228|0)[0-9]{8}$/,  // Togo: +228 ou 0 suivi de 8 chiffres 
+  telephone: /^(\+228)?(70|71|72|76|79|90|91|92|93|96|97|98|99)\d{6}$/,   
   password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, // Min 8 chars, 1 maj, 1 min, 1 chiffre, 1 spécial
   numeroCarte: /^[0-9]{6}$/, // Exactement 6 chiffres
   nomPrenom: /^[a-zA-ZÀ-ÿ\s\-']+$/, // Lettres, espaces, traits d'union, apostrophes
@@ -20,6 +20,7 @@ export const errorMessages = {
   dateNaissance: "Vous devez avoir au moins 15 ans pour vous inscrire",
   photo: "La photo ne doit pas dépasser 2Mo",
   photoFormat: "Seuls les formats JPG et PNG sont acceptés",
+  sexe: "Sexe invalide (M ou F requis)",
 };
 
 // Fonctions utilitaires pour la validation de date
@@ -61,36 +62,59 @@ export const validerPhoto = (fichier) => {
 
 // Fonctions de validation
 export const validateField = (fieldName, value, isRequired = true) => {
-  if (isRequired && !value?.trim()) {
-    return errorMessages.required;
+
+  // Gère les types : string, number (int backend), null/undefined, File (photo)
+  let trimmedValue;
+  if (typeof value === 'string') {
+    trimmedValue = value.trim();
+  } else if (typeof value === 'number') {
+    if (isRequired && (value === null || value === undefined || isNaN(value) || value <= 0)) {
+      return errorMessages.required;
+    }
+    if (value <= 0) return null;  // Optionnel vide
+    trimmedValue = String(value);  // Pour regex seulement
+  } else if (value === null || value === undefined) {
+    if (isRequired) return errorMessages.required;
+    return null;
+  } else {
+    if (isRequired) return errorMessages.required;
+    return null;
   }
 
-  if (!value?.trim()) return null; // Champ optionnel vide
+  // Si optionnel et vide : OK
+  if (!isRequired && (!trimmedValue || trimmedValue === '')) return null;
 
   switch (fieldName) {
     case 'email':
-      return !validationPatterns.email.test(value) ? errorMessages.email : null;
+      return !validationPatterns.email.test(trimmedValue) ? errorMessages.email : null;
     
     case 'telephone':
     case 'contact':
-      return !validationPatterns.telephone.test(value) ? errorMessages.telephone : null;
+      return !validationPatterns.telephone.test(trimmedValue) ? errorMessages.telephone : null;
     
     case 'password':
-      return !validationPatterns.password.test(value) ? errorMessages.password : null;
+      return !validationPatterns.password.test(trimmedValue) ? errorMessages.password : null;
     
     case 'numero_carte':
-      return !validationPatterns.numeroCarte.test(value) ? errorMessages.numeroCarte : null;
+    case 'num_carte': 
+      return !validationPatterns.numeroCarte.test(trimmedValue) ? errorMessages.numeroCarte : null;
     
     case 'nom':
     case 'prenom':
     case 'autre_prenom':
-      return !validationPatterns.nomPrenom.test(value) ? errorMessages.nomPrenom : null;
+    case 'last_name':  
+    case 'first_name':
+      return !validationPatterns.nomPrenom.test(trimmedValue) ? errorMessages.nomPrenom : null;
     
     case 'lieu_naiss':
-      return !validationPatterns.lieuNaissance.test(value) ? errorMessages.lieuNaissance : null;
+      return !validationPatterns.lieuNaissance.test(trimmedValue) ? errorMessages.lieuNaissance : null;
     
     case 'date_naissance':
-      return !validerAge(value) ? errorMessages.dateNaissance : null;
+    case 'date_naiss':  // Alias
+      return !validerAge(trimmedValue) ? errorMessages.dateNaissance : null;
+    
+    case 'sexe':  
+      return !['M', 'F'].includes(trimmedValue.toUpperCase()) ? errorMessages.sexe : null;
     
     default:
       return null;

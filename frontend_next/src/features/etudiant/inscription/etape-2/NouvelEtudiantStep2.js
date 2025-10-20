@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { validateField, calculerDateMinimale, validerPhoto } from '@/components/ui/ValidationUtils';
+import api from "@/services/api";  // Pour les checks API (num_carte).
 
-export default function NouвелEtudiantStep2() {
+export default function NouvelEtudiantStep2() {
   const [typeInscription, setTypeInscription] = useState(null);
   const [ancienEtudiantData, setAncienEtudiantData] = useState(null);
   const [formulaire, setFormulaire] = useState({
@@ -22,6 +23,7 @@ export default function NouвелEtudiantStep2() {
   const [erreurs, setErreurs] = useState({});
   const [champsModifies, setChampsModifies] = useState({});
   const [chargement, setChargement] = useState(false);
+  const [verificationEnCours, setVerificationEnCours] = useState({});  // Loader pour vérif (ex: {num_carte: true}).
   const router = useRouter();
 
   const champsRequis = {
@@ -112,6 +114,7 @@ export default function NouвелEtudiantStep2() {
     }
   }, []);
 
+  // Changement champ (basique : Update state, efface erreur si valide).
   const gererChangement = (e) => {
     const { name, value } = e.target;
     setFormulaire(prev => ({ ...prev, [name]: value }));
@@ -119,6 +122,38 @@ export default function NouвелEtudiantStep2() {
     
     const erreur = validateField(name, value, champsRequis[name]?.required);
     setErreurs(prev => ({ ...prev, [name]: erreur }));
+  };
+
+  // Fonction générique pour vérifier un champ sur onBlur (unicité/validité).
+  const verifierChamp = async (champ) => {
+    if (typeInscription?.typeEtudiant !== 'nouveau' || champsRequis[champ]?.required === false && !formulaire[champ]?.trim()) return;  // Seulement pour nouveaux, et si fourni pour optionnels.
+
+    const value = formulaire[champ]?.trim();
+    if (!value) {
+      setErreurs(prev => ({ ...prev, [champ]: '' }));  // Efface si vide.
+      return;
+    }
+
+    if (champ !== 'num_carte') return;  // Pour l'instant, seulement num_carte a API.
+
+    setVerificationEnCours(prev => ({ ...prev, [champ]: true }));
+    setErreurs(prev => ({ ...prev, [champ]: '' }));  // Efface précédente.
+
+    try {
+      const reponse = await api.post('utilisateurs/check-num-carte/', { num_carte: value });
+      if (!reponse.data.disponible) {
+        setErreurs(prev => ({ ...prev, [champ]: 'Ce numéro de carte est déjà utilisé.' }));
+      }
+    } catch (error) {
+      console.error(`Erreur vérification ${champ}:`, error);
+      if (error.response?.status === 400) {
+        setErreurs(prev => ({ ...prev, [champ]: error.response.data.erreur || 'Données invalides.' }));
+      } else {
+        setErreurs(prev => ({ ...prev, [champ]: 'Erreur de vérification. Réessayez.' }));
+      }
+    } finally {
+      setVerificationEnCours(prev => ({ ...prev, [champ]: false }));
+    }
   };
 
   const gererChangementPhoto = (e) => {
@@ -174,9 +209,47 @@ export default function NouвелEtudiantStep2() {
     return Object.values(nouvellesErreurs).every(error => !error);
   };
 
+  // Soumission formulaire (validation + sauvegarde).
   const soumettreFormulaire = async (e) => {
     e.preventDefault();
+    
+    // Reset erreurs globales.
+    setErreurs({});
+    
     if (!validerFormulaire()) return;
+
+    // Re-calculer les erreurs de format localement pour décision synchrone.
+    const formatErreurs = {};
+    Object.keys(champsRequis).forEach(key => {
+      if (key !== 'photo') {
+        formatErreurs[key] = validateField(key, formulaire[key], champsRequis[key].required);
+      }
+    });
+
+    // Vérif unicité num_carte seulement pour nouveau et si format OK et fourni.
+    if (typeInscription?.typeEtudiant === 'nouveau' && formulaire.num_carte?.trim() && !formatErreurs.num_carte) {
+      setVerificationEnCours(prev => ({ ...prev, num_carte: true }));
+      try {
+        const reponse = await api.post('utilisateurs/check-num-carte/', { num_carte: formulaire.num_carte.trim() });
+        if (!reponse.data.disponible) {
+          setErreurs(prev => ({ ...prev, num_carte: 'Ce numéro de carte est déjà utilisé.' }));
+          const inputErrone = document.querySelector('[name="num_carte"]');
+          if (inputErrone) inputErrone.focus();
+          return;  // Bloque !
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification num_carte:", error);
+        const msg = error.response?.status === 400 
+          ? (error.response.data.erreur || 'Données invalides.')
+          : 'Erreur de vérification. Réessayez.';
+        setErreurs(prev => ({ ...prev, num_carte: msg }));
+        const inputErrone = document.querySelector('[name="num_carte"]');
+        if (inputErrone) inputErrone.focus();
+        return;  // Bloque !
+      } finally {
+        setVerificationEnCours(prev => ({ ...prev, num_carte: false }));
+      }
+    }
 
     setChargement(true);
 
@@ -207,7 +280,7 @@ export default function NouвелEtudiantStep2() {
       
     } catch (error) {
       console.error("Erreur:", error);
-      setErreurs(prev => ({ ...prev, formulaire: "Une erreur s'est produite lors de la sauvegarde" }));
+      setErreurs(prev => ({ ...prev, general: "Une erreur s'est produite lors de la sauvegarde" }));
     } finally {
       setChargement(false);
     }
@@ -225,6 +298,13 @@ export default function NouвелEtudiantStep2() {
           <p className="text-sm text-green-700">
             Vos informations ont été pré-remplies. Vous pouvez modifier le sexe si nécessaire.
           </p>
+        </div>
+      )}
+
+      {/* Affichage erreur générale si existe. */}
+      {erreurs.general && (
+        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+          <p className="text-red-600 text-sm">{erreurs.general}</p>
         </div>
       )}
 
@@ -318,8 +398,9 @@ export default function NouвелEtudiantStep2() {
               name="num_carte"
               value={formulaire.num_carte}
               onChange={gererChangement}
+              onBlur={() => verifierChamp('num_carte')}  // Vérif unicité sur blur.
               type="text"
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              className={`w-full px-4 py-2 rounded-lg border ${erreurs.num_carte ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${verificationEnCours.num_carte ? 'opacity-70' : ''}`}
               placeholder="Ex:523456"
               readOnly={typeInscription?.typeEtudiant === 'ancien'}
             />

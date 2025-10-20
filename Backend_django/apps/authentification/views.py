@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from apps.utilisateurs.models import Utilisateur
 from django.contrib.auth import authenticate
-
+from rest_framework.decorators import api_view, permission_classes
 
 class RegisterView(views.APIView):
     def post(self, request):
@@ -50,3 +50,39 @@ class StudentRegisterView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED
         )
+        
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_username(request):
+    username = request.data.get('username', '').strip()
+    
+    if not username:
+        return Response(
+            {'existe': False, 'disponible': False, 'erreur': 'Username vide'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    existe = Utilisateur.objects.filter(username=username).exists()
+    
+    return Response({
+        'existe': existe,
+        'disponible': not existe
+    })
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_email(request):
+    email = request.data.get('email', '').strip()
+    
+    if not email:
+        return Response(
+            {'existe': False, 'disponible': False, 'erreur': 'Email vide'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    existe = Utilisateur.objects.filter(email=email).exists()
+    
+    return Response({
+        'existe': existe,
+        'disponible': not existe
+    })

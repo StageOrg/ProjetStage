@@ -49,7 +49,7 @@ export default function Connexion() {
       router.push("/gestion-notes/dashboard");
     } 
     else if (data.user.role === "resp_inscription") {
-      router.push("/resp_inscription/dashboard");  
+      router.push("/resp_inscription/dashboard/gestionEtudiant");  
     } else {
       router.push("/programmes"); // fallback
     }

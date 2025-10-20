@@ -5,12 +5,15 @@ const etudiantService = {
     try {
       console.log("Recherche étudiants avec filtres:", filters);
       
-      // Nettoyer les paramètres vides et ignorer la pagination (page et page_size)
+      // Nettoyer les paramètres vides
       const cleanFilters = Object.fromEntries(
         Object.entries(filters).filter(([key, value]) => 
-          value !== null && value !== undefined && value !== '' && !['page', 'page_size'].includes(key)
+          value !== null && value !== undefined && value !== ''
         )
       );
+      
+      // Ajout d'un page_size large pour récupérer tous les résultats en une fois (supprime la pagination)
+      cleanFilters.page_size = 10000;  // Ou une valeur max selon ton backend (ex. : 999999)
       
       const response = await api.get("/inscription/etudiants/filtrer/", { 
         params: cleanFilters 
@@ -18,11 +21,10 @@ const etudiantService = {
       
       console.log("Étudiants reçus:", response.data);
       
-      // Retourner la réponse au format attendu
+      // Retourner tous les résultats (pas de pagination)
       return {
-        results: response.data.results || [],
-        count: response.data.count || 0,
-        total_pages: response.data.total_pages || 1
+        results: response.data.results || response.data || [],  // Utilise data directement si pas paginé
+        count: response.data.count || response.data.length || 0,
       };
     } catch (error) {
       console.error("Erreur getAllEtudiants:", error);
@@ -113,25 +115,6 @@ const etudiantService = {
       throw error;
     }
   },
-
-
-  exportCSV: (etudiants) => {
-    const headers = ['Num Carte', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Date Naissance'];
-    const csvData = etudiants.map(etudiant => [
-      etudiant.num_carte || '',
-      etudiant.utilisateur?.last_name || '',
-      etudiant.utilisateur?.first_name || '',
-      etudiant.utilisateur?.email || '',
-      etudiant.utilisateur?.telephone || '',
-      etudiant.date_naiss || ''
-    ]);
-    
-    const csvContent = [headers, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
-      
-    return csvContent;
-  }
 };
 
 export default etudiantService;

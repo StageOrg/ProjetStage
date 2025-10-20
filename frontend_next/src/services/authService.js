@@ -14,6 +14,20 @@ const TokenStorage = {
   },
 };
 
+// Liste des endpoints publics (pas d'auth header requis)
+const PUBLIC_ENDPOINTS = [
+  '/token/refresh/',           // Refresh token (utilise payload, pas header)
+  '/notes/ues/filtrer/',       // Filtrage UEs (public pour inscription)
+  '/auth/register-etudiant/',  // Création étudiant (public)
+  '/auth/register/',           // Inscription basique
+  '/auth/login/',              // Login (pas de token requis)
+  '/inscription/annee-academique/', // Récup année active
+  '/inscription/inscription/', // Création inscription
+  '/inscription/verifier-ancien-etudiant/', // Vérif ancien étudiant
+  '/inscription/ancien-etudiant/', // Inscription ancien
+  // Ajoutez d'autres endpoints publics si besoin
+];
+
 let isRefreshing = false;
 let refreshQueue = [];
 
@@ -27,7 +41,13 @@ function processQueue(error, token = null) {
 
 api.interceptors.request.use((config) => {
   const token = TokenStorage.getAccess();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  // Ne pas ajouter le token pour les endpoints publics
+  const isPublic = PUBLIC_ENDPOINTS.some(endpoint => config.url.endsWith(endpoint));
+  if (token && !isPublic) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
   return config;
 }, (error) => Promise.reject(error));
 
@@ -54,6 +74,7 @@ api.interceptors.response.use(
 
       isRefreshing = true;
       try {
+        // Note : Grâce à PUBLIC_ENDPOINTS, pas d'header ajouté ici
         const res = await api.post("token/refresh/", { refresh: refreshToken });
         const newAccess = res.data.access;
         TokenStorage.setTokens({ access: newAccess });

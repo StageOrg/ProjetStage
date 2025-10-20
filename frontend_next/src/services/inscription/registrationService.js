@@ -1,7 +1,7 @@
 // services/registrationService.js
-import { authAPI } from './authService';
+import { authAPI } from '@/services/authService';
 import inscriptionService from './inscriptionService';
-import api from './api';
+import api from '../api';
 
 class RegistrationService {
   /**
@@ -28,6 +28,8 @@ class RegistrationService {
    * Valide les données avant création
    */
   validateRegistrationData(data) {
+    console.log('📋 Toutes les données pour validation :', data); // Log debug (retire après)
+    
     const errors = [];
 
     // Validation étape 1
@@ -35,17 +37,20 @@ class RegistrationService {
     if (!data.step1?.email) errors.push("Email manquant");
     if (!data.step1?.password) errors.push("Mot de passe manquant");
 
-    // Validation étape 2
-    if (!data.step2?.nom) errors.push("Nom manquant");
-    if (!data.step2?.prenom) errors.push("Prénom manquant");
-    if (!data.step2?.date_naissance) errors.push("Date de naissance manquante");
+    // Validation étape 2 : Clés alignées sur le formulaire (anglais)
+    if (!data.step2?.last_name) errors.push("Nom manquant");
+    if (!data.step2?.first_name) errors.push("Prénom manquant");
+    if (!data.step2?.date_naiss) errors.push("Date de naissance manquante");
     if (!data.step2?.lieu_naiss) errors.push("Lieu de naissance manquant");
+    if (!data.step2?.telephone) errors.push("Téléphone manquant");  // Ajouté si obligatoire
+    if (!data.step2?.sexe || !['M', 'F'].includes(data.step2.sexe)) errors.push("Sexe invalide (M ou F requis)");  // Nouveau : Validation sexe
 
     // Validation étape 3
     if (!data.step3?.parcours_id) errors.push("Parcours non sélectionné");
     if (!data.step3?.filiere_id) errors.push("Filière non sélectionnée");
     if (!data.step3?.annee_etude_id) errors.push("Année d'étude non sélectionnée");
 
+    console.log('❌ Erreurs de validation :', errors); // Log debug (retire après)
     return errors;
   }
 
@@ -71,15 +76,24 @@ class RegistrationService {
       formData.append('username', allData.step1.username);
       formData.append('password', allData.step1.password);
       formData.append('email', allData.step1.email);
-      formData.append('first_name', allData.step2.prenom);
-      formData.append('last_name', allData.step2.nom);
       
-      if (allData.step2.contact) {
-        formData.append('telephone', allData.step2.contact);
+      // Données utilisateur (étape 2) : Clés alignées sur le formulaire
+      formData.append('first_name', allData.step2.first_name);  // Prénom
+      formData.append('last_name', allData.step2.last_name);    // Nom
+      
+      // Téléphone
+      if (allData.step2.telephone) {
+        formData.append('telephone', allData.step2.telephone);
+      }
+      
+      // Nouveau : Sexe
+      if (allData.step2.sexe) {
+        formData.append('sexe', allData.step2.sexe);  // "M" ou "F"
+        console.log('🔤 Sexe ajouté à FormData :', allData.step2.sexe);  // Log debug
       }
       
       // Données étudiant (étape 2)
-      formData.append('date_naiss', allData.step2.date_naissance);
+      formData.append('date_naiss', allData.step2.date_naiss);
       formData.append('lieu_naiss', allData.step2.lieu_naiss);
       
       if (allData.step2.autre_prenom) {
@@ -91,6 +105,7 @@ class RegistrationService {
       
       // Gérer la photo si elle existe
       if (allData.step2.photoBase64 && allData.step2.photoNom) {
+        console.log('🖼️ Photo détectée, conversion en File...');  // Log debug
         const photoFile = this.base64ToFile(
           allData.step2.photoBase64, 
           allData.step2.photoNom, 
@@ -98,7 +113,12 @@ class RegistrationService {
         );
         if (photoFile) {
           formData.append('photo', photoFile);
+          console.log('✅ Photo ajoutée à FormData');  // Log debug
+        } else {
+          console.warn('⚠️ Échec conversion photo');  // Log debug
         }
+      } else {
+        console.log('ℹ️ Aucune photo fournie');  // Log debug
       }
 
       // Étape 2 : Création utilisateur + étudiant

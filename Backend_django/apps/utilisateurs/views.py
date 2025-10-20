@@ -11,7 +11,7 @@ from apps.utilisateurs.serializers import (
     RespInscriptionSerializer, ResponsableSaisieNoteSerializer, SecretaireSerializer
 )
 from apps.authentification.permissions import IsIntranet, IsSelfOrAdmin, IsAdminOrReadOnly
-
+from rest_framework.permissions import AllowAny
 from apps.utilisateurs.models import Utilisateur, Administrateur, Connexion
 from apps.utilisateurs.serializers import (
     UtilisateurSerializer,
@@ -19,7 +19,7 @@ from apps.utilisateurs.serializers import (
     ConnexionSerializer
 )
 from apps.page_professeur.serializers import UESerializer
-
+from rest_framework.decorators import api_view, permission_classes
 # ----- UTILISATEUR DE BASE -----
 class UtilisateurViewSet(viewsets.ModelViewSet):
     queryset = Utilisateur.objects.all().order_by('last_name')
@@ -270,4 +270,20 @@ class ConnexionViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return Connexion.objects.all()
         return Connexion.objects.filter(utilisateur=user)
-        
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_num_carte(request):
+    num_carte = request.data.get('num_carte', '').strip()
+    
+    if not num_carte:
+        return Response({
+            'existe': False,
+            'disponible': True
+        })
+    
+    existe = Etudiant.objects.filter(num_carte=num_carte).exists()
+    
+    return Response({
+        'existe': existe,
+        'disponible': not existe
+    })

@@ -15,7 +15,7 @@ export default function NavbarRetourAccueil() {
 
   useEffect(() => {
     // Récupérer les données utilisateur stockées après connexion
-    const storedUser = localStorage.getItem('userData');
+    const storedUser = localStorage.getItem('user');
     
     if (storedUser) {
       const userData = JSON.parse(storedUser);
@@ -36,12 +36,13 @@ export default function NavbarRetourAccueil() {
   };
 
   // Déterminer le nom à afficher (priorité : last_name first_name, sinon username)
+  // Prénom en minuscules
   const displayName = user.last_name || user.first_name 
-    ? `${user.last_name} ${user.first_name}`.trim() 
+    ? `${user.last_name.toUpperCase()} ${user.first_name.toLowerCase()}`.trim() 
     : user.username;
 
   return (
-    <nav className="text-white flex justify-between items-center px-4 py-5 shadow-sm border-b border-blue-500 bg-blue-900">
+    <nav className="text-white flex justify-between items-center px-4 py-5 shadow-sm border-b border-blue-700 bg-blue-800">
       {/* Bouton retour */}
       <div
         className="flex items-center gap-2 cursor-pointer hover:bg-blue-500/20 px-3 py-1 rounded-lg transition-all duration-200"
@@ -49,6 +50,13 @@ export default function NavbarRetourAccueil() {
       >
         <ArrowLeft className="w-4 h-4 text-blue-100" />
         <span className="font-semibold text-blue-100 text-sm">Retour à l'accueil</span>
+      </div>
+
+      {/* Titre central */}
+      <div className="flex-2 mr-25  mx-4">
+        <h1 className="text-lg font-bold text-blue-100 ">
+          Portail Pédagogique de l'École Polytechnique de Lomé
+        </h1>
       </div>
 
       {/* Informations utilisateur */}
@@ -59,7 +67,7 @@ export default function NavbarRetourAccueil() {
               Chargement...
             </span>
           ) : (
-            <span className="font-bold text-sm block uppercase tracking-wide">
+            <span className="font-bold text-sm block tracking-wide">
               {displayName}
             </span>
           )}
