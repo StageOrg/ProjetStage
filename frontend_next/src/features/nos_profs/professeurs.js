@@ -22,7 +22,7 @@ export default function Professeurs() {
   }, []);
 
   // Filtrage par nom et rôle
-const filtered = professeurs.filter((prof) => {
+const filtered = professeurs?.filter((prof) => {
   const matchName = prof.utilisateur.last_name
     .toLowerCase()
     .includes(search.toLowerCase());
@@ -62,11 +62,11 @@ const filtered = professeurs.filter((prof) => {
 
         {/* Liste des professeurs */}
         <div className="space-y-6 flex flex-col items-center">
-          {filtered.length === 0 && (
+          {filtered?.length === 0 && (
             <p className="text-gray-600 text-center">Aucun professeur trouvé.</p>
           )}
 
-          {filtered.map((prof) => (
+          {filtered?.map((prof) => (
             <Link
               key={prof.id}
               href={`/nos-profs/${prof.id}`} 

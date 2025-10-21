@@ -94,7 +94,7 @@ useEffect(() => {
     return objet;
   }
 //Filtres
-const filteredCourses = courses.filter((c) => {
+const filteredCourses = courses?.filter((c) => {
   const filiereOk =
     !selectedFiliere ||
     trouverObjetParId(filieres, c.filiere)?.abbreviation === selectedFiliere;
@@ -114,7 +114,7 @@ const filteredCourses = courses.filter((c) => {
 });
 
 
-const sortedCourses = [...filteredCourses].sort((a, b) => {
+const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
     if (sortConfig.key) {
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -156,7 +156,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Filières</option>
-          {filieres.map((filiere, idx) => (
+          {filieres?.map((filiere, idx) => (
             <option key={idx} value={filiere.abbreviation}>
               {filiere.abbreviation}
             </option>
@@ -174,7 +174,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value=""> Parcours</option>
-          {parcours.map((parcours, idx) => (
+          {parcours?.map((parcours, idx) => (
             <option key={idx} value={parcours.libelle}>
               {parcours.libelle}
             </option>
@@ -192,7 +192,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Année d'étude</option>
-          {anneesEtude.map((annee, idx) => (
+          {anneesEtude?.map((annee, idx) => (
             <option key={idx} value={annee.libelle}>
               {annee.libelle}
             </option>
@@ -210,7 +210,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Semestre</option>
-          {semestres.map((semestre, idx) => (
+          {semestres?.map((semestre, idx) => (
             <option key={idx} value={semestre.libelle}>
               {semestre.libelle}
             </option>
@@ -308,19 +308,6 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
         </table>
       </div>
 
-      {/* Boutons séparés */}
-      <div className="mt-8 flex justify-between">
-        <button
-          className={`${
-            selectedCourse
-              ? 'bg-orange-500 hover:bg-orange-600 text-white'
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-          } font-semibold px-6 py-2 rounded-lg shadow transition`}
-          disabled={!selectedCourse}
-        >
-          Informations sur l'UE
-        </button>
-      </div>
     </div>
   );
 }

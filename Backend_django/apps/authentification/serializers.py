@@ -7,7 +7,9 @@ from apps.utilisateurs.serializers import (
     SecretaireSerializer,
     RespInscriptionSerializer,
     ResponsableSaisieNoteSerializer,
-    AdministrateurSerializer
+    AdministrateurSerializer,
+    GestionnaireSerializer,
+    ChefDepartementSerializer
 )
 from django.contrib.auth.password_validation import validate_password
 # Association rôle → serializer correspondant
@@ -17,7 +19,9 @@ ROLE_SERIALIZER_MAP = {
     'secretaire': SecretaireSerializer,
     'resp_inscription': RespInscriptionSerializer,
     'resp_notes': ResponsableSaisieNoteSerializer,
-    'admin': AdministrateurSerializer
+    'admin': AdministrateurSerializer,
+    'gestionnaire': GestionnaireSerializer,
+    'chef_dpt': ChefDepartementSerializer,
 }
 
 class RegisterSerializer(serializers.Serializer):

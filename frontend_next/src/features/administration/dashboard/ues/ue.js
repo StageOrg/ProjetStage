@@ -152,7 +152,7 @@ useEffect(() => {
   };
 
 //Filtres
-const filteredCourses = courses||[].filter((c) => {
+const filteredCourses = courses?.filter((c) => {
   const filiereOk =
     !selectedFiliere ||
     trouverObjetParId(filieres, c.filiere)?.abbreviation === selectedFiliere;
@@ -173,7 +173,7 @@ const filteredCourses = courses||[].filter((c) => {
 
 console.log("filteredCourses =>", filteredCourses);
 
-const sortedCourses = [...(filteredCourses.results || [])].sort((a, b) => {
+const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
     if (sortConfig.key) {
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -358,7 +358,7 @@ const sortedCourses = [...(filteredCourses.results || [])].sort((a, b) => {
                   required
                 >
                   <option value="">Sélectionnez un semestre</option>
-                  {semestres.map((s) => (
+                  {semestres?.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.libelle}
                     </option>
@@ -460,7 +460,7 @@ const sortedCourses = [...(filteredCourses.results || [])].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Semestre</option>
-          {semestres || [].map((semestre, idx) => (
+          {semestres?.map((semestre, idx) => (
             <option key={idx} value={semestre.libelle}>
               {semestre.libelle}
             </option>

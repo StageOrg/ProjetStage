@@ -127,6 +127,14 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = '__all__'
+    def create(self, validated_data):
+        user = self.context['request'].user
+        if not hasattr(user, 'professeur'):
+            raise serializers.ValidationError("Seuls les professeurs peuvent encadrer.")
+
+        validated_data['professeur'] = user.professeur
+        return Article.objects.create(**validated_data)
+   
 
 class EncadrementSerializer(serializers.ModelSerializer):
     class Meta:

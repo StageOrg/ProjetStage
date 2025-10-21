@@ -36,7 +36,7 @@ export default function ProjetsEncadresProf() {
   };
 
   // Filtrer projets par titre ou resume
-  const filteredProjets = projets.filter(
+  const filteredProjets = projets?.filter(
     (p) =>
       p.titre.toLowerCase().includes(search.toLowerCase()) ||
       p.resume.toLowerCase().includes(search.toLowerCase())
@@ -274,14 +274,14 @@ export default function ProjetsEncadresProf() {
             </tr>
           </thead>
           <tbody>
-            {filteredProjets.length === 0 ? (
+            {filteredProjets?.length === 0 ? (
               <tr>
                 <td colSpan="5" className="text-center py-4 text-gray-500">
                   Aucun projet trouvé.
                 </td>
               </tr>
             ) : (
-              filteredProjets.map(p => (
+              filteredProjets?.map(p => (
                 <tr key={p.id} className="bg-white/70 hover:bg-blue-50 transition rounded-xl shadow">
                   <td className="px-3 py-2 font-semibold text-blue-900">{p.titre}</td>
                   <td className="px-3 py-2">
