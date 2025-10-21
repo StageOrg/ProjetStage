@@ -38,7 +38,7 @@ export default function EncadrementsProf() {
   };
 
   // Filtrer selon étudiant ou titre
-  const filteredEncadrements = encadrements.filter(
+  const filteredEncadrements = encadrements?.filter(
     (e) =>
       e.nom_etudiant.toLowerCase().includes(search.toLowerCase()) ||
       e.titre.toLowerCase().includes(search.toLowerCase())
@@ -312,14 +312,14 @@ export default function EncadrementsProf() {
             </tr>
           </thead>
           <tbody>
-            {filteredEncadrements.length === 0 ? (
+            {filteredEncadrements?.length === 0 ? (
               <tr>
                 <td colSpan="8" className="text-center py-4 text-gray-500">
                   Aucun encadrement trouvé.
                 </td>
               </tr>
             ) : (
-              filteredEncadrements.map((e) => (
+              filteredEncadrements?.map((e) => (
                 <tr key={e.id} className="bg-white/70 hover:bg-blue-50 transition rounded-xl shadow">
                   <td className="px-3 py-2">
                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">

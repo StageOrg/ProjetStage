@@ -47,6 +47,12 @@ export default function Connexion() {
     } 
     else if (data.user.role === "resp_notes") {
       router.push("/gestion-notes/dashboard");
+    } 
+    else if (data.user.role === "gestionnaire") {
+      router.push("/gestion/dashboard");
+    } 
+    else if (data.user.role === "secretaire") {
+      router.push("/secretariat/dashboard/ue-exam");
     } else {
       router.push("/programmes"); // fallback
     }

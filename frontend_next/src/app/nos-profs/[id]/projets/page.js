@@ -6,7 +6,6 @@ export default async function PageProjetsPublic({ params }) {
 
   return (
     <div>
-      <h1>Projets for Professeur {id}</h1>
       <ProjetsPublic profId={id} />
     </div>
   );

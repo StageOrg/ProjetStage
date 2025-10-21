@@ -12,6 +12,11 @@ const UEService = {
   },
   getAllUE : async () => {
     const response = await api.get("/notes/ues/");
+    console.log("Données reçues du backend:", response.data);
+    return response.data;
+  },
+  getUEByEvaluation: async () => {
+    const response = await api.get(`/notes/ues/filter-examen/`);
     return response.data;
   },
   creerUE : async (libelle,code, nbre_credit,composite,parcours,filiere,annee_etude,semestre) => {

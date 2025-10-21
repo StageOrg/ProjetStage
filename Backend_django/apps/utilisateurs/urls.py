@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from apps.utilisateurs.views import (
    UtilisateurViewSet, AdministrateurViewSet, ConnexionViewSet, ProfesseurViewSet, EtudiantViewSet,
-    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet
+    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, GestionnaireViewSet, ChefDepartementViewSet
 )
 
 router = DefaultRouter()
@@ -14,8 +14,9 @@ router.register(r'secretaires', SecretaireViewSet)
 router.register(r'responsables-inscription', RespInscriptionViewSet)
 router.register(r'responsables-notes', ResponsableSaisieNoteViewSet)
 router.register(r'administrateurs', AdministrateurViewSet)
+router.register(r'gestionnaires', GestionnaireViewSet)
 router.register(r'connexions', ConnexionViewSet)
-
+router.register(r'chefs-departement', ChefDepartementViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -5,7 +5,7 @@ from apps.page_professeur.models import Projet, Recherche, Article, Encadrement,
 from apps.page_professeur.serializers import AffectationUeSerializer, NoteSerializer
 from .models import (
     Utilisateur, Etudiant, Professeur, Administrateur,
-    RespInscription, ResponsableSaisieNote, Secretaire, Connexion
+    RespInscription, ResponsableSaisieNote, Secretaire, Connexion, Gestionnaire, ChefDepartement
 )
 
 # -------- UTILS --------
@@ -128,6 +128,25 @@ class AdministrateurSerializer(BaseProfilSerializer):
     class Meta:
         model = Administrateur
         role = 'admin'
+        fields = '__all__'
+        
+#--------------GESTIONNAIRE-----------------
+class GestionnaireSerializer(BaseProfilSerializer):
+    role = serializers.CharField(default='gestionnaire', read_only=True)
+    
+    class Meta:
+        model = Gestionnaire
+        role = 'gestionnaire'
+        fields = '__all__'
+        
+
+# -------- CHEF DEPARTEMENT --------
+class ChefDepartementSerializer(BaseProfilSerializer):
+    role = serializers.CharField(default='chef_dpt', read_only=True)
+
+    class Meta:
+        model = ChefDepartement
+        role = 'chef_dpt'
         fields = '__all__'
 
 

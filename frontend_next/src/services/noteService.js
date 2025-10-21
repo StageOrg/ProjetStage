@@ -15,7 +15,7 @@ const NoteService = {
         },
         
       );
-      return response.data; // retourne la note créée
+      return response.data; 
     } catch (error) {
       console.error("Erreur lors de la création de la note :", error.response?.data || error.message);
       throw error;

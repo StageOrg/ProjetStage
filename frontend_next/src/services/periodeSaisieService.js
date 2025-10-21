@@ -4,6 +4,7 @@ const PeriodeSaisieService = {
     getAll: async () => {
         try{ 
             const response = await api.get("notes/periodes/");
+            console.log("Périodes de saisie récupérées :", response.data);
             return response.data;
         }
         catch(error) {

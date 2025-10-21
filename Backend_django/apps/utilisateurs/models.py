@@ -12,6 +12,8 @@ class Utilisateur(AbstractUser):
         ('resp_notes', 'Responsable des notes'),
         ('resp_inscription', 'Responsable des inscriptions'),
         ('secretaire', 'Secrétaire'),
+        ('gestionnaire', 'Gestionnaire'),
+        ('chef_dpt', 'Chef de département'),
     ]
     SEXE = [
         ('M', 'Masculin'),
@@ -53,6 +55,12 @@ class Utilisateur(AbstractUser):
     @property
     def is_admin_personnalise(self):
         return hasattr(self, 'admin')
+    @property
+    def is_gestionnaire(self):
+        return hasattr(self, 'gestionnaire')
+    @property
+    def is_chef_dpt(self):
+        return hasattr(self, 'chef_dpt')
 
 
 # -----------------------------
@@ -88,6 +96,12 @@ class ResponsableSaisieNote(models.Model):
 
 class Secretaire(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="secretaire")
+
+class Gestionnaire(models.Model):
+    utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="gestionnaire")
+
+class ChefDepartement(models.Model):
+    utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="chef_dpt")
 
 class Connexion(models.Model):
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='connexions')

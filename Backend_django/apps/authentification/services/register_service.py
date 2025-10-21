@@ -1,6 +1,6 @@
 from apps.utilisateurs.models import (
     Utilisateur, Etudiant, Professeur, Secretaire,
-    RespInscription, ResponsableSaisieNote
+    RespInscription, ResponsableSaisieNote, Gestionnaire, ChefDepartement
 )
 from django.db import transaction
 
@@ -17,6 +17,7 @@ class RegisterService:
         """
 
         role = user_data.get("role")
+        print(f"=== Rôle reçu brut : {repr(role)} ===")
         if role not in dict(Utilisateur.ROLES):
             raise ValueError(f"Rôle invalide: {role}")
 
@@ -42,7 +43,11 @@ class RegisterService:
 
         elif role == "resp_notes":
             profil = ResponsableSaisieNote.objects.create(utilisateur=utilisateur, **profil_data)
-
+        
+        elif role == "gestionnaire":
+            profil = Gestionnaire.objects.create(utilisateur= utilisateur, **profil_data)
+        elif role == "chef_dpt":
+            profil = ChefDepartement.objects.create(utilisateur= utilisateur, **profil_data)
         else:
             raise ValueError(f"Gestion du rôle '{role}' non implémentée")
 

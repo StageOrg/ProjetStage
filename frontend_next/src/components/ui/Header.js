@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [annees, setAnnees] = useState([]);
+  const [anneeChoisie, setAnneeChoisie] = useState(null);
   const [role, setRole] = useState("visiteur");
 
   // Charger rôle depuis localStorage
@@ -27,11 +30,13 @@ export default function Header() {
       case "professeur":
         return "/prof/dashboard";
       case "secretaire":
-        return "/secretaire/dashboard";
+        return "/secretariat/dashboard/ue-exam";
       case "responsable inscriptions":
         return "/resp-inscriptions/dashboard";
       case "resp_notes":
         return "/resp-notes/dashboard";
+      case "gestionnaire":
+        return "gestion/dashboard"
       default:
         return "/";
     }
@@ -80,7 +85,8 @@ export default function Header() {
     role === "professeur" ||
     role === "secretaire" ||
     role === "responsable inscriptions" ||
-    role === "resp_notes"
+    role === "resp_notes"||
+    role === "gestionnaire"
       ? personnelMenu
       : baseMenu;
 
@@ -93,6 +99,25 @@ export default function Header() {
   const handleProtectedPersonnel = (href) => {
     localStorage.setItem("personnel_redirect", href);
     router.push("/login");
+  };
+  useEffect(() => {
+    AnneeAcademiqueService.getAll()
+    .then((data) => setAnnees(data))
+    .catch((error) => console.error("Erreur lors du chargement des années académiques :", error));
+  }, []);
+  useEffect(() => {
+    if (annees.length > 0) {
+      setAnneeChoisie(annees[0]);
+      localStorage.setItem("annee_id", annees[0].id);
+      console.log("Année académique choisie :", annees[0]);
+    }
+  }, [annees]);
+  const onChange = (e) => {
+    const selectedId = e.target.value;
+    const selectedAnnee = annees.find((annee) => annee.id.toString() === selectedId);
+    setAnneeChoisie(selectedAnnee);
+    localStorage.setItem("annee_id", selectedAnnee.id);
+    console.log("Année académique choisie :", selectedAnnee);
   };
 
   return (
@@ -190,7 +215,21 @@ export default function Header() {
               </div>
             );
           })}
-
+          {role !== "visiteur" && (
+          <div className="h-6  " >
+            <select
+              onChange={(e) => {
+                onChange(e);}}
+              className="block w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+            >
+              {annees.map((annee) => (
+              <option key={annee.id} value={annee.id} >
+                {annee.libelle}
+              </option>
+              ))}
+            </select>
+          </div>
+          )}
           {/* Bouton Connexion */}
           <Link
             href="/login"

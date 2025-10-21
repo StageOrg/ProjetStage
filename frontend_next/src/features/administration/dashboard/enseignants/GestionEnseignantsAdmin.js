@@ -19,7 +19,7 @@ export default function GestionEnseignants() {
   }, []);
 
 
-  const filtered = professeurs.filter(
+  const filtered = professeurs?.filter(
     (e) =>
       e.utilisateur.first_name.toLowerCase().includes(filterNom.toLowerCase()) &&
       e.titre.toLowerCase().includes(filterTitre.toLowerCase())
@@ -70,7 +70,7 @@ export default function GestionEnseignants() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((e, idx) => (
+            {(filtered || []).map((e, idx) => (
               <tr key={idx} className="border-b hover:bg-blue-50 transition">
                 <td className="p-3 font-semibold text-gray-800">{e.utilisateur.first_name.toUpperCase()}</td>
                 <td className="p-3">{e.utilisateur.last_name.toLowerCase()}</td>
@@ -79,7 +79,7 @@ export default function GestionEnseignants() {
                 <td className="p-3">{e.titre}</td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {(filtered || []).length === 0 && (
               <tr>
                 <td colSpan={5} className="p-4 text-center text-gray-500">
                   Aucun enseignant trouvé.

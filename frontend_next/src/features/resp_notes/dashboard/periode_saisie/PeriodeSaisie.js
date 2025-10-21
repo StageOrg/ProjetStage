@@ -118,7 +118,7 @@ export default function PeriodeSaisie() {
           </tr>
         </thead>
         <tbody>
-          {periodes.map((periode) => (
+          {periodes?.map((periode) => (
             <tr key={periode.id} className="text-center hover:bg-blue-50">
               <td className="px-4 py-2 border">{periode.numero}</td>
               <td className="px-4 py-2 border">{formatDateForDisplay(periode.date_debut)}</td>

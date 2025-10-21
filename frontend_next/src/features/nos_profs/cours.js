@@ -34,7 +34,7 @@ useEffect(() => {
     FiliereService.getFilieres()
       .then((data) => setFilieres(data))
       .catch((err) => console.error(err));
-      console.log("Filieres data:", filieres);
+      console.log("Filieres data result:", filieres);
 }, []);
 
 //recuperer les parcours
@@ -83,7 +83,7 @@ useEffect(() => {
       : <FaSortDown className="ml-1 text-blue-600" />;
   };
   const trouverObjetParId = (array,id) => {
-    const objet = array.find(f => f.id === parseInt(id));
+    const objet = array?.find(f => f.id === parseInt(id));
     return objet;
   }
 
@@ -160,7 +160,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Filières</option>
-          {filieres.map((filiere, idx) => (
+          {filieres?.map((filiere, idx) => (
             <option key={idx} value={filiere.abbreviation}>
               {filiere.abbreviation}
             </option>

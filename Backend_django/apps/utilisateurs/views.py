@@ -4,11 +4,11 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from ..utilisateurs.models import (
     Professeur, Etudiant,
-    RespInscription, ResponsableSaisieNote, Secretaire
+    RespInscription, ResponsableSaisieNote, Secretaire, Gestionnaire, ChefDepartement
 )
 from apps.utilisateurs.serializers import (
     ProfesseurSerializer, EtudiantSerializer,
-    RespInscriptionSerializer, ResponsableSaisieNoteSerializer, SecretaireSerializer
+    RespInscriptionSerializer, ResponsableSaisieNoteSerializer, SecretaireSerializer, GestionnaireSerializer, ChefDepartementSerializer
 )
 from apps.authentification.permissions import IsIntranet, IsSelfOrAdmin, IsAdminOrReadOnly
 
@@ -200,6 +200,53 @@ class AdministrateurViewSet(viewsets.ModelViewSet):
         elif request.method == 'PUT':
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
+
+#----------------GESTIONNAIRE----------------
+class GestionnaireViewSet(viewsets.ModelViewSet):
+    queryset = Gestionnaire.objects.all()
+    serializer_class = GestionnaireSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and user.is_gestionnaire:
+            return Gestionnaire.objects.filter(utilisateur=user)
+        return super().get_queryset()
+    
+    @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        instance = request.user.gestionnaire
+        serializer = self.get_serializer(instance, data=request.data if request.method == 'PUT' else None, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        elif request.method == 'PUT':
+            return Response(serializer.errors, status=400)
+        return Response(serializer.data)
+    
+    
+
+#----- CHEF DEPARTEMENT -----
+class ChefDepartementViewSet(viewsets.ModelViewSet):
+    queryset = ChefDepartement.objects.all()
+    serializer_class = ChefDepartementSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and user.is_chef_dpt:
+            return ChefDepartement.objects.filter(utilisateur=user)
+        return super().get_queryset()
+    
+    @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        instance = request.user.chef_dpt
+        serializer = self.get_serializer(instance, data=request.data if request.method == 'PUT' else None, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        elif request.method == 'PUT':
+            return Response(serializer.errors, status=400)
+        return Response(serializer.data)
+    
     
 class ConnexionViewSet(viewsets.ModelViewSet):
     """

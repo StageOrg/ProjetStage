@@ -3,9 +3,6 @@ from ..utilisateurs.models import Professeur, Etudiant, ResponsableSaisieNote
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-
-# Create your models here.
-
 class UE(models.Model):
     libelle = models.CharField(max_length=100)
     code = models.CharField(max_length=50 , unique=True)
@@ -35,6 +32,8 @@ class Anonymat(models.Model):
     etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")
     ue = models.ForeignKey("UE", on_delete=models.CASCADE, related_name="anonymats")
     numero = models.CharField(max_length=50, unique=True)
+    annee_academique = models.ForeignKey("inscription_pedagogique.AnneeAcademique", on_delete=models.CASCADE)
+
 
     class Meta:
         unique_together = ("etudiant", "ue") 

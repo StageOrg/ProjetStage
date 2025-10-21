@@ -89,7 +89,9 @@ from apps.utilisateurs.serializers import (
     SecretaireSerializer,
     RespInscriptionSerializer,
     ResponsableSaisieNoteSerializer,
-    AdministrateurSerializer
+    AdministrateurSerializer,
+    GestionnaireSerializer,
+    ChefDepartementSerializer
 )
 
 # Association rôle → serializer correspondant
@@ -99,7 +101,9 @@ ROLE_SERIALIZER_MAP = {
     'secretaire': SecretaireSerializer,
     'resp_inscription': RespInscriptionSerializer,
     'resp_notes': ResponsableSaisieNoteSerializer,
-    'admin': AdministrateurSerializer
+    'admin': AdministrateurSerializer,
+    'gestionnaire': GestionnaireSerializer,
+    'chef_dpt': ChefDepartementSerializer,
 }
 
 class RegisterSerializer(serializers.Serializer):
