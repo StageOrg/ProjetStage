@@ -13,7 +13,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
     date_naiss: '',
     lieu_naiss: ''
   });
-  
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -38,29 +38,29 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
   // Validation du formulaire
   const validateForm = () => {
     const newErrors = {};
-    
+   
     if (!formData.first_name.trim()) {
       newErrors.first_name = 'Le prénom est requis';
     }
-    
+   
     if (!formData.last_name.trim()) {
       newErrors.last_name = 'Le nom est requis';
     }
-    
+   
     if (!formData.email.trim()) {
       newErrors.email = 'L\'email est requis';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email invalide';
     }
-    
+   
     if (!formData.telephone.trim()) {
       newErrors.telephone = 'Le téléphone est requis';
     }
-    
+   
     if (!formData.sexe) {
       newErrors.sexe = 'Le sexe est requis';
     }
-    
+   
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -72,7 +72,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
       ...prev,
       [name]: value
     }));
-    
+   
     // Effacer l'erreur du champ modifié
     if (errors[name]) {
       setErrors(prev => ({
@@ -85,11 +85,11 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
   // Sauvegarde
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+   
     if (!validateForm()) {
       return;
     }
-    
+   
     setLoading(true);
     try {
       await onSave(student.id, formData);
@@ -109,7 +109,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
       <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* En-tête */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-black flex items-center gap-2">
             <User className="w-6 h-6 text-blue-600" />
             Modifier l'étudiant
           </h2>
@@ -120,7 +120,6 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
             <X className="w-6 h-6" />
           </button>
         </div>
-
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="p-6">
           {/* Erreur générale */}
@@ -130,10 +129,9 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               <span>{errors.general}</span>
             </div>
           )}
-
           {/* Numéro de carte */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2 text-sm">
+            <label className="block text-black font-semibold mb-2 text-sm">
               Numéro de carte étudiant
             </label>
             <input
@@ -142,15 +140,14 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               value={formData.num_carte}
               onChange={handleChange}
               disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-gray-600"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-black"
             />
             <p className="text-xs text-gray-500 mt-1">Ce champ ne peut pas être modifié</p>
           </div>
-
           {/* Nom et Prénom */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+              <label className="block text-black font-semibold mb-2 text-sm">
                 Nom*
               </label>
               <input
@@ -160,7 +157,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                   errors.last_name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } text-black`}
                 placeholder="Nom"
               />
               {errors.last_name && (
@@ -170,9 +167,8 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 </p>
               )}
             </div>
-
             <div>
-              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+              <label className="block text-black font-semibold mb-2 text-sm">
                 Prénom*
               </label>
               <input
@@ -182,7 +178,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                   errors.first_name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } text-black`}
                 placeholder="Prénom"
               />
               {errors.first_name && (
@@ -193,10 +189,9 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               )}
             </div>
           </div>
-
           {/* Autre prénom */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2 text-sm">
+            <label className="block text-black font-semibold mb-2 text-sm">
               Autre(s) prénom(s)
             </label>
             <input
@@ -204,14 +199,13 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               name="autre_prenom"
               value={formData.autre_prenom}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
               placeholder="Autres prénoms"
             />
           </div>
-
           {/* Sexe */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2 text-sm">
+            <label className="block text-black font-semibold mb-2 text-sm">
               Sexe*
             </label>
             <select
@@ -220,7 +214,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                 errors.sexe ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } text-black`}
             >
               <option value="">-- Sélectionner --</option>
               <option value="M">Masculin</option>
@@ -233,11 +227,10 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               </p>
             )}
           </div>
-
           {/* Email et Téléphone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-gray-700 font-semibold mb-2 text-sm flex items-center gap-2">
+              <label className="block text-black font-semibold mb-2 text-sm flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-500" />
                 Email*
               </label>
@@ -248,7 +241,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } text-black`}
                 placeholder="email@example.com"
               />
               {errors.email && (
@@ -258,9 +251,8 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 </p>
               )}
             </div>
-
             <div>
-              <label className="block text-gray-700 font-semibold mb-2 text-sm flex items-center gap-2">
+              <label className="block text-black font-semibold mb-2 text-sm flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-500" />
                 Téléphone*
               </label>
@@ -271,7 +263,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                   errors.telephone ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } text-black`}
                 placeholder="+228 90 12 34 56"
               />
               {errors.telephone && (
@@ -282,11 +274,10 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               )}
             </div>
           </div>
-
           {/* Date et Lieu de naissance */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-gray-700 font-semibold mb-2 text-sm flex items-center gap-2">
+              <label className="block text-black font-semibold mb-2 text-sm flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-gray-500" />
                 Date de naissance
               </label>
@@ -295,12 +286,11 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 name="date_naiss"
                 value={formData.date_naiss}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
               />
             </div>
-
             <div>
-              <label className="block text-gray-700 font-semibold mb-2 text-sm flex items-center gap-2">
+              <label className="block text-black font-semibold mb-2 text-sm flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-gray-500" />
                 Lieu de naissance
               </label>
@@ -309,18 +299,17 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 name="lieu_naiss"
                 value={formData.lieu_naiss}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
                 placeholder="Ville, Pays"
               />
             </div>
           </div>
-
           {/* Boutons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold"
+              className="px-6 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition font-semibold"
             >
               Annuler
             </button>

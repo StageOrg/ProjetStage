@@ -4,14 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import inscriptionService from "@/services/inscription/inscriptionService";
 import registrationService from "@/services/inscription/registrationService";
-import { authAPI } from '@/services/authService';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const LIMITE_CREDITS_MAX = 70;
 
 export default function NouvelEtudiantStep4() {
   const [ues, setUes] = useState([]);
-  const [uesGroupedBySemester, setUesGroupedBySemester] = useState({});
   const [selectedUEs, setSelectedUEs] = useState({});
   const [typeInscription, setTypeInscription] = useState(null);
   const [ancienEtudiantData, setAncienEtudiantData] = useState(null);
@@ -34,6 +32,19 @@ export default function NouvelEtudiantStep4() {
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
 
   const router = useRouter();
+
+  // Fonction utilitaire pour nettoyer les données de Step 2
+  const nettoyerDonneesStep2 = (step2Data) => {
+    const nettoye = { ...step2Data };
+   
+    // Pour num_carte : si vide ou non-numérique, passe à null
+    if (!nettoye.num_carte || nettoye.num_carte.trim() === '' || isNaN(parseInt(nettoye.num_carte, 10))) {
+      nettoye.num_carte = null;
+    } else {
+      nettoye.num_carte = parseInt(nettoye.num_carte.trim(), 10);
+    }  
+    return nettoye;
+  };
 
   useEffect(() => {
     const loadAllData = () => {
@@ -63,9 +74,8 @@ export default function NouvelEtudiantStep4() {
               };
               setInfosPedagogiques(mockStep3);
               fetchUEsForAncienEtudiant(parsedAncien);
-              selectAllUEs(parsedAncien.ues_disponibles);
+              return;
             }
-            return;
           }
         }
       }
@@ -75,7 +85,7 @@ export default function NouvelEtudiantStep4() {
       const step3Data = localStorage.getItem("inscription_step3");
       
       if (!step1Data || !step2Data || !step3Data) {
-        setError("Données d'inscription incomplètes. Veuillez reprendre depuis le début.");
+        setError("Les données d'inscription sont incomplètes. Veuillez recommencer depuis l'étape 1.");
         router.push("/etudiant/inscription/etape-1");
         return;
       }
@@ -88,14 +98,6 @@ export default function NouvelEtudiantStep4() {
     loadAllData();
   }, [router]);
 
-  const selectAllUEs = (uesArray) => {
-    const allSelected = {};
-    uesArray.forEach(ue => {
-      allSelected[ue.id] = true;
-    });
-    setSelectedUEs(allSelected);
-  };
-
   const fetchUEs = async (params) => {
     setLoading(true);
     setError("");
@@ -107,11 +109,20 @@ export default function NouvelEtudiantStep4() {
       });
       
       const uesData = Array.isArray(response) ? response : response.results || response;
-      setUes(uesData);
-      selectAllUEs(uesData);
-      groupUEsBySemester(uesData);
+      
+      // Tri par semestre (du plus petit au plus grand) et par code si même semestre
+      const sortedUes = uesData.sort((a, b) => {
+        const semestreA = a.semestre || 0;
+        const semestreB = b.semestre || 0;
+        if (semestreA !== semestreB) {
+          return semestreA - semestreB;
+        }
+        return (a.code || '').localeCompare(b.code || '');
+      });
+      
+      setUes(sortedUes);
     } catch (err) {
-      setError("Erreur lors de la récupération des UEs.");
+      setError("Une erreur s'est produite lors de la récupération des unités d'enseignement (UE). Veuillez réessayer.");
       console.error("Erreur dans fetchUEs:", err);
     } finally {
       setLoading(false);
@@ -123,7 +134,7 @@ export default function NouvelEtudiantStep4() {
     setError("");
     try {
       if (!ancienData.ues_disponibles || ancienData.ues_disponibles.length === 0) {
-        setError("Aucune UE disponible.");
+        setError("Aucune unité d'enseignement (UE) disponible pour cette inscription. Contactez l'administration.");
         return;
       }
       
@@ -132,26 +143,23 @@ export default function NouvelEtudiantStep4() {
         semestre: ue.semestre || { libelle: "Semestre non défini" }
       }));
       
-      setUes(uesCorrigees);
-      groupUEsBySemester(uesCorrigees);
+      // Tri par semestre (du plus petit au plus grand) et par code si même semestre
+      const sortedUes = uesCorrigees.sort((a, b) => {
+        const semestreA = a.semestre || 0;
+        const semestreB = b.semestre || 0;
+        if (semestreA !== semestreB) {
+          return semestreA - semestreB;
+        }
+        return (a.code || '').localeCompare(b.code || '');
+      });
+      
+      setUes(sortedUes);
     } catch (err) {
-      setError("Erreur lors de la récupération des UEs.");
+      setError("Une erreur s'est produite lors de la récupération des unités d'enseignement (UE). Veuillez réessayer.");
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const groupUEsBySemester = (uesArray) => {
-    const grouped = {};
-    uesArray.forEach(ue => {
-      const semestreLibelle = ue.semestre?.libelle || "Semestre non défini";
-      if (!grouped[semestreLibelle]) {
-        grouped[semestreLibelle] = [];
-      }
-      grouped[semestreLibelle].push(ue);
-    });
-    setUesGroupedBySemester(grouped);
   };
 
   const handleCheckboxChange = (ueId, isComposite = false, composantesIds = []) => {
@@ -174,7 +182,8 @@ export default function NouvelEtudiantStep4() {
           .reduce((sum, u) => sum + u.nbre_credit, 0);
         
         if (totalCreditsActuels + creditsDesToggle > LIMITE_CREDITS_MAX) {
-          setError(`Impossible d'ajouter cette UE. Vous dépasseriez la limite de ${LIMITE_CREDITS_MAX} crédits.`);
+          const messageErreur = `Impossible d'ajouter cette UE : vous dépasseriez la limite maximale de ${LIMITE_CREDITS_MAX} crédits. Veuillez désélectionner d'autres UE pour libérer de la place.`;
+          setError(messageErreur);
           return prev;
         }
       }
@@ -183,12 +192,12 @@ export default function NouvelEtudiantStep4() {
         newSelected[id] = !prev[id];
       });
 
+      if (error && error.includes("dépasseriez la limite")) {
+        setError("");
+      }
+
       return newSelected;
     });
-
-    if (error.includes("limite")) {
-      setError("");
-    }
   };
 
   const totalCreditsSelectionnes = ues
@@ -215,7 +224,7 @@ export default function NouvelEtudiantStep4() {
       });
       
     if (selectedUEIds.length === 0) {
-      setError("Veuillez sélectionner au moins une UE.");
+      setError("Vous devez sélectionner au moins une unité d'enseignement (UE) pour continuer.");
       return;
     }
 
@@ -224,7 +233,7 @@ export default function NouvelEtudiantStep4() {
       .reduce((sum, ue) => sum + ue.nbre_credit, 0);
       
     if (totalCredits > LIMITE_CREDITS_MAX) {
-      setError(`Le total des crédits ne peut pas dépasser ${LIMITE_CREDITS_MAX}.`);
+      setError(`Le total des crédits sélectionnés (${totalCredits}) dépasse la limite autorisée de ${LIMITE_CREDITS_MAX}. Veuillez ajuster votre sélection.`);
       return;
     }
 
@@ -238,7 +247,7 @@ export default function NouvelEtudiantStep4() {
     setShowConfirmModal(true);
   };
 
-  // Annuler le modal
+  // Annuler la confirmation
   const handleCancelModal = () => {
     setShowConfirmModal(false);
     setPendingSubmitData(null);
@@ -259,16 +268,16 @@ export default function NouvelEtudiantStep4() {
         });
       } else {
         const step1Data = localStorage.getItem("inscription_step1");
-        const step2Data = localStorage.getItem("inscription_step2");
+        const step2DataRaw = localStorage.getItem("inscription_step2");
         const step3Data = localStorage.getItem("inscription_step3");
 
-        if (!step1Data || !step2Data || !step3Data) {
-          throw new Error("Données d'inscription incomplètes");
+        if (!step1Data || !step2DataRaw || !step3Data) {
+          throw new Error("Les données d'inscription sont incomplètes. Veuillez recommencer depuis l'étape 1.");
         }
 
         const allData = {
           step1: JSON.parse(step1Data),
-          step2: JSON.parse(step2Data),
+          step2: nettoyerDonneesStep2(JSON.parse(step2DataRaw)),  // Nettoyage appliqué ici
           step3: JSON.parse(step3Data)
         };
 
@@ -286,14 +295,14 @@ export default function NouvelEtudiantStep4() {
       
     } catch (err) {
       console.error("Erreur inscription:", err);
-      setError(err.message || "Erreur lors de l'inscription");
+      const messageErreur = err.response?.data?.message || err.response?.data?.erreur || err.message || "Une erreur inattendue s'est produite lors de la finalisation de votre inscription. Veuillez vérifier vos données et réessayer. Si le problème persiste, contactez l'administration.";
+      setError(messageErreur);
     } finally {
       setLoading(false);
       setPendingSubmitData(null);
     }
   };
 
-  // Préparer les données pour le modal
   const modalData = {
     type: typeInscription?.typeEtudiant === 'ancien' ? 'Ancien étudiant' : 'Nouveau étudiant',
     infos: infosPedagogiques,
@@ -305,13 +314,11 @@ export default function NouvelEtudiantStep4() {
     <>
       <form
         onSubmit={handleSubmit}
-        className="bg-gradient-to-br from-slate-50 to-slate-100 p-6 md:p-8 rounded-xl shadow-lg w-full max-w-7xl mx-auto"
+        className="bg-transparent from-slate-50 to-slate-100 p-10 md:p-8 w-full max-w-none mx-auto"
       >
         <h2 className="text-3xl font-bold text-center mb-2 text-slate-800">
           {typeInscription?.typeEtudiant === 'ancien' ? 'Inscription pour l\'année suivante' : 'Sélection des UE'}
         </h2>
-        <p className="text-center text-slate-600 text-sm mb-6">Sélection automatique activée</p>
-
         {error && (
           <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm">
             {error}
@@ -352,7 +359,7 @@ export default function NouvelEtudiantStep4() {
           </div>
         )}
 
-        <div className="mb-6 bg-white p-4 rounded-lg border-2 border-slate-200">
+        <div className="mb-6 ">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-slate-600">Crédits sélectionnés</p>
@@ -364,73 +371,69 @@ export default function NouvelEtudiantStep4() {
               {totalCreditsSelectionnes > LIMITE_CREDITS_MAX && (
                 <p className="text-red-600 text-xs font-semibold">Dépassement limite</p>
               )}
-              {totalCreditsSelectionnes > LIMITE_CREDITS_MAX * 0.8 && totalCreditsSelectionnes <= LIMITE_CREDITS_MAX && (
-                <p className="text-orange-600 text-xs font-semibold">Proche limite</p>
-              )}
             </div>
           </div>
         </div>
 
         <div className="overflow-x-auto mt-6">
-  <table className="w-full border border-gray-300 text-sm text-gray-800">
-    <thead className="bg-gray-200">
-      <tr>
-        <th className="border border-gray-300 px-3 py-2 text-left">Code</th>
-        <th className="border border-gray-300 px-3 py-2 text-left">Libellé</th>
-        <th className="border border-gray-300 px-3 py-2 text-center">Semestre</th>
-        <th className="border border-gray-300 px-3 py-2 text-center">Crédit</th>
-        <th className="border border-gray-300 px-3 py-2 text-center">Choix</th>
-      </tr>
-    </thead>
+          <table className="w-full border border-gray-300 text-sm text-gray-800">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="border border-gray-300 px-3 py-2 text-left">Code</th>
+                <th className="border border-gray-300 px-3 py-2 text-left">Libellé</th>
+                <th className="border border-gray-300 px-3 py-2 text-center">Semestre</th>
+                <th className="border border-gray-300 px-3 py-2 text-center">Crédit</th>
+                <th className="border border-gray-300 px-3 py-2 text-center">Choix</th>
+              </tr>
+            </thead>
 
-    <tbody>
-      {ues.length === 0 ? (
-        <tr>
-          <td
-            colSpan="5"
-            className="text-center py-3 text-gray-500 border border-gray-300"
-          >
-            {loading ? "Chargement des UE..." : "Aucune UE disponible"}
-          </td>
-        </tr>
-      ) : (
-        ues.map((ue, index) => {
-          const wouldExceedLimit =
-            !selectedUEs[ue.id] &&
-            totalCreditsSelectionnes + ue.nbre_credit > LIMITE_CREDITS_MAX;
+            <tbody>
+              {ues.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    className="text-center py-3 text-gray-500 border border-gray-300"
+                  >
+                    {loading ? "Chargement des UE..." : "Aucune UE disponible"}
+                  </td>
+                </tr>
+              ) : (
+                ues.map((ue, index) => {
+                  const wouldExceedLimit =
+                    !selectedUEs[ue.id] &&
+                    totalCreditsSelectionnes + ue.nbre_credit > LIMITE_CREDITS_MAX;
 
-          return (
-            <tr
-              key={ue.id}
-              className={`${index % 2 === 0 ? "bg-white" : "bg-gray-100"} ${
-                wouldExceedLimit ? "opacity-50" : ""
-              }`}
-            >
-              <td className="border border-gray-300 px-3 py-2">{ue.code}</td>
-              <td className="border border-gray-300 px-3 py-2">{ue.libelle}</td>
-              <td className="border border-gray-300 px-3 py-2 text-center">
-                {ue.semestre?.libelle || "—"}
-              </td>
-              <td className="border border-gray-300 px-3 py-2 text-center">
-                {ue.nbre_credit}
-              </td>
-              <td className="border border-gray-300 px-3 py-2 text-center">
-                <input
-                  type="checkbox"
-                  checked={selectedUEs[ue.id] || false}
-                  onChange={() => handleCheckboxChange(ue.id, false)}
-                  disabled={wouldExceedLimit}
-                  className="w-4 h-4 accent-blue-600 cursor-pointer"
-                />
-              </td>
-            </tr>
-          );
-        })
-      )}
-    </tbody>
-  </table>
-</div>
-
+                  return (
+                    <tr
+                      key={ue.id}
+                      className={`${index % 2 === 0 ? "bg-white" : "bg-gray-100"} ${
+                        wouldExceedLimit ? "opacity-50" : ""
+                      }`}
+                    >
+                      <td className="border border-gray-300 px-3 py-2">{ue.code}</td>
+                      <td className="border border-gray-300 px-3 py-2">{ue.libelle}</td>
+                      <td className="border border-gray-300 px-3 py-2 text-center">
+                        {ue.semestre || "—"}
+                      </td>
+                      <td className="border border-gray-300 px-3 py-2 text-center">
+                        {ue.nbre_credit}
+                      </td>
+                      <td className="border border-gray-300 px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          onChange={() => handleCheckboxChange(ue.id, false)}
+                          disabled={wouldExceedLimit}
+                          className="w-4 h-4 accent-blue-600 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
         <div className="flex justify-between mt-8 gap-4">
           <Link
@@ -446,10 +449,6 @@ export default function NouvelEtudiantStep4() {
           >
             {loading ? "Enregistrement..." : "Finaliser inscription"}
           </button>
-        </div>
-
-        <div className="mt-4 p-3 bg-slate-100 rounded-lg text-center text-xs text-slate-600 border border-slate-300">
-          Limite maximale: {LIMITE_CREDITS_MAX} crédits • Sélection automatique activée
         </div>
       </form>
 

@@ -239,7 +239,7 @@ export default function GestionPeriodeInscription() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="text-center mt-2 mb-4">
-        <h1 className="text-3xl font-extrabold text-gray-800 flex items-center justify-center gap-3 underline underline-offset-8 decoration-blue-600">
+        <h1 className="text-3xl font-extrabold text-white flex items-center justify-center gap-3 underline underline-offset-8 decoration-blue-600">
           <Calendar className="w-7 h-7 text-blue-600" />
           Gestion de la Période d'Inscription
         </h1>

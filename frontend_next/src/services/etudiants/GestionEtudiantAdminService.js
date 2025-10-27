@@ -13,7 +13,7 @@ const etudiantService = {
       );
       
       // Ajout d'un page_size large pour récupérer tous les résultats en une fois (supprime la pagination)
-      cleanFilters.page_size = 10000;  // Ou une valeur max selon ton backend (ex. : 999999)
+      cleanFilters.page_size = 1000;  // Ou une valeur max selon ton backend (ex. : 999999)
       
       const response = await api.get("/inscription/etudiants/filtrer/", { 
         params: cleanFilters 

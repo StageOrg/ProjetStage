@@ -270,19 +270,39 @@ class ConnexionViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return Connexion.objects.all()
         return Connexion.objects.filter(utilisateur=user)
+        
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def check_num_carte(request):
+    """
+    Vérifie si un numéro de carte est disponible
+    Accepte les valeurs vides (champ optionnel)
+    Le numéro doit contenir exactement 6 chiffres
+    """
     num_carte = request.data.get('num_carte', '').strip()
-    
-    if not num_carte:
+   
+    # Si vide → disponible (champ optionnel)
+    if not num_carte or num_carte == '':
         return Response({
             'existe': False,
             'disponible': True
         })
-    
-    existe = Etudiant.objects.filter(num_carte=num_carte).exists()
-    
+   
+    # Valider le format (exactement 6 chiffres)
+    try:
+        num_carte_int = int(num_carte)
+        if num_carte_int < 100000 or num_carte_int > 999999:
+            return Response({
+                'erreur': 'Le numéro de carte doit contenir exactement 6 chiffres'
+            }, status=400)
+    except ValueError:
+        return Response({
+            'erreur': 'Le numéro de carte doit contenir uniquement des chiffres'
+        }, status=400)
+   
+    # Vérifier l'existence
+    existe = Etudiant.objects.filter(num_carte=num_carte_int).exists()
+   
     return Response({
         'existe': existe,
         'disponible': not existe
