@@ -13,6 +13,7 @@ from .views.viewset.views import (
     InscriptionViewSet, 
     PeriodeInscriptionViewSet,
     SemestreViewSet,
+    check_annee_etude,
     inscription_ancien_etudiant,
     verifier_ancien_etudiant,  
 
@@ -39,5 +40,6 @@ urlpatterns = [
     path('parcours-relations/', parcours_avec_relations, name='parcours-relations'),
     path('verifier-ancien-etudiant/<str:num_carte>/',verifier_ancien_etudiant, name='verifier_ancien_etudiant'),
     path('ancien-etudiant/', inscription_ancien_etudiant, name='inscription_ancien_etudiant'),
-    path('stats/', StatistiquesInscriptionsAPIView.as_view(), name='statistiques-inscriptions'),
+    path('stats/', StatistiquesInscriptionsAPIView.as_view(), name='statistiques-inscriptions'),    
+    path('inscription/check-annee-etude/',check_annee_etude, name='check-annee-etude'),
 ]

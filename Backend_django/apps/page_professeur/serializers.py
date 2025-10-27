@@ -1,6 +1,10 @@
 
 from rest_framework import serializers
+<<<<<<< HEAD
 from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, Anonymat
+=======
+from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, ResultatUE
+>>>>>>> feature/inscription-thib
 from ..inscription_pedagogique.models import Inscription, Parcours, Filiere, AnneeEtude, Semestre
 from django.utils import timezone
 
@@ -12,12 +16,63 @@ class UESerializer(serializers.ModelSerializer):
     filiere = serializers.PrimaryKeyRelatedField(queryset=Filiere.objects.all(), many=True, required=True)
     annee_etude = serializers.PrimaryKeyRelatedField(queryset=AnneeEtude.objects.all(), many=True, required=True)
     semestre = serializers.PrimaryKeyRelatedField(queryset=Semestre.objects.all(), required=True)
+    
+    ues_composantes = serializers.PrimaryKeyRelatedField(
+        queryset=UE.objects.all(), 
+        many=True, 
+        required=False,
+        allow_null=True
+    )
+    
+    # Pour l'affichage des composantes (lecture seule)
+    composantes_details = serializers.SerializerMethodField()
+    
     class Meta:
         model = UE
         fields = '__all__'
         required_fields = ['libelle', 'code', 'nbre_credit', 'composite', 'parcours', 'filiere', 'annee_etude','semestre']
         
     
+    def get_composantes_details(self, obj):
+        """Retourne les détails des UEs composantes si c'est une UE composite"""
+        if obj.composite and obj.ues_composantes.exists():
+            return [
+                {
+                    'id': ue.id,
+                    'code': ue.code,
+                    'libelle': ue.libelle,
+                    'nbre_credit': ue.nbre_credit
+                }
+                for ue in obj.ues_composantes.all()
+            ]
+        return None
+    
+    def validate(self, data):
+        """Validation des UEs composites"""
+        composite = data.get('composite', False)
+        ues_composantes = data.get('ues_composantes', [])
+        
+        if composite and len(ues_composantes) not in [0, 2]:
+            raise serializers.ValidationError(
+                "Une UE composite doit avoir exactement 2 UEs composantes."
+            )
+        
+        if not composite and ues_composantes:
+            raise serializers.ValidationError(
+                "Une UE non-composite ne peut pas avoir de composantes."
+            )
+        
+        # Vérifier que les composantes ne sont pas elles-mêmes composites
+        if composite:
+            for ue_comp in ues_composantes:
+                if ue_comp.composite:
+                    raise serializers.ValidationError(
+                        f"L'UE '{ue_comp.code}' est déjà composite. Les composantes ne peuvent pas être composites."
+                    )
+        
+        return data
+
+
 
 class EvaluationSerializer(serializers.ModelSerializer):
    # écriture → on envoie ue
@@ -184,3 +239,22 @@ class AffectationUeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AffectationUe
         fields = '__all__'
+        
+ #  ResultatUE
+class ResultatUESerializer(serializers.ModelSerializer):
+    ue_code = serializers.CharField(source='ue.code', read_only=True)
+    ue_libelle = serializers.CharField(source='ue.libelle', read_only=True)
+    ue_credits = serializers.IntegerField(source='ue.nbre_credit', read_only=True)
+    ue_composite = serializers.BooleanField(source='ue.composite', read_only=True)
+    etudiant_num_carte = serializers.CharField(source='etudiant.num_carte', read_only=True)
+    
+    class Meta:
+        model = ResultatUE
+        fields = [
+            'id', 'etudiant', 'etudiant_num_carte', 'ue', 'ue_code', 
+            'ue_libelle', 'ue_credits', 'ue_composite', 'inscription',
+            'moyenne', 'est_valide', 'credits_obtenus', 'details_validation',
+            'date_calcul'
+        ]
+        read_only_fields = ['date_calcul']       
+        

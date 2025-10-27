@@ -11,7 +11,7 @@ from apps.utilisateurs.serializers import (
     RespInscriptionSerializer, ResponsableSaisieNoteSerializer, SecretaireSerializer, GestionnaireSerializer, ChefDepartementSerializer
 )
 from apps.authentification.permissions import IsIntranet, IsSelfOrAdmin, IsAdminOrReadOnly
-
+from rest_framework.permissions import AllowAny
 from apps.utilisateurs.models import Utilisateur, Administrateur, Connexion
 from apps.utilisateurs.serializers import (
     UtilisateurSerializer,
@@ -19,7 +19,7 @@ from apps.utilisateurs.serializers import (
     ConnexionSerializer
 )
 from apps.page_professeur.serializers import UESerializer
-
+from rest_framework.decorators import api_view, permission_classes
 # ----- UTILISATEUR DE BASE -----
 class UtilisateurViewSet(viewsets.ModelViewSet):
     queryset = Utilisateur.objects.all().order_by('last_name')
@@ -318,3 +318,39 @@ class ConnexionViewSet(viewsets.ModelViewSet):
             return Connexion.objects.all()
         return Connexion.objects.filter(utilisateur=user)
         
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_num_carte(request):
+    """
+    Vérifie si un numéro de carte est disponible
+    Accepte les valeurs vides (champ optionnel)
+    Le numéro doit contenir exactement 6 chiffres
+    """
+    num_carte = request.data.get('num_carte', '').strip()
+   
+    # Si vide → disponible (champ optionnel)
+    if not num_carte or num_carte == '':
+        return Response({
+            'existe': False,
+            'disponible': True
+        })
+   
+    # Valider le format (exactement 6 chiffres)
+    try:
+        num_carte_int = int(num_carte)
+        if num_carte_int < 100000 or num_carte_int > 999999:
+            return Response({
+                'erreur': 'Le numéro de carte doit contenir exactement 6 chiffres'
+            }, status=400)
+    except ValueError:
+        return Response({
+            'erreur': 'Le numéro de carte doit contenir uniquement des chiffres'
+        }, status=400)
+   
+    # Vérifier l'existence
+    existe = Etudiant.objects.filter(num_carte=num_carte_int).exists()
+   
+    return Response({
+        'existe': existe,
+        'disponible': not existe
+    })

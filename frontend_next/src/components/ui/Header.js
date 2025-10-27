@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+<<<<<<< HEAD
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
+=======
+import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
+
+>>>>>>> feature/inscription-thib
 
 export default function Header() {
   const pathname = usePathname();
@@ -13,6 +18,8 @@ export default function Header() {
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
   const [role, setRole] = useState("visiteur");
+  const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-0");
+
 
   // Charger rôle depuis localStorage
   useEffect(() => {
@@ -21,6 +28,21 @@ export default function Header() {
       setRole(storedRole);
     }
   }, []);
+  useEffect(() => {
+  const fetchPeriode = async () => {
+    if (role === "etudiant") {
+      const statut = await periodeInscriptionService.verifierStatutInscriptions();
+      if (!statut.ouvert) {
+        // Si période fermée ou expirée, redirige vers page FinInscription
+        setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
+      } else {
+        setInscriptionLink("/etudiant/inscription/etape-0");
+      }
+    }
+  };
+  fetchPeriode();
+}, [role]);
+
 
   // Déterminer la route du menu Personnel selon rôle
   const getPersonnelHref = (role) => {
@@ -51,7 +73,7 @@ export default function Header() {
     {
       label: "Étudiant",
       children: [
-        { label: "Inscriptions", href: "/etudiant/inscription/etape-0" },
+        { label: "Inscriptions", href: inscriptionLink },
         {
           label: "Données personnelles",
           protected: true,

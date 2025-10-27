@@ -62,8 +62,23 @@ class InscriptionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PeriodeInscriptionSerializer(serializers.ModelSerializer):
-    responsable = serializers.PrimaryKeyRelatedField(queryset=RespInscription.objects.all(), required=True)
+    responsable = serializers.PrimaryKeyRelatedField(
+        queryset=RespInscription.objects.all(), 
+        required=False,      # Optionnel
+        allow_null=True      # Peut être NULL
+    )
+    
     class Meta:
         model = PeriodeInscription
         fields = '__all__'
+    
+    def create(self, validated_data):
+        """Attribution automatique du responsable si connecté"""
+        request = self.context.get('request')
+        
+        # Si pas de responsable fourni ET utilisateur est un responsable d'inscription
+        if not validated_data.get('responsable') and request and hasattr(request.user, 'resp_inscription'):
+            validated_data['responsable'] = request.user.resp_inscription
+        
+        return super().create(validated_data)
         

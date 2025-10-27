@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import inscriptionService from "@/services/inscriptionService";
+import inscriptionService from "@/services/inscription/inscriptionService";
 
 export default function NouvelEtudiantStep0() {
   const [typeEtudiant, setTypeEtudiant] = useState("");
@@ -99,7 +99,7 @@ export default function NouvelEtudiantStep0() {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-md px-8 py-10 w-full max-w-lg mx-auto border border-gray-300 rounded-lg shadow-lg">
+    <div className="bg-transparent backdrop-blur-md  w-full max-w-lg mx-auto  ">
       <h2 className="text-2xl font-bold text-center text-blue-800 mb-6">
         Inscription pédagogique
       </h2>
@@ -144,14 +144,14 @@ export default function NouvelEtudiantStep0() {
           onClick={() => gererChangementType('ancien')}
           className={`p-6 border-2 rounded-lg cursor-pointer transition-all ${
             typeEtudiant === 'ancien'
-              ? 'border-green-500 bg-green-50'
-              : 'border-gray-300 hover:border-green-300'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-300 hover:border-blue-300'
           }`}
         >
           <div className="flex items-center">
             <div className={`w-4 h-4 rounded-full border-2 mr-4 ${
               typeEtudiant === 'ancien' 
-                ? 'border-green-500 bg-green-500' 
+                ? 'border-blue-500 bg-blue-500' 
                 : 'border-gray-300'
             }`}>
               {typeEtudiant === 'ancien' && (
@@ -180,7 +180,7 @@ export default function NouvelEtudiantStep0() {
             onChange={(e) => setNumCarte(e.target.value)}
             className={`w-full px-4 py-2 rounded-lg border ${
               erreurs.numCarte ? 'border-red-500' : 'border-gray-300'
-            } focus:outline-none focus:ring-2 focus:ring-green-400 bg-white`}
+            } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
             placeholder="Ex: 523456"
           />
           {erreurs.numCarte && (

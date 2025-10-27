@@ -3,6 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from apps.utilisateurs.views import (
    UtilisateurViewSet, AdministrateurViewSet, ConnexionViewSet, ProfesseurViewSet, EtudiantViewSet,
+    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, check_num_carte
     RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, GestionnaireViewSet, ChefDepartementViewSet
 )
 
@@ -20,4 +21,5 @@ router.register(r'chefs-departement', ChefDepartementViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('check-num-carte/', check_num_carte, name='check-num-carte'),
 ]

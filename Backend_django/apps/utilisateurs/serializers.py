@@ -80,9 +80,7 @@ class EtudiantSerializer(serializers.ModelSerializer):
     telephone = serializers.CharField(source='utilisateur.telephone', read_only=False, allow_blank=True, allow_null=True)    
     sexe = serializers.CharField(source='utilisateur.sexe', read_only=False, allow_blank=True)               
     role = serializers.CharField(source='utilisateur.role', read_only=True)
-    
-    # Informations étudiant
-    num_carte = serializers.CharField(read_only=True)
+    num_carte = serializers.IntegerField(required=False,allow_null=True,read_only=False)
     date_naiss = serializers.DateField(read_only=False, allow_null=True)
     lieu_naiss = serializers.CharField(read_only=False, allow_blank=True, allow_null=True)
     autre_prenom = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -114,6 +112,46 @@ class EtudiantSerializer(serializers.ModelSerializer):
     def get_annee_etude_info(self, obj):
         inscription = obj.inscriptions.first()
         return inscription.annee_etude.libelle if inscription and inscription.annee_etude else None
+
+    def validate_num_carte(self, value):
+        """
+        Gère les valeurs vides ET vérifie l'unicité
+        Le numéro doit contenir exactement 6 chiffres
+        """
+        # Si vide/null/
+        if value in [None, '', ' ']:
+            return None
+        
+        # Si c'est une chaîne, la convertir en int
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                return None
+            try:
+                value = int(value)
+            except ValueError:
+                raise serializers.ValidationError(
+                    "Le numéro de carte doit contenir uniquement des chiffres"
+                )
+        
+        if value < 100000 or value > 999999:
+            raise serializers.ValidationError(
+                "Le numéro de carte doit contenir exactement 6 chiffres"
+            )
+        
+        # Vérifier l'unicité
+        queryset = Etudiant.objects.filter(num_carte=value)
+        
+        # Si mise à jour, exclure l'étudiant actuel
+        if self.instance:
+            queryset = queryset.exclude(id=self.instance.id)
+        
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "Ce numéro de carte est déjà utilisé par un autre étudiant"
+            )
+        
+        return value
 
     def update(self, instance, validated_data):
         """
@@ -153,7 +191,7 @@ class EtudiantSerializer(serializers.ModelSerializer):
         representation['date_naiss'] = instance.date_naiss.isoformat() if instance.date_naiss else None
         representation['lieu_naiss'] = instance.lieu_naiss or ''
         representation['autre_prenom'] = instance.autre_prenom or ''
-        representation['num_carte'] = instance.num_carte or ''
+        representation['num_carte'] = instance.num_carte if instance.num_carte else None
         
         # Gérer la photo
         if instance.photo:

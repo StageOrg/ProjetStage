@@ -3,9 +3,13 @@ from ..utilisateurs.models import Professeur, Etudiant, ResponsableSaisieNote
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> feature/inscription-thib
 class UE(models.Model):
     libelle = models.CharField(max_length=100)
-    code = models.CharField(max_length=50 , unique=True)
+    code = models.CharField(max_length=50, unique=True)
     nbre_credit = models.IntegerField()
     composite = models.BooleanField(default=False)
     description = models.TextField(blank=True)
@@ -14,8 +18,17 @@ class UE(models.Model):
     lien_evaluation = models.URLField(blank=True)
     parcours = models.ManyToManyField("inscription_pedagogique.Parcours", related_name='ues')
     filiere = models.ManyToManyField("inscription_pedagogique.Filiere", related_name='ues')
-    annee_etude= models.ManyToManyField("inscription_pedagogique.AnneeEtude", related_name='ues')
+    annee_etude = models.ManyToManyField("inscription_pedagogique.AnneeEtude", related_name='ues')
     semestre = models.ForeignKey("inscription_pedagogique.Semestre", on_delete=models.CASCADE, related_name='ues')
+    
+    # Pour lier les UEs composantes
+    ues_composantes = models.ManyToManyField(
+        'self',
+        symmetrical=False,
+        blank=True,
+        related_name='ue_parente'
+    )
+
 
 class Evaluation(models.Model):
     TYPE = [
@@ -24,10 +37,11 @@ class Evaluation(models.Model):
         ('Examen', 'Examen'),
         ('Projet', 'Projet'),
     ]
-    ue = models.ForeignKey(UE,on_delete=models.CASCADE, related_name='evaluations')
+    ue = models.ForeignKey(UE, on_delete=models.CASCADE, related_name='evaluations')
     type = models.CharField(max_length=50, choices=TYPE)
     poids = models.FloatField()
 
+<<<<<<< HEAD
 class Anonymat(models.Model):
     etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")
     ue = models.ForeignKey("UE", on_delete=models.CASCADE, related_name="anonymats")
@@ -39,6 +53,8 @@ class Anonymat(models.Model):
         unique_together = ("etudiant", "ue") 
     def __str__(self):
         return f"{self.numero} ({self.etudiant} - {self.ue})"
+=======
+>>>>>>> feature/inscription-thib
 
 class Note(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='notes')
@@ -54,6 +70,7 @@ class Projet(models.Model):
     resume = models.TextField()
     lien = models.URLField()
 
+
 class Recherche(models.Model):
     professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE)
     titre = models.CharField(max_length=200)
@@ -62,12 +79,14 @@ class Recherche(models.Model):
     date_fin = models.DateField(null=True, blank=True)
     lien = models.URLField()
 
+
 class Article(models.Model):
     professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE)
     titre = models.CharField(max_length=200)
     journal = models.CharField(max_length=100)
     annee = models.CharField(max_length=4)
     lien = models.URLField()
+
 
 class Encadrement(models.Model):
     professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE)
@@ -94,27 +113,37 @@ class PeriodeSaisie(models.Model):
     def clean(self):
         if self.date_fin < self.date_debut:
             raise ValidationError("La date de fin doit être postérieure à la date de début.")
-        if self._state.adding:  # uniquement à la création
+        if self._state.adding:
             today = timezone.now().date()
             if self.date_debut < today or self.date_fin < today:
                 raise ValidationError("Les dates de début et de fin doivent être dans le futur.")
 
     def save(self, *args, **kwargs):
         today = timezone.now().date()
-
-        # Si la période a démarré et qu'elle est toujours dans sa plage, active automatiquement
         if self.date_debut <= today <= self.date_fin:
-            self.active = True  # automatique
-        # Sinon, ne rien changer si le responsable a défini manuellement active=False
-
+            self.active = True
         self.clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Période {self.numero} ({self.date_debut} → {self.date_fin})"
-    
+
 
 class AffectationUe(models.Model):
     ue = models.ForeignKey(UE, on_delete=models.CASCADE, related_name='affectations')
     professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE, related_name='affectations')
-   
+    
+    
+class ResultatUE(models.Model):
+    etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='resultats_ues')
+    ue = models.ForeignKey(UE, on_delete=models.CASCADE, related_name='resultats')
+    inscription = models.ForeignKey("inscription_pedagogique.Inscription", on_delete=models.CASCADE, related_name='resultats_ues')
+    
+    moyenne = models.FloatField(null=True, blank=True)
+    est_valide = models.BooleanField(default=False)
+    credits_obtenus = models.IntegerField(default=0)
+    details_validation = models.JSONField(null=True, blank=True)
+    date_calcul = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('etudiant', 'ue', 'inscription')  
