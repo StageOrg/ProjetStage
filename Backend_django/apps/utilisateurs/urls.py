@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from apps.utilisateurs.views import (
    UtilisateurViewSet, AdministrateurViewSet, ConnexionViewSet, ProfesseurViewSet, EtudiantViewSet,
-    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, check_num_carte
+    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, check_num_carte,
     RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, GestionnaireViewSet, ChefDepartementViewSet
 )
 
