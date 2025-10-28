@@ -126,19 +126,6 @@ class UEViewSet(viewsets.ModelViewSet):
         ).distinct()
 
         # Construction de la réponse
-        """"
-        Récupère toutes les évaluations d'une UE, les étudiants inscrits,
-        et les notes correspondantes.
-        """
-        ue = self.get_object()
-
-        # Toutes les évaluations liées à cette UE
-        evaluations = Evaluation.objects.filter(ue=ue)
-
-        # Tous les étudiants inscrits à cette UE
-        etudiants = Etudiant.objects.filter(inscriptions__ues=ue).distinct()
-
-        # Construire la réponse JSON
 
         data = {
             "ue": ue.libelle,
@@ -152,11 +139,11 @@ class UEViewSet(viewsets.ModelViewSet):
         }
 
         for etu in etudiants:
-            # 🔹 Récupération du numéro d’anonymat
+            #  Récupération du numéro d’anonymat
             anonymat_obj = Anonymat.objects.filter(etudiant=etu, ue=ue, annee_academique_id=annee_id).first()
             numero_anonymat = anonymat_obj.numero if anonymat_obj else None
 
-            # 🔹 Récupération des notes
+            #  Récupération des notes
             notes_dict = {}
             for ev in evaluations:
                 note_obj = Note.objects.filter(etudiant=etu, evaluation=ev).first()
@@ -197,7 +184,7 @@ class UEViewSet(viewsets.ModelViewSet):
         serializer = UESerializer(queryset.distinct(), many=True)
         return Response(serializer.data)
     
-    # NOUVELLE ACTION : Calculer les résultats (BIEN INDENTÉ dans la classe)
+    #  Calculer les résultats (BIEN INDENTÉ dans la classe)
     @action(detail=True, methods=['post'], url_path='calculer-resultats')
     def calculer_resultats(self, request, pk=None):
         """
@@ -218,7 +205,7 @@ class UEViewSet(viewsets.ModelViewSet):
                 'error': f"Erreur lors du calcul des résultats: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    # NOUVELLE ACTION : Obtenir les résultats d'une UE
+    #  Obtenir les résultats d'une UE
     @action(detail=True, methods=['get'], url_path='resultats')
     def get_resultats(self, request, pk=None):
         """
