@@ -1,10 +1,6 @@
 
 from rest_framework import serializers
-<<<<<<< HEAD
-from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, Anonymat
-=======
-from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, ResultatUE
->>>>>>> feature/inscription-thib
+from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, ResultatUE, Anonymat
 from ..inscription_pedagogique.models import Inscription, Parcours, Filiere, AnneeEtude, Semestre
 from django.utils import timezone
 

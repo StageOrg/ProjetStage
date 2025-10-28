@@ -3,12 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
-=======
 import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
 
->>>>>>> feature/inscription-thib
 
 export default function Header() {
   const pathname = usePathname();
