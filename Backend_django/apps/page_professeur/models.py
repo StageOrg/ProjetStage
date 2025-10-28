@@ -37,7 +37,6 @@ class Evaluation(models.Model):
     type = models.CharField(max_length=50, choices=TYPE)
     poids = models.FloatField()
 
-
 class Anonymat(models.Model):
     etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")
     ue = models.ForeignKey("UE", on_delete=models.CASCADE, related_name="anonymats")
@@ -49,7 +48,6 @@ class Anonymat(models.Model):
         unique_together = ("etudiant", "ue") 
     def __str__(self):
         return f"{self.numero} ({self.etudiant} - {self.ue})"
-
 
 class Note(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='notes')

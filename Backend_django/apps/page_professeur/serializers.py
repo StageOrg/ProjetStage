@@ -5,7 +5,6 @@ from ..inscription_pedagogique.models import Inscription, Parcours, Filiere, Ann
 from django.utils import timezone
 
 
-
 class UESerializer(serializers.ModelSerializer):
     evaluations = serializers.PrimaryKeyRelatedField(queryset=Evaluation.objects.all(), many=True, required=False) 
     parcours = serializers.PrimaryKeyRelatedField(queryset=Parcours.objects.all(), many=True, required=True)

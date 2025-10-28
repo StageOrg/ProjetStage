@@ -5,15 +5,10 @@ from django.shortcuts import render
 
 from rest_framework import viewsets, status
 from apps.page_professeur.services import calculer_validation_ue, obtenir_resultats_etudiant, obtenir_ues_validees, calculer_tous_resultats_ue
+from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie, Anonymat, ResultatUE
 from apps.inscription_pedagogique.models import Inscription
-from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement, PeriodeSaisie, ResultatUE ,Anonymat
-from apps.authentification.permissions import IsAdminOrRespNotesOnly, IsProfesseur,IsProfOrSecretaire, IsResponsableNotes, IsOwnerOrReadOnlyForProf, IsSuperUserOrGestionnaire
-from .serializers import (
-    UESerializer, AffectationUeSerializer, EvaluationSerializer, NoteSerializer, 
-    ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, 
-    PeriodeSaisieSerializer, ResultatUESerializer,AnonymatSerializer
-)
-
+from apps.authentification.permissions import IsAdminOrRespNotesOnly, IsProfOrSecretaire, IsProfesseur, IsResponsableNotes, IsOwnerOrReadOnlyForProf, IsSuperUserOrGestionnaire
+from .serializers import UESerializer,AffectationUeSerializer, EvaluationSerializer, NoteSerializer, ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, PeriodeSaisieSerializer, AnonymatSerializer, ResultatUESerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions 
 from apps.utilisateurs.models import Professeur, Etudiant
@@ -30,7 +25,8 @@ class UEViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
     
         user = self.request.user
-
+        
+        # Création, modification, suppression, seulement Responsable de notes
         if self.action in ['create', 'update', 'destroy']:
             return [IsSuperUserOrGestionnaire()]
 
@@ -46,7 +42,6 @@ class UEViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
 
         return [permissions.IsAuthenticated()]
-        
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -126,7 +121,6 @@ class UEViewSet(viewsets.ModelViewSet):
         ).distinct()
 
         # Construction de la réponse
-
         data = {
             "ue": ue.libelle,
             "semestre": semestre,
