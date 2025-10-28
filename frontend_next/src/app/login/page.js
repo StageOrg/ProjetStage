@@ -50,16 +50,12 @@ export default function Connexion() {
       router.push("/gestion-notes/dashboard");
     } 
     else if (data.user.role === "resp_inscription") {
-<<<<<<< HEAD
-      router.push("/resp_inscription/dashboard");  
+      router.push("/resp_inscription/dashboard/gestionEtudiant");  
     }else if (data.user.role === "gestionnaire") {
       router.push("/gestion/dashboard");
     } 
     else if (data.user.role === "secretaire") {
       router.push("/secretariat/dashboard/ue-exam");
-=======
-      router.push("/resp_inscription/dashboard/gestionEtudiant");  
->>>>>>> feature/inscription-thib
     } else {
       router.push("/programmes"); // fallback
     }

@@ -3,10 +3,6 @@ from ..utilisateurs.models import Professeur, Etudiant, ResponsableSaisieNote
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/inscription-thib
 class UE(models.Model):
     libelle = models.CharField(max_length=100)
     code = models.CharField(max_length=50, unique=True)
@@ -41,7 +37,6 @@ class Evaluation(models.Model):
     type = models.CharField(max_length=50, choices=TYPE)
     poids = models.FloatField()
 
-<<<<<<< HEAD
 class Anonymat(models.Model):
     etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")
     ue = models.ForeignKey("UE", on_delete=models.CASCADE, related_name="anonymats")
@@ -53,8 +48,7 @@ class Anonymat(models.Model):
         unique_together = ("etudiant", "ue") 
     def __str__(self):
         return f"{self.numero} ({self.etudiant} - {self.ue})"
-=======
->>>>>>> feature/inscription-thib
+
 
 class Note(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='notes')
