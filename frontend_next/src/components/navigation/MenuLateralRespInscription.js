@@ -1,9 +1,7 @@
-// frontend_next/src/features/res_inscrip/modification/EditStudent.js
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FaTachometerAlt, FaUserGraduate, FaChalkboardTeacher, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaChartBar, FaSignOutAlt } from "react-icons/fa";
-import { useRouter } from "next/navigation";  // Ajout pour router dans handleLogout
 
 const links = [
   { href: "/resp_inscription/dashboard/gestionEtudiant", label: "Gestion étudiants", icon: <FaUserGraduate /> },
@@ -11,17 +9,18 @@ const links = [
   { href: "/resp_inscription/dashboard/periodeInscription", label: "Gestion Periode Inscription", icon: <FaBook /> },
 ];
 
-const handleLogout = () => {
-  localStorage.removeItem("authToken"); 
-  const router = useRouter();
-  router.push("/login"); 
-};
-
 export default function MenuLateralAdmin() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken"); 
+    router.push("/login"); 
+  };
+
   return (
     <aside className="hidden md:flex flex-col gap-3 bg-black/90 backdrop-blur-2xl shadow-2xl w-64 h-screen sticky top-0 z-10 py-0 px-0 border-r border-blue-500/50"> {/* Reduced gap, bg semi-transparent black, subtle border */}
-      <div className="flex-1 flex flex-col overflow-y-auto py-8 px-4"> {/* Reduced padding */}
+      <div className="flex-1 flex flex-col overflow-y-auto py-8 px-4"> 
         <div className="mb-6 flex items-center gap-2 justify-center"> {/* Reduced mb */}
           <span className="font-extrabold text-blue-300 text-xl tracking-tight drop-shadow-lg">EPL</span> {/* Smaller text, lighter blue for dark */}
           <span className="bg-blue-900/80 text-blue-200 font-bold px-2 py-0.5 rounded-md text-xs shadow-md">Responsable Inscription</span> {/* Darker badge, smaller py */}
