@@ -14,7 +14,7 @@ const TokenStorage = {
   },
 };
 
-// Liste des endpoints publics (pas d'auth header requis)
+// Liste des endpoints publics 
 const PUBLIC_ENDPOINTS = [
   '/token/refresh/',           // Refresh token (utilise payload, pas header)
   '/notes/ues/filtrer/',       // Filtrage UEs (public pour inscription)
@@ -25,7 +25,6 @@ const PUBLIC_ENDPOINTS = [
   '/inscription/inscription/', // Création inscription
   '/inscription/verifier-ancien-etudiant/', // Vérif ancien étudiant
   '/inscription/ancien-etudiant/', // Inscription ancien
-  // Ajoutez d'autres endpoints publics si besoin
 ];
 
 let isRefreshing = false;
@@ -94,6 +93,7 @@ api.interceptors.response.use(
   }
 );
 
+
 export const authAPI = {
   login: async (username, password) => {
     // ici on envoie les bons noms de champs
@@ -131,8 +131,52 @@ export const authAPI = {
     const res = await api.get("utilisateurs/me/");
     return res.data;
   },
+  
+  // ====== MÉTHODES POUR RESET PASSWORD =====
+  
+  /**
+   * Demande de réinitialisation de mot de passe
+   * @param {string} email - Email de l'utilisateur
+   * @returns {Promise} Réponse du serveur
+   */
+  demandeResetPassword: async (email) => {
+    const res = await api.post("auth/password-reset/demande/", { email });
+    return res.data;
+  },
+
+  /**
+   * Vérifie si le token de réinitialisation est valide
+   * @param {string} uid - ID utilisateur encodé
+   * @param {string} token - Token de réinitialisation
+   * @returns {Promise} Validation du token
+   */
+  verifierTokenReset: async (uid, token) => {
+    const res = await api.post("auth/password-reset/verifier/", { uid, token });
+    return res.data;
+  },
+
+  /**
+   * Réinitialise le mot de passe avec le token
+   * @param {string} uid - ID utilisateur encodé
+   * @param {string} token - Token de réinitialisation
+   * @param {string} password - Nouveau mot de passe
+   * @param {string} password_confirmation - Confirmation du mot de passe
+   * @returns {Promise} Confirmation de la réinitialisation
+   */
+  resetPassword: async (uid, token, password, password_confirmation) => {
+    const res = await api.post("auth/password-reset/confirmer/", { 
+      uid, 
+      token, 
+      password, 
+      password_confirmation 
+    });
+    return res.data;
+  },
+
 
   apiInstance: () => api,
 };
+
+
 
 export default authAPI;

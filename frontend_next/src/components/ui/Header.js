@@ -3,9 +3,17 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+<<<<<<< HEAD
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
 
+=======
+import { FaChevronDown } from "react-icons/fa";
+import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
+import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
+
+
+>>>>>>> feature/inscription-thib
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -184,7 +192,9 @@ export default function Header() {
                     }`}
                   >
                     {item.label}
-                    <span className="text-xs">▼</span>
+                    <FaChevronDown
+                      className={`w-3 h-3 transition-transform duration-200 ${openDropdown === item.label ? 'rotate-180' : ''}`}
+                    />
                   </button>
                 ) : (
                   <Link

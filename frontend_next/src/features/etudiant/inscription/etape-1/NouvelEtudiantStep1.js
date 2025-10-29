@@ -10,6 +10,7 @@ const step1FieldsConfig = {
   email: { required: true },
   username: { required: true },
   password: { required: true },
+  confirmPassword: { required: true },
 };
 
 export default function NouvelEtudiantStep1() { 
@@ -19,11 +20,13 @@ export default function NouvelEtudiantStep1() {
     email: "",
     username: "",
     password: "",
+    confirmPassword: "",
   });
   const [erreurs, setErreurs] = useState({});  // Erreurs par champ (objet) – inclut maintenant unicité/validité.
   const [chargement, setChargement] = useState(false);  // Chargement soumission.
   const [verificationEnCours, setVerificationEnCours] = useState({});  // Loader pour vérif (ex: {username: true}).
   const [showPassword, setShowPassword] = useState(false);  // State pour toggle mot de passe (false = masqué).
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  // State pour toggle confirmation mot de passe.
   const router = useRouter(); 
 
   // Chargement des données selon le type d'inscription (localStorage ou ancien).
@@ -57,8 +60,9 @@ export default function NouvelEtudiantStep1() {
           setFormulaire(prev => ({
             ...prev,
             username: parsed.username || "",
-            password: "",
+            password: parsed.password || "",
             email: parsed.email || "",
+            confirmPassword: parsed.confirmPassword || "",
           }));
         }
       }
@@ -66,6 +70,16 @@ export default function NouvelEtudiantStep1() {
       router.push('/etudiant/inscription/etape-0');  // Pas de type : Retour étape 0.
     }
   }, [router]);
+
+  // useEffect pour mise à jour en temps réel de l'erreur de correspondance des mots de passe.
+  useEffect(() => {
+    if (typeInscription?.typeEtudiant === 'nouveau') {
+      const matchError = formulaire.password !== formulaire.confirmPassword 
+        ? "Les mots de passe ne correspondent pas." 
+        : "";
+      setErreurs(prev => ({ ...prev, confirmPassword: matchError }));
+    }
+  }, [formulaire.password, formulaire.confirmPassword, typeInscription]);
 
   // Changement champ (basique : Update state, efface erreur si valide).
   const gererChangement = (e) => {
@@ -84,6 +98,11 @@ export default function NouvelEtudiantStep1() {
     // Password : Sync.
     if (champ === 'password') {
       return validateField('password', value, true);
+    }
+
+    // ConfirmPassword : Sync (correspondance).
+    if (champ === 'confirmPassword') {
+      return value !== formulaire.password ? "Les mots de passe ne correspondent pas." : null;
     }
 
     // Email/Username : Async API.
@@ -135,6 +154,11 @@ export default function NouvelEtudiantStep1() {
   // Toggle visibilité mot de passe (simple : Change type input).
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);  // Inverse state (true/false).
+  };
+
+  // Toggle visibilité confirmation mot de passe.
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   // Confirmation pour ancien étudiant (sauvegarde et navigue).
@@ -197,7 +221,13 @@ export default function NouvelEtudiantStep1() {
     }
 
     // Merge toutes les erreurs (format + async).
-    const allErreurs = { ...nouvellesErreurs, ...asyncErreurs };
+    let allErreurs = { ...nouvellesErreurs, ...asyncErreurs };
+
+    // Vérification supplémentaire pour correspondance des mots de passe (sécurité en cas de soumission sans re-render).
+    if (typeInscription?.typeEtudiant === 'nouveau' && !allErreurs.confirmPassword && formulaire.password !== formulaire.confirmPassword) {
+      allErreurs.confirmPassword = "Les mots de passe ne correspondent pas.";
+    }
+
     setErreurs(allErreurs);
 
     // Vérifier si erreurs.
@@ -330,6 +360,44 @@ export default function NouvelEtudiantStep1() {
           </p>
         )}
       </div>
+
+      {/* Champ Confirmation Password (seulement pour nouveaux étudiants). */}
+      {typeInscription?.typeEtudiant === 'nouveau' && (
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">
+            Confirmer le mot de passe*
+          </label>
+          <div className="relative">
+            <input
+              name="confirmPassword"
+              value={formulaire.confirmPassword}
+              onChange={gererChangement}
+              onBlur={() => verifierChamp('confirmPassword')}  // Vérif correspondance sur blur.
+              type={showConfirmPassword ? "text" : "password"}
+              className={`w-full px-4 py-2 rounded-lg border pr-10 ${erreurs.confirmPassword ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${verificationEnCours.confirmPassword ? 'opacity-70' : ''}`} 
+              placeholder="Confirmez votre mot de passe"
+            />
+            <button
+              type="button"
+              onClick={toggleConfirmPasswordVisibility}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+              aria-label={showConfirmPassword ? "Masquer confirmation mot de passe" : "Afficher confirmation mot de passe"}
+            >
+              {showConfirmPassword ? (
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {erreurs.confirmPassword && <p className="text-red-500 text-sm mt-1">{erreurs.confirmPassword}</p>}
+        </div>
+      )}
 
       {/* Boutons d'action. */}
       <div className="flex justify-between mt-6 gap-4">

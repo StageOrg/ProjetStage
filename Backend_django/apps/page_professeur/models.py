@@ -49,7 +49,6 @@ class Anonymat(models.Model):
     def __str__(self):
         return f"{self.numero} ({self.etudiant} - {self.ue})"
 
-
 class Note(models.Model):
     etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='notes')
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='notes')

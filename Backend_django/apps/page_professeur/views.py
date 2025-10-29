@@ -1,16 +1,14 @@
 # apps/page_professeur/views.py
 
 from django.shortcuts import render
+# Create your views here.
+
 from rest_framework import viewsets, status
 from apps.page_professeur.services import calculer_validation_ue, obtenir_resultats_etudiant, obtenir_ues_validees, calculer_tous_resultats_ue
+from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie, Anonymat, ResultatUE
 from apps.inscription_pedagogique.models import Inscription
-from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement, PeriodeSaisie, ResultatUE, Anonymat
 from apps.authentification.permissions import IsAdminOrRespNotesOnly, IsProfOrSecretaire, IsProfesseur, IsResponsableNotes, IsOwnerOrReadOnlyForProf, IsSuperUserOrGestionnaire
-from .serializers import (
-    UESerializer, AffectationUeSerializer, EvaluationSerializer, NoteSerializer, 
-    ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, 
-    PeriodeSaisieSerializer, ResultatUESerializer, AnonymatSerializer
-)
+from .serializers import UESerializer,AffectationUeSerializer, EvaluationSerializer, NoteSerializer, ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, PeriodeSaisieSerializer, AnonymatSerializer, ResultatUESerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions 
 from apps.utilisateurs.models import Professeur, Etudiant
@@ -27,7 +25,7 @@ class UEViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
     
         user = self.request.user
-
+        
         # Création, modification, suppression, seulement Responsable de notes
         if self.action in ['create', 'update', 'destroy']:
             return [IsSuperUserOrGestionnaire()]
@@ -88,7 +86,6 @@ class UEViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def notes(self, request, pk=None):
         """
-<<<<<<< HEAD
         Récupère toutes les évaluations d’une UE, les étudiants inscrits,
         leurs notes, le semestre, l’année académique et les numéros anonymes.
         Possibilité de filtrer par année académique avec ?annee=ID.
@@ -136,11 +133,11 @@ class UEViewSet(viewsets.ModelViewSet):
         }
 
         for etu in etudiants:
-            # 🔹 Récupération du numéro d’anonymat
+            #  Récupération du numéro d’anonymat
             anonymat_obj = Anonymat.objects.filter(etudiant=etu, ue=ue, annee_academique_id=annee_id).first()
             numero_anonymat = anonymat_obj.numero if anonymat_obj else None
 
-            # 🔹 Récupération des notes
+            #  Récupération des notes
             notes_dict = {}
             for ev in evaluations:
                 note_obj = Note.objects.filter(etudiant=etu, evaluation=ev).first()
@@ -181,7 +178,7 @@ class UEViewSet(viewsets.ModelViewSet):
         serializer = UESerializer(queryset.distinct(), many=True)
         return Response(serializer.data)
     
-    # NOUVELLE ACTION : Calculer les résultats (BIEN INDENTÉ dans la classe)
+    #  Calculer les résultats (BIEN INDENTÉ dans la classe)
     @action(detail=True, methods=['post'], url_path='calculer-resultats')
     def calculer_resultats(self, request, pk=None):
         """
@@ -202,7 +199,7 @@ class UEViewSet(viewsets.ModelViewSet):
                 'error': f"Erreur lors du calcul des résultats: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    # NOUVELLE ACTION : Obtenir les résultats d'une UE
+    #  Obtenir les résultats d'une UE
     @action(detail=True, methods=['get'], url_path='resultats')
     def get_resultats(self, request, pk=None):
         """
@@ -229,7 +226,7 @@ class UEViewSet(viewsets.ModelViewSet):
         """
         Liste toutes les UEs qui ont au moins une évaluation de type 'Examen'.
         """
-        # 🔍 Filtrer les UEs dont au moins une évaluation est de type 'Examen'
+        #  Filtrer les UEs dont au moins une évaluation est de type 'Examen'
         ues = UE.objects.filter(evaluations__type="Examen").distinct()
 
         serializer = self.get_serializer(ues, many=True)

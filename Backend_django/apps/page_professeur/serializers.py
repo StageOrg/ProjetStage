@@ -1,10 +1,8 @@
 
 from rest_framework import serializers
-
 from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,  PeriodeSaisie, ResultatUE, Anonymat
 from ..inscription_pedagogique.models import Inscription, Parcours, Filiere, AnneeEtude, Semestre
 from django.utils import timezone
-
 
 
 class UESerializer(serializers.ModelSerializer):
