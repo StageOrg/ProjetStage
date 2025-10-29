@@ -4,7 +4,7 @@ import api from "./api";
 
 class EtudiantService {
   static async getNotesByUE(ueId) {
-    const annee = localStorage.getItem("annee");
+    const annee = localStorage.getItem("annee_id");
     console.log("Récupération des notes pour l'UE ID :", ueId, "et année académique :", annee);
     try {
       const response = await api.get(`/notes/ues/${ueId}/notes/?annee=${annee}`);

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import EtudiantService from "@/services/etudiantService";
 import EvaluationNormale from "./evaluationNormale";
-import EvaluationExamen from "./evaluationExamen";
+import EvaluationExamen from "./anonymat/evaluationExamen";
 
 function ListeEtudiantsUE({ ueId }) {
   const [etudiants, setEtudiants] = useState([]);
@@ -13,19 +13,20 @@ function ListeEtudiantsUE({ ueId }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const annee_id = localStorage.getItem("annee_id");
-  console.log("Année académique actuelle :", annee_id);
-
 
   useEffect(() => {
     const fetchData = async () => {
       if (!ueId) return;
       try {
         const res = await EtudiantService.getNotesByUE(ueId);
-        console.log("Données reçues :", res);
         setEtudiants(res.etudiants);
         setEvaluations(res.evaluations);
         setAnnee(res.annee_academique);
         setSemestre(res.semestre);
+        // Si une seule évaluation existe, on la sélectionne automatiquement
+        if (res.evaluations.length === 1) {
+          setSelectedEvaluation(res.evaluations[0]);
+        }
 
         if (res.evaluations.length === 0) {
           router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`);
@@ -69,10 +70,10 @@ function ListeEtudiantsUE({ ueId }) {
         <select
           value={selectedEvaluation?.id || ""}
           onChange={(e) => {
-            const evalChoisi = evaluations.find(
+            const evalChoisie = evaluations.find(
               (ev) => ev.id === parseInt(e.target.value)
             );
-            setSelectedEvaluation(evalChoisi);
+            setSelectedEvaluation(evalChoisie);
           }}
           className="border rounded px-2 py-1"
         >
@@ -93,7 +94,7 @@ function ListeEtudiantsUE({ ueId }) {
 
       {/* Affichage du tableau selon le type d’évaluation */}
       {selectedEvaluation ? (
-        selectedEvaluation.type === "Examen" ? (
+        selectedEvaluation.type === "Examen" && selectedEvaluation.anonyme === true ? (
           <EvaluationExamen
             ueId={ueId}
             evaluations={evaluations}

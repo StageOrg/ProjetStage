@@ -193,9 +193,6 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
           Cours enseignés
         </h1>
         <div className="flex items-center gap-4">
-          <div className="text-sm font-medium text-gray-600">
-            2023-2024 | Semestre 1
-          </div>
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"

@@ -1,187 +1,146 @@
 "use client";
-import { useState } from "react";
-import { PlusCircle, ChevronRight, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, X } from "lucide-react"; 
+import DepartementService from "@/services/departementService";
+import ParcoursService from "@/services/parcoursService";
+import FiliereService from "@/services/filiereService";
+import AnneeEtudeService from "@/services/anneeEtudeService";
+import SemestreService from "@/services/semestreService";
+import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 
-export default function EtablissementGestion() {
-  const [parcoursOuvert, setParcoursOuvert] = useState(null);
-  const [filiereOuverte, setFiliereOuverte] = useState(null);
-  const [anneeOuverte, setAnneeOuverte] = useState(null);
+import DepartementForm from "./formulaires/DepartementForm";
+import ParcoursForm from "./formulaires/ParcoursForm";
+import FiliereForm from "./formulaires/FiliereForm";
+import SemestreForm from "./formulaires/SemestreForm";
+import AnneeEtudeForm from "./formulaires/AnneeEtudeForm";
+import AnneeAcademiqueForm from "./formulaires/AnneeAcademiqueForm";
 
-  // 🔹 Données statiques (à remplacer plus tard par API)
-  const etablissement = {
-    nom: "Université de Lomé - Faculté des Sciences",
-    departements: [
-      {
-        nom: "Département de Mathématiques et Informatique",
-        parcours: [
-          {
-            id: 1,
-            libelle: "Informatique",
-            filieres: [
-              {
-                id: 1,
-                nom: "Génie Logiciel",
-                annees: [
-                  {
-                    id: 1,
-                    libelle: "1ère année",
-                    semestres: ["Semestre 1", "Semestre 2"],
-                  },
-                  {
-                    id: 2,
-                    libelle: "2ème année",
-                    semestres: ["Semestre 3", "Semestre 4"],
-                  },
-                ],
-              },
-              {
-                id: 2,
-                nom: "Réseaux et Télécoms",
-                annees: [
-                  {
-                    id: 3,
-                    libelle: "1ère année",
-                    semestres: ["Semestre 1", "Semestre 2"],
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: 2,
-            libelle: "Mathématiques",
-            filieres: [],
-          },
-        ],
-      },
-    ],
+// Tu ajouteras AnnéeEtudeForm également
+
+export default function GestionEtablissement({ parcoursOptions, filiereOptions, departementOptions, anneeOptions, semestreOptions }) {
+  const [parcours, setParcours] = useState([]);
+  const [filieres, setFilieres] = useState([]);
+  const [departements, setDepartements] = useState([]);
+  const [annees, setAnnees] = useState([]);
+  const [semestres, setSemestres] = useState([]);
+  const [anneesAcademiques, setAnneesAcademiques] = useState([]);
+  const [activeForm, setActiveForm] = useState(null); // <- POUR OUVRIR LE FORMULAIRE
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setDepartements(await DepartementService.getDepartements());
+        setParcours(await ParcoursService.getParcours());
+        setFilieres(await FiliereService.getFilieres());
+        setAnnees(await AnneeEtudeService.getAnneesEtude());
+        setSemestres(await SemestreService.getSemestres());
+        setAnneesAcademiques(await AnneeAcademiqueService.getAll());
+      } catch (error) {
+        console.error("Erreur lors du chargement:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const sections = [
+    { id: "departement", title: "Département", items: departements },
+    { id: "filiere", title: "Filière", items: filieres },
+    { id: "parcours", title: "Parcours", items: parcours },
+    { id: "semestre", title: "Semestre", items: semestres },
+    { id: "annee", title: "Année d'Étude", items: annees },
+    { id: "anneeAcademique", title: "Année Académique", items: anneesAcademiques },
+  ];
+
+  const renderForm = () => {
+    switch (activeForm) {
+      case "departement":
+        return <DepartementForm onSubmit={() => setActiveForm(null)} onSuccess={(newDepartement) => setDepartements([...departements, newDepartement])} />;
+      case "filiere":
+        return <FiliereForm onSubmit={() => setActiveForm(null)} departementOptions={departements} parcoursOptions={parcours}  onSuccess={(newFiliere) => setFilieres([...filieres, newFiliere])}/>;
+      case "parcours":
+        return <ParcoursForm onSubmit={() => setActiveForm(null)} onSuccess={(newParcours) => setParcours([...parcours, newParcours])} />;
+      case "semestre":
+        return <SemestreForm onSubmit={() => setActiveForm(null)} onSuccess={(newSemestre) => setSemestres([...semestres, newSemestre])} />;
+      case "annee":
+        return <AnneeEtudeForm onSubmit={() => setActiveForm(null)} parcoursOptions={parcours} semestreOptions={semestres} onSuccess={(newAnnee) => setAnnees([...annees, newAnnee])} />;
+      case "anneeAcademique":
+        return <AnneeAcademiqueForm onSubmit={() => setActiveForm(null)} onSuccess={(newAnneeAcademique) => setAnneesAcademiques([...anneesAcademiques, newAnneeAcademique])} />;
+      default:
+        return null;
+    }
   };
 
-  const handleToggleParcours = (id) =>
-    setParcoursOuvert(parcoursOuvert === id ? null : id);
-
-  const handleToggleFiliere = (id) =>
-    setFiliereOuverte(filiereOuverte === id ? null : id);
-
-  const handleToggleAnnee = (id) =>
-    setAnneeOuverte(anneeOuverte === id ? null : id);
-
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white shadow-md rounded-2xl">
-      <h1 className="text-2xl font-bold text-blue-700 mb-6 text-center">
-        {etablissement.nom}
+    <div className="relative p-8">
+      <h1 className="text-center text-2xl font-bold text-blue-600 mb-8 uppercase">
+        Gestion Établissement
       </h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sections.map((section) => (
+          <AcademicCard
+            key={section.id}
+            section={section}
+            onAdd={() => setActiveForm(section.id)}
+          />
+        ))}
+      </div>
 
-      {etablissement.departements.map((dep, index) => (
-        <div key={index} className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">
-            {dep.nom}
-          </h2>
-
-          {/* Parcours */}
-          <div className="space-y-2">
-            {dep.parcours.map((p) => (
-              <div key={p.id} className="border rounded-lg p-3 bg-gray-50">
-                <div
-                  onClick={() => handleToggleParcours(p.id)}
-                  className="flex justify-between items-center cursor-pointer"
-                >
-                  <span className="font-medium">{p.libelle}</span>
-                  <div className="flex items-center gap-2">
-                    <PlusCircle className="text-blue-600 cursor-pointer" size={18} />
-                    {parcoursOuvert === p.id ? (
-                      <ChevronDown size={18} />
-                    ) : (
-                      <ChevronRight size={18} />
-                    )}
-                  </div>
-                </div>
-
-                {/* Filières */}
-                {parcoursOuvert === p.id && (
-                  <div className="ml-5 mt-3 space-y-2">
-                    {p.filieres.map((f) => (
-                      <div
-                        key={f.id}
-                        className="border-l-2 pl-3 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
-                      >
-                        <div
-                          onClick={() => handleToggleFiliere(f.id)}
-                          className="flex justify-between items-center"
-                        >
-                          <span className="text-gray-700">{f.nom}</span>
-                          <div className="flex items-center gap-2">
-                            <PlusCircle
-                              className="text-green-600 cursor-pointer"
-                              size={16}
-                            />
-                            {filiereOuverte === f.id ? (
-                              <ChevronDown size={16} />
-                            ) : (
-                              <ChevronRight size={16} />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Années */}
-                        {filiereOuverte === f.id && (
-                          <div className="ml-5 mt-2 space-y-1">
-                            {f.annees.map((a) => (
-                              <div
-                                key={a.id}
-                                className="border-l pl-3 py-1 hover:bg-gray-50"
-                              >
-                                <div
-                                  onClick={() => handleToggleAnnee(a.id)}
-                                  className="flex justify-between items-center"
-                                >
-                                  <span>{a.libelle}</span>
-                                  <div className="flex items-center gap-2">
-                                    <PlusCircle
-                                      className="text-purple-600 cursor-pointer"
-                                      size={14}
-                                    />
-                                    {anneeOuverte === a.id ? (
-                                      <ChevronDown size={14} />
-                                    ) : (
-                                      <ChevronRight size={14} />
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Semestres */}
-                                {anneeOuverte === a.id && (
-                                  <ul className="ml-4 mt-2 list-disc text-sm text-gray-600">
-                                    {a.semestres.map((s, i) => (
-                                      <li key={i} className="flex items-center">
-                                        {s}
-                                        <PlusCircle
-                                          className="ml-2 text-orange-500 cursor-pointer"
-                                          size={12}
-                                        />
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Bouton pour ajouter un parcours */}
-            <div className="mt-3 flex items-center gap-2 text-blue-600 cursor-pointer">
-              <PlusCircle size={18} />
-              <span>Ajouter un parcours</span>
-            </div>
+      {/* ✅ MODALE DYNAMIQUE */}
+      {activeForm && (
+        <div className="fixed inset-0 bg-transparent flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg relative">
+            <button
+              onClick={() => setActiveForm(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
+            >
+              <X size={20} />
+            </button>
+            {renderForm()}
           </div>
         </div>
-      ))}
+      )}
+    </div>
+  );
+}
+
+function AcademicCard({ section, onAdd }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-8 relative">
+      <div className="flex justify-between items-center mb-4">
+        <h2
+          className="text-lg font-semibold text-gray-800 uppercase cursor-pointer"
+          onClick={() => setOpen(!open)}
+        >
+          {section.title}
+        </h2>
+        {open && (
+          <button
+            className="flex items-center gap-0.5 border border-blue-600 text-blue-600 px-2 py-1 rounded-md hover:bg-blue-600 hover:text-white transition"
+            onClick={onAdd}
+          >
+            <Plus size={18} /> Ajouter
+          </button>
+        )}
+      </div>
+
+      {open ? (
+        <div className="space-y-2">
+          {section.items?.length > 0 ? (
+            section.items.map((item, index) => (
+              <div key={index} className="p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
+                {item?.libelle || item?.nom}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 italic">Aucun élément disponible.</p>
+          )}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm">Cliquez pour voir les éléments</p>
+      )}
     </div>
   );
 }

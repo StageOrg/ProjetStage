@@ -5,9 +5,9 @@ const FiliereService = {
     console.log("FiliereService response data:", response.data);
     return response.data;
   },
-  create: async (filiereData) => {
+  createFiliere: async (nom, abbreviation, departement, parcours) => {
+    const filiereData = { nom, abbreviation, departement, parcours };
     const response = await api.post("/inscription/filiere/", filiereData);
-    console.log("FiliereService create response data:", response.data);
     return response.data;
   }
 };

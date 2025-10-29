@@ -258,13 +258,22 @@ export default function Header() {
             </select>
           </div>
           )}
-          {/* Bouton Connexion */}
-          <Link
-            href="/login"
-            className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1"
-          >
-            Connexion
-          </Link>
+          {/* Bouton Deconnexion */}
+          {role !== "visiteur" ? (
+            <Link
+              href="/logout"
+              className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1"
+            >
+              Deconnexion
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1"
+            >
+              Connexion
+            </Link>
+          )}
         </nav>
       </div>
     </header>

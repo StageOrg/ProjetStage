@@ -82,7 +82,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Evaluation
-        fields = ["id", "type", "poids", "ue"]
+        fields = ["id", "type", "poids", "ue", "anonyme"]
         required_fields = ['type', 'poids', 'ue']
     def create(self, validated_data):
         user = self.context['request'].user
@@ -95,10 +95,27 @@ class EvaluationSerializer(serializers.ModelSerializer):
         return Evaluation.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        for field in ['type', 'poids']:
-            setattr(instance, field, validated_data.get(field, getattr(instance, field)))
+        user = self.context['request'].user
+
+        # Si c'est un professeur : il ne peut modifier que type et poids
+        if hasattr(user, 'professeur'):
+            allowed_fields = ['type', 'poids']
+
+        # Si c'est un responsable de notes : il  modifie 'anonyme'
+        elif hasattr(user, 'resp_notes'):
+            allowed_fields = ['anonyme']
+        
+        else:
+            raise serializers.ValidationError("Vous n'êtes pas autorisé à modifier cette évaluation.")
+
+        # Appliquer uniquement les champs autorisés
+        for field in allowed_fields:
+            if field in validated_data:
+                setattr(instance, field, validated_data.get(field))
+
         instance.save()
         return instance
+
 
 class AnonymatSerializer(serializers.ModelSerializer):
     class Meta:
