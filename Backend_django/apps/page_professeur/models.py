@@ -20,13 +20,14 @@ class UE(models.Model):
 class Evaluation(models.Model):
     TYPE = [
         ('Devoir', 'Devoir'),
-        ('Examen anticipé', 'Examen anticipé'),
         ('Examen', 'Examen'),
         ('Projet', 'Projet'),
+        ('TP', 'TP'),
     ]
     ue = models.ForeignKey(UE,on_delete=models.CASCADE, related_name='evaluations')
     type = models.CharField(max_length=50, choices=TYPE)
     poids = models.FloatField()
+    anonyme = models.BooleanField(default=False)
 
 class Anonymat(models.Model):
     etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")

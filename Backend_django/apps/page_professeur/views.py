@@ -5,7 +5,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie, Anonymat
 from apps.inscription_pedagogique.models import Inscription
-from apps.authentification.permissions import IsAdminOrRespNotesOnly, IsProfOrSecretaire, IsProfesseur, IsResponsableNotes, IsOwnerOrReadOnlyForProf, IsSuperUserOrGestionnaire
+from apps.authentification.permissions import IsAdminOrRespNotesOnly, IsProfOrSecretaire, IsProfesseur, IsResponsableNotes, IsOwnerOrReadOnlyForProf, IsSuperUserOrGestionnaire, IsRespInscriptionOrSecretaire
 from .serializers import UESerializer,AffectationUeSerializer, EvaluationSerializer, NoteSerializer, ProjetSerializer, RechercheSerializer, ArticleSerializer, EncadrementSerializer, PeriodeSaisieSerializer, AnonymatSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions 
@@ -24,7 +24,7 @@ class UEViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if self.action in ['create', 'update', 'destroy']:
-            return [IsSuperUserOrGestionnaire()]
+            return [()]
 
         elif self.action == 'list':
             if hasattr(user, 'professeur') or hasattr(user, 'secretaire'):
@@ -123,7 +123,7 @@ class UEViewSet(viewsets.ModelViewSet):
             "semestre": semestre,
             "annee_academique": annee_academique,
             "evaluations": [
-                {"id": ev.id, "type": ev.type, "poids": ev.poids}
+                {"id": ev.id, "type": ev.type, "poids": ev.poids, "anonyme": ev.anonyme}
                 for ev in evaluations
             ],
             "etudiants": []
@@ -181,17 +181,45 @@ class UEViewSet(viewsets.ModelViewSet):
         Liste toutes les UEs qui ont au moins une évaluation de type 'Examen'.
         """
         # 🔍 Filtrer les UEs dont au moins une évaluation est de type 'Examen'
-        ues = UE.objects.filter(evaluations__type="Examen").distinct()
+        ues = UE.objects.filter(evaluations__type="Examen", evaluations__anonyme=True).distinct()
 
         serializer = self.get_serializer(ues, many=True)
         return Response(serializer.data)
 
+    #Endpoint pour recuperer les ues qui ont des evaluations anonymes et qui n'ont pas encore de notes saisies
+    @action(detail=False, methods=["get"], url_path="ues-anonymes-sans-notes")
+    def ues_anonymes_sans_notes(self, request):
+        """
+        Liste toutes les UEs qui ont au moins une évaluation anonyme
+        et pour lesquelles aucune note n'a encore été saisie.
+        """
+        ues = UE.objects.filter(
+            evaluations__anonyme=True
+        ).distinct()
+
+        ues_sans_notes = []
+        for ue in ues:
+            evaluations_anonymes = ue.evaluations.filter(anonyme=True)
+            notes_existantes = Note.objects.filter(evaluation__in=evaluations_anonymes).exists()
+            if not notes_existantes:
+                ues_sans_notes.append(ue)
+
+        serializer = self.get_serializer(ues_sans_notes, many=True)
+        return Response(serializer.data)
 
 
 class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
     
+    @action (detail=False, methods=['get'], url_path='by-ue/(?P<ue_id>[^/.]+)')
+    def by_ue(self, request, ue_id=None):
+        if not ue_id:
+            return Response({"error": "ue est requis"}, status=400)
+        evaluations = Evaluation.objects.filter(ue__id=ue_id)
+        serializer = self.get_serializer(evaluations, many=True)
+        return Response(serializer.data)
+
 class AnonymatViewSet(viewsets.ModelViewSet):
     queryset = Anonymat.objects.all()
     serializer_class = AnonymatSerializer
@@ -297,6 +325,8 @@ class PeriodeSaisieViewSet(viewsets.ModelViewSet):
             return PeriodeSaisie.objects.filter(responsable=user.resp_notes)
         elif hasattr(user, 'professeur'):
             return PeriodeSaisie.objects.all() 
+        elif hasattr(user, 'secretaire'):
+            return PeriodeSaisie.objects.all()
         return PeriodeSaisie.objects.none()
 
     def perform_create(self, serializer):

@@ -92,3 +92,10 @@ class IsAdminOrRespNotesOnly(BasePermission):
 class IsSuperUserOrGestionnaire(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_superuser or hasattr(request.user, 'gestionnaire')
+    
+
+#SEULS le responsable ou la secretaire peuvent acceder
+class IsRespInscriptionOrSecretaire(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return hasattr(user, 'resp_notes') or hasattr(user, 'secretaire')

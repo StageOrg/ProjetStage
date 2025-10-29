@@ -8,6 +8,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.default ? pdfFonts.default.vfs : pdfFonts.vfs;
 
 export default function Export({ etudiants, evaluations, evaluation, calculerMoyenne, type, annee, semestre }) {
+  console.log("evaluation", evaluation);
   // --- Export Excel ---
   const exportExcel = () => {
     const data = etudiants.map((etu) => {
