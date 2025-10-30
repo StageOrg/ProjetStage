@@ -5,8 +5,8 @@ import { FaUser, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaUsers, 
 
 const links = [
   { href: "/gestion-notes/dashboard/tableau-de-bord", label: "Tableau de bord", icon: <FaChartBar /> },
-  { href: "/gestion-notes/dashboard/periodes-saisie-de-notes", label: "Periode de saisie", icon: <FaUser /> },
-  { href: "/secretariat/dashboard/ue-exam", label: "Notes", icon: <FaClipboardList /> },
+  { href: "/secretariat/dashboard/ue-exam", label: "Saisie Anononymat", icon: <FaClipboardList /> },
+  { href: "/secretariat/dashboard/notes", label: "Notes", icon: <FaClipboardList /> },
   { href: "/gestion-notes/dashboard/listes-d-emmargement", label: "Listes d'emmargement", icon: <FaUsers /> },
 ];
 
@@ -17,7 +17,7 @@ export default function MenuLateralSecretaire() {
       <div className="flex-1 flex flex-col overflow-y-auto py-10 px-6">
         <div className="mb-8 flex items-center gap-2 justify-center">
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
-          <span className="bg-blue-100 text-black font-bold px-2 py-1  text-xs shadow">Gestion Notes</span>
+          <span className="bg-blue-100 text-black font-bold px-2 py-1  text-xs shadow">Secretariat</span>
         </div>
         <nav className="flex flex-col gap-2 text-lg font-semibold mt-10 mb-10">
           {links.map(link => (

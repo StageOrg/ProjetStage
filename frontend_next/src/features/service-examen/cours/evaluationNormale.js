@@ -3,11 +3,10 @@ import NoteService from "@/services/noteService";
 import Export from "./export";
 import PeriodeActive from "./periodeActive";
 
-export default function EvaluationNormale({ ueId, evaluations, evaluation, etudiants, setEtudiants, calculerMoyenne, annee, semestre }) {
+export default function EvaluationNormale({ueId, evaluations, evaluation, etudiants, setEtudiants, calculerMoyenne, annee, semestre }) {
   const periodeActive = PeriodeActive();
   const [editIndex, setEditIndex] = useState(null);
   const [editedData, setEditedData] = useState({});
-  console.log("periodeActive:", periodeActive);
 
   const handleEdit = (index, etu) => {
     setEditIndex(index);
@@ -20,7 +19,7 @@ export default function EvaluationNormale({ ueId, evaluations, evaluation, etudi
       alert("Note invalide (0–20).");
       return;
     }
-
+    console.log("active", periodeActive);
     try {
       await NoteService.createNote(etu.id, evaluation.id, noteValue);
       setEtudiants((prev) =>
@@ -38,13 +37,14 @@ export default function EvaluationNormale({ ueId, evaluations, evaluation, etudi
 
   return (
     <div className="bg-transparent px-8 py-10 w-full h-full animate-fade-in">
-       <Export
-          etudiants={etudiants}
-          evaluations={evaluations}
-          type="normal"
-          annee={annee}
-          semestre={semestre}
-        />
+      <Export
+        etudiants={etudiants}
+        evaluations={evaluations}
+        evaluation={evaluation}
+        type="normal"
+        annee={annee}
+        semestre={semestre}
+      />
       <table className="w-full border-collapse border">
         <thead className="bg-gray-100">
           <tr>
@@ -52,7 +52,9 @@ export default function EvaluationNormale({ ueId, evaluations, evaluation, etudi
             <th className="border px-2 py-1">Nom</th>
             <th className="border px-2 py-1">Prénom</th>
             <th className="border px-2 py-1">Sexe</th>
-            <th className="border px-2 py-1 text-center">{evaluation.type} ({evaluation.poids}%)</th>
+            <th className="border px-2 py-1 text-center">
+              {evaluation.type} ({evaluation.poids}%)
+            </th>
             <th className="border px-2 py-1 text-center">Moyenne</th>
           </tr>
         </thead>
@@ -90,6 +92,16 @@ export default function EvaluationNormale({ ueId, evaluations, evaluation, etudi
           ))}
         </tbody>
       </table>
+      <div className=" mt-6 text-center">
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded-lg"
+          onClick={() => {
+            alert("Numéros anonymes enregistrés. Fin de la saisie.");
+          }}
+        >
+          Enregistrer
+        </button>
+      </div>
     </div>
   );
 }

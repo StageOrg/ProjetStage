@@ -193,9 +193,6 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
           Cours enseignés
         </h1>
         <div className="flex items-center gap-4">
-          <div className="text-sm font-medium text-gray-600">
-            2023-2024 | Semestre 1
-          </div>
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
@@ -208,9 +205,9 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
 
       {/* Modal du formulaire */}
       {showForm && (
-        <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-transparent flex items-center justify-center ">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mt-15">
               <h2 className="text-xl font-bold text-gray-900">Ajouter une UE</h2>
               <button
                 onClick={() => setShowForm(false)}
@@ -220,7 +217,7 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 p-4">
               {/* Libelle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -524,36 +521,45 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
             </tr>
           </thead>
           <tbody>
-            {sortedCourses.map((course, idx) => (
-              <tr
-                key={idx}
-                className={`hover:bg-gray-50 transition cursor-pointer ${
-                  selectedCourse?.code === course.code ? 'bg-orange-50' : ''
-                }`}
-              >
-                <td className="px-4 py-3 border-b border-gray-200 font-medium text-gray-900">
-                  {course.code}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-200">
-                    {course.libelle}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-200 text-center">
-                  {course.nbre_credit}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-200">
-                  {trouverObjetParId(parcours,course.filiere)?.libelle }
-                </td>
-                <td className="px-4 py-3 border-b border-gray-200">
-                  {trouverObjetParId(filieres,course.filiere)?.abbreviation }
-                </td>
-                <td className="px-4 py-3 border-b border-gray-200 text-center">
-                  {trouverObjetParId(anneesEtude,course.annee_etude)?.libelle }
-                </td>
-                <td className="px-4 py-3 border-b border-gray-200 text-center">
-                  {trouverObjetParId(semestres,course.semestre)?.libelle }
+            {/* Affichage des cours triés. Si sortedCourses existe et n'est pas vide. Si elle est vide, afficher aucun cours */}
+            {sortedCourses && sortedCourses.length > 0 ? (
+              sortedCourses.map((course, idx) => (
+                <tr
+                  key={idx}
+                  className={`hover:bg-gray-50 transition cursor-pointer ${
+                    selectedCourse?.code === course.code ? 'bg-orange-50' : ''
+                  }`}
+                >
+                  <td className="px-4 py-3 border-b border-gray-200 font-medium text-gray-900">
+                    {course.code}
+                  </td>
+                  <td className="px-4 py-3 border-b border-gray-200">
+                      {course.libelle}
+                  </td>
+                  <td className="px-4 py-3 border-b border-gray-200 text-center">
+                    {course.nbre_credit}
+                  </td>
+                  <td className="px-4 py-3 border-b border-gray-200">
+                    {trouverObjetParId(parcours, course.parcours)?.libelle}
+                  </td>
+                  <td className="px-4 py-3 border-b border-gray-200">
+                    {trouverObjetParId(filieres, course.filiere)?.abbreviation}
+                  </td>
+                  <td className="px-4 py-3 border-b border-gray-200 text-center">
+                    {trouverObjetParId(anneesEtude, course.annee_etude)?.libelle}
+                  </td>
+                  <td className="px-4 py-3 border-b border-gray-200 text-center">
+                    {trouverObjetParId(semestres, course.semestre)?.libelle}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                  Aucun cours
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

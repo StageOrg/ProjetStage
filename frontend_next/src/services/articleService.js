@@ -5,7 +5,7 @@ const ArticleService = {
     getMesArticles: async () => {
         try {
             const response = await api.get("/notes/articles/");
-            return response.data.results;
+            return response.data;
         } catch (error) {
             console.error("Erreur lors de la récupération de la liste des articles:", error);
             throw error;
@@ -16,7 +16,7 @@ const ArticleService = {
     getArticleById: async (id) => {
         try {
             const response = await api.get(`/notes/articles/${id}/`);
-            return response.data.results;
+            return response.data;
         } catch (error) {
             console.error(`Erreur lors de la récupération de l'article ${id}:`, error);
             throw error;
@@ -28,7 +28,7 @@ const ArticleService = {
         try {
             const articleData = { titre, journal, annee, lien };
             const response = await api.post("/notes/articles/", articleData);
-            return response.data.results;
+            return response.data;
         } catch (error) {
             console.error("Erreur lors de la création de l'article:", error);
             throw error;
@@ -40,7 +40,7 @@ const ArticleService = {
         try {
             const articleData = { titre, journal, annee, lien };
             const response = await api.put(`/notes/articles/${id}/`, articleData);
-            return response.data.results;
+            return response.data;
         } catch (error) {
             console.error("Erreur lors de la mise à jour de l'article:", error);
             throw error;
@@ -51,7 +51,7 @@ const ArticleService = {
     delete: async (id) => {
         try {
             const response = await api.delete(`/notes/articles/${id}/`);
-            return response.data.results;
+            return response.data;
         } catch (error) {
             console.error("Erreur lors de la suppression de l'article:", error);
             throw error;
@@ -61,7 +61,7 @@ const ArticleService = {
     getArticleByProfId: async (profId) => {
         try {
             const response = await api.get(`/notes/articles/par-professeur/${profId}/`);
-            return response.data.results;
+            return response.data;
         } catch (error) {
             console.error(`Erreur lors de la récupération des articles pour le professeur ${profId}:`, error);
             throw error;

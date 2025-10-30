@@ -12,7 +12,7 @@ export default function DashboardAdminLayout({ children }) {
       <aside className="hidden md:block fixed top-15 left-0 h-screen z-30">
         <MenuLateralGestionnaire />
       </aside>
-      <main className="md:ml-64 flex-1 min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-100 font-sans flex flex-col items-center justify-center px-4 py-12 pt-24 gap-8">
+      <main className="md:ml-64 flex-1 min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-100 font-sans flex flex-col items-center justify-start px-4 py-12 pt-24 gap-8">
         {children}
       </main>
     </>

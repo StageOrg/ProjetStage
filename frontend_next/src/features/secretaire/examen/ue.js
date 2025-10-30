@@ -60,7 +60,7 @@ useEffect(() => {
 }, []);
 // récupère les UEs 
 useEffect(() => {
-    UEService.getUEByEvaluation()
+    UEService.getUEByEvaluationSansNote()
       .then((data) => setCourses(data))
       .catch((err) => console.error(err));
       console.log("Courses data:", courses);
@@ -86,7 +86,7 @@ useEffect(() => {
     const SelectedUeId= course.id;
     console.log("SelectedUeId:", SelectedUeId);
     setSelectedUeId(SelectedUeId);
-    router.push(`/service-examen/notes/${SelectedUeId}/etudiants-inscrits`);
+    router.push(`/service-examen/anonymat/${SelectedUeId}`);
   };
 
   const trouverObjetParId = (array,id) => {
@@ -133,9 +133,6 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
         <h1 className="text-2xl font-bold text-blue-900">
           Cours enseignés
         </h1>
-        <div className="text-sm font-medium text-gray-600">
-          2023-2024 | Semestre 1
-        </div>
       </div>
 
       {/* Filtre */}
@@ -273,6 +270,13 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
             </tr>
           </thead>
           <tbody>
+            {sortedCourses.length === 0 && (
+              <tr>
+                <td colSpan="7" className="px-4 py-3 border-b border-gray-200 text-center text-gray-500">
+                  Aucune UE trouvée.
+                </td>
+              </tr>
+            )}
             {sortedCourses.map((course, idx) => (
               <tr
                 key={idx}

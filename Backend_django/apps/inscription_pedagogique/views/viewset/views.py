@@ -23,6 +23,8 @@ class AnneeAcademiqueViewSet(viewsets.ModelViewSet):
 class SemestreViewSet(viewsets.ModelViewSet):
     queryset = Semestre.objects.all()
     serializer_class = SemestreSerializer
+    pagination_class = None
+
 
 class ParcoursViewSet(viewsets.ModelViewSet):
     queryset = Parcours.objects.all()
@@ -57,12 +59,15 @@ class AnneeEtudeViewSet(viewsets.ModelViewSet):
 class EtablissementViewSet(viewsets.ModelViewSet):
     queryset = Etablissement.objects.all()
     serializer_class = EtablissementSerializer
+    pagination_class = None
 
 class DepartementViewSet(viewsets.ModelViewSet):
     queryset = Departement.objects.all()
     serializer_class = DepartementSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['etablissement']
+    pagination_class = None
+
 
 class InscriptionViewSet(viewsets.ModelViewSet):
     queryset = Inscription.objects.all()

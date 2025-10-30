@@ -17,7 +17,7 @@ const PeriodeSaisieService = {
         console.log("Creating periode with data:", { numero, date_debut, date_fin });
         try{
             const response = await api.post("notes/periodes/", { numero, date_debut, date_fin });
-            return response.data.results;
+            return response.data  ;
 
         }
         catch(error){

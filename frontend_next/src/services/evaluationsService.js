@@ -8,7 +8,7 @@ const EvaluationService = {
   }
     const response = await api.get(`/notes/ues/${ueId}/evaluations/`);
     console.log("evaluations:", response.data);
-    return response.data.results;
+    return response.data  ;
   },
 
  async createEvaluation(type, poids, ueId) {
@@ -22,8 +22,8 @@ const EvaluationService = {
 
   // Mettre à jour une évaluation existante
   async updateEvaluation(evaluationId, data) {
+    console.log("Updating evaluation ID:", evaluationId, "with data:", data);
     return await api.patch(`/notes/evaluations/${evaluationId}/`, data);
-    // data peut être {type: "Devoir"} ou {poids: 20}, ou les deux
   },
 
   // Supprimer une évaluation (optionnel)
