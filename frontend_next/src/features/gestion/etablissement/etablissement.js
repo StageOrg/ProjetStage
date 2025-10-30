@@ -34,6 +34,7 @@ export default function GestionEtablissement({ parcoursOptions, filiereOptions, 
         setFilieres(await FiliereService.getFilieres());
         setAnnees(await AnneeEtudeService.getAnneesEtude());
         setSemestres(await SemestreService.getSemestres());
+        console.log("semestres loaded:", semestres);
         setAnneesAcademiques(await AnneeAcademiqueService.getAll());
       } catch (error) {
         console.error("Erreur lors du chargement:", error);

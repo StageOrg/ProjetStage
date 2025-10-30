@@ -8,13 +8,19 @@ export default function LogoutPage() {
 
   useEffect(() => {
     // Effectuer la déconnexion
-        try{
+      try{
         authAPI.logout();
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
         localStorage.removeItem("user_role");
+        localStorage.removeItem("annee_id");
+        localStorage.setItem("user_role", "visiteur")
+        console.log("item removed");
         router.push("/");
         } catch (error) {
         console.error("Erreur lors de la déconnexion :", error);
-        }
+      }
     }, [router]);
 
   return null;

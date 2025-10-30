@@ -21,7 +21,7 @@ export default function DepartementForm({ etablissementOptions = [{ id: 1, nom: 
       setNom("");
       setAbbreviation("");
       setEtablissement("1");
-      if (onSuccess) onSuccess(response);
+      if (onSuccess) onSuccess(response);// Pour rafraîchir la liste dans le parent
     } catch (error) {
       console.error("❌ Erreur API :", error);
       setMessage("❌ Erreur lors de la création du département.");

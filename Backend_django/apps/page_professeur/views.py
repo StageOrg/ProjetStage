@@ -22,13 +22,15 @@ class UEViewSet(viewsets.ModelViewSet):
     serializer_class = UESerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['parcours', 'filiere', 'annee_etude', 'semestre']
+    pagination_class = None
+
     def get_permissions(self):
     
         user = self.request.user
         
         # Création, modification, suppression, seulement Responsable de notes
         if self.action in ['create', 'update', 'destroy']:
-            return [()]
+            return [IsSuperUserOrGestionnaire()]
 
         elif self.action == 'list':
             if hasattr(user, 'professeur') or hasattr(user, 'secretaire'):
@@ -42,6 +44,7 @@ class UEViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
 
         return [permissions.IsAuthenticated()]
+
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -69,6 +72,7 @@ class UEViewSet(viewsets.ModelViewSet):
         etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue)
         serializer = EtudiantSerializer(etudiantsInscrits, many=True)
         return Response(serializer.data)
+    pagination_class = None
 
     
     # Récupérer toutes les évaluations liées à une UE donnée
@@ -81,7 +85,8 @@ class UEViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except UE.DoesNotExist:
             return Response({"error": "UE introuvable"}, status=404)
-        
+    pagination_class = None
+
     # Nouvelle action pour récupérer les notes
     @action(detail=True, methods=["get"])
     def notes(self, request, pk=None):
@@ -154,6 +159,9 @@ class UEViewSet(viewsets.ModelViewSet):
             })
 
         return Response(data)
+        pagination_class = None
+
+    
         
     @action(detail=False, methods=['get'], url_path='filtrer')
     def filtrer(self, request):
@@ -177,6 +185,8 @@ class UEViewSet(viewsets.ModelViewSet):
 
         serializer = UESerializer(queryset.distinct(), many=True)
         return Response(serializer.data)
+    pagination_class = None
+
     
     #  Calculer les résultats (BIEN INDENTÉ dans la classe)
     @action(detail=True, methods=['post'], url_path='calculer-resultats')
@@ -220,7 +230,8 @@ class UEViewSet(viewsets.ModelViewSet):
             },
             'resultats': serializer.data
         })
-
+        
+    #Endpoint pour recuperer les ues qui ont des examens anonymes
     @action(detail=False, methods=["get"], url_path="filter-examen")
     def ues_avec_examen(self, request):
         """
@@ -231,6 +242,8 @@ class UEViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(ues, many=True)
         return Response(serializer.data)
+    pagination_class = None
+
 
     #Endpoint pour recuperer les ues qui ont des evaluations anonymes et qui n'ont pas encore de notes saisies
     @action(detail=False, methods=["get"], url_path="ues-anonymes-sans-notes")
@@ -252,11 +265,15 @@ class UEViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(ues_sans_notes, many=True)
         return Response(serializer.data)
+    pagination_class = None
+
 
 
 class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
+    pagination_class = None
+
     
     @action (detail=False, methods=['get'], url_path='by-ue/(?P<ue_id>[^/.]+)')
     def by_ue(self, request, ue_id=None):
@@ -265,10 +282,14 @@ class EvaluationViewSet(viewsets.ModelViewSet):
         evaluations = Evaluation.objects.filter(ue__id=ue_id)
         serializer = self.get_serializer(evaluations, many=True)
         return Response(serializer.data)
+    pagination_class = None
+
+    
 
 class AnonymatViewSet(viewsets.ModelViewSet):
     queryset = Anonymat.objects.all()
     serializer_class = AnonymatSerializer
+    pagination_class = None
     
     def get_permissions(self):
         if self.action in ['create', 'update', 'destroy']:
@@ -286,16 +307,19 @@ class AnonymatViewSet(viewsets.ModelViewSet):
         anonymats = Anonymat.objects.filter(ue__id=ue_id)   
         serializer = self.get_serializer(anonymats, many=True)
         return Response(serializer.data)
+    pagination_class = None
 
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
+    pagination_class = None
 
 
 class ProjetViewSet(viewsets.ModelViewSet):
     queryset = Projet.objects.all()
     serializer_class = ProjetSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return Projet.objects.filter(professeur=self.request.user.professeur)
@@ -303,16 +327,19 @@ class ProjetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(professeur=self.request.user.professeur)
     
+    #Endpoint pour recuperer les projets par professeur
     @action(detail=False, methods=['get'], url_path='par-professeur/(?P<prof_id>[^/.]+)')
     def projets_par_professeur(self, request, prof_id=None):
         projets = Projet.objects.filter(professeur__id=prof_id)
         serializer = self.get_serializer(projets, many=True)
         return Response(serializer.data)
+    pagination_class = None
 
 
 class RechercheViewSet(viewsets.ModelViewSet):
     queryset = Recherche.objects.all()
     serializer_class = RechercheSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return Recherche.objects.filter(professeur=self.request.user.professeur)
@@ -320,16 +347,20 @@ class RechercheViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(professeur=self.request.user.professeur)
     
+    #Endpoint pour recuperer les recherches par professeur
     @action(detail=False, methods=['get'], url_path='par-professeur/(?P<prof_id>[^/.]+)')
     def recherches_par_professeur(self, request, prof_id=None):
         recherches = Recherche.objects.filter(professeur__id=prof_id)
         serializer = self.get_serializer(recherches, many=True)
         return Response(serializer.data)
+    pagination_class = None
+
 
 
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return Article.objects.filter(professeur=self.request.user.professeur)
@@ -337,16 +368,19 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(professeur=self.request.user.professeur)
     
+    #Endpoint pour recuperer les articles par professeur
     @action(detail=False, methods=['get'], url_path='par-professeur/(?P<prof_id>[^/.]+)')
     def articles_par_professeur(self, request, prof_id=None):
         articles = Article.objects.filter(professeur__id=prof_id)
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
+    pagination_class = None
 
 
 class EncadrementViewSet(viewsets.ModelViewSet):
     queryset = Encadrement.objects.all()
     serializer_class = EncadrementSerializer
+    pagination_class = None
     
     def get_queryset(self):
         return Encadrement.objects.filter(professeur=self.request.user.professeur)
@@ -354,17 +388,20 @@ class EncadrementViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(professeur=self.request.user.professeur)
     
+    #Endpoint pour recuperer les encadrements par professeur
     @action(detail=False, methods=['get'], url_path='par-professeur/(?P<prof_id>[^/.]+)')
     def encadrements_par_professeur(self, request, prof_id=None):
         encadrements = Encadrement.objects.filter(professeur__id=prof_id)
         serializer = self.get_serializer(encadrements, many=True)
         return Response(serializer.data)
+    pagination_class = None
 
 
 class PeriodeSaisieViewSet(viewsets.ModelViewSet):
     queryset = PeriodeSaisie.objects.all()
     serializer_class = PeriodeSaisieSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
@@ -393,6 +430,7 @@ class AffectationUeViewSet(viewsets.ModelViewSet):
     queryset = AffectationUe.objects.all()
     serializer_class = AffectationUeSerializer
     permission_classes = [IsSuperUserOrGestionnaire()]
+    pagination_class = None
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'destroy']:

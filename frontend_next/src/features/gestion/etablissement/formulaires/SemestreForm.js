@@ -23,9 +23,7 @@ export default function SemestreForm({ onSuccess }) {
       setMessage("✅ Semestre créée avec succès !");
       setLibelle("");
       //  Rafraîchir la liste dans le parent si onSuccess est fourni
-      if (onSuccess) {
-        onSuccess(response);
-      }
+      if (onSuccess) onSuccess(response);  
     } catch (error) {
       console.error("Erreur lors de la création du semestre :", error);
       setMessage("❌ Une erreur est survenue. Veuillez réessayer.");

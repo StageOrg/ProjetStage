@@ -8,7 +8,7 @@ const UEService = {
   }
     const response = await api.get(`/notes/ues/${ueId}/etudiantsInscrits/`);
     console.log("Données reçues du backend:", response.data);
-    return response.data.results;
+    return response.data  ;
   },
   getAllUE : async () => {
     const response = await api.get("/notes/ues/");
@@ -35,7 +35,7 @@ const UEService = {
   },
   getUEById: async (id) => {
     const response = await api.get(`/notes/ues/${id}/`);
-    return response.data.results;
+    return response.data  ;
   },
   // Mise à jour partielle (description + liens)
   updateUE: async (id, data) => {

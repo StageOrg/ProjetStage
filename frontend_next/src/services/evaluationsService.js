@@ -8,7 +8,7 @@ const EvaluationService = {
   }
     const response = await api.get(`/notes/ues/${ueId}/evaluations/`);
     console.log("evaluations:", response.data);
-    return response.data.results;
+    return response.data  ;
   },
 
  async createEvaluation(type, poids, ueId) {

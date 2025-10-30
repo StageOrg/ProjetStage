@@ -19,10 +19,10 @@ export default function AnneeAcademiqueForm({ onSuccess }) {
 
     setLoading(true);
     try {
-      await AnneeAcademiqueService.createAnneeAcademique(libelle);
+      const response = await AnneeAcademiqueService.createAnneeAcademique(libelle);
       setMessage({ type: "success", text: "Année académique créée avec succès !" });
       setLibelle("");
-      if (onSuccess) onSuccess(); // Pour rafraîchir la liste après création
+      if (onSuccess) onSuccess(response); // Pour rafraîchir la liste après création
     } catch (error) {
       setMessage({
         type: "error",
