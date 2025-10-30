@@ -15,7 +15,7 @@ from apps.utilisateurs.models import Professeur, Etudiant
 from apps.utilisateurs.serializers import EtudiantSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
+from django.db.models import Max
 
 class UEViewSet(viewsets.ModelViewSet):
     queryset = UE.objects.all().order_by('code')

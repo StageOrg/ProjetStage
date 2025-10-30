@@ -17,13 +17,12 @@ export default function DonneesPersonnelles() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [newPhotoFile, setNewPhotoFile] = useState(null); // NOUVEAU: Stocker le fichier séparément
 
-  // Fonction utilitaire pour vérifier si une valeur est vide
   const isEmpty = (value) => {
     return value === null || value === undefined || value === '' || (typeof value === 'string' && value.trim() === '');
   };
 
-  // Fonction utilitaire pour afficher une valeur ou "Non spécifié"
   const displayValue = (value, defaultText = "Non spécifié") => {
     return isEmpty(value) ? defaultText : value;
   };
@@ -39,8 +38,21 @@ export default function DonneesPersonnelles() {
         first_name: response.first_name || '',
         last_name: response.last_name || '',
         telephone: response.telephone || '',
-        autre_prenom: response.autre_prenom || ''
+        autre_prenom: response.autre_prenom || '',
+        num_carte: response.num_carte || ''
       });
+      
+      // CORRECTION: Initialiser la photo correctement
+      if (response.photo) {
+        // Si l'URL est relative, ajouter le domaine de base
+        const photoUrl = response.photo.startsWith('http') 
+          ? response.photo 
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${response.photo}`;
+        setPhotoPreview(photoUrl);
+      } else {
+        setPhotoPreview(null);
+      }
+      setNewPhotoFile(null); // Réinitialiser le nouveau fichier
     } catch (err) {
       console.error('Erreur récupération données:', err);
       setError("Erreur lors du chargement de vos données personnelles");
@@ -52,12 +64,27 @@ export default function DonneesPersonnelles() {
   useEffect(() => {
     fetchStudentData();
   }, []);
-  useEffect(() => {
-  console.log('studentData après mise à jour:', studentData);
-}, [studentData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === 'num_carte') {
+      const numeriqueValue = value.replace(/\D/g, '');
+      const truncatedValue = numeriqueValue.slice(0, 6);
+      
+      if (value && value !== truncatedValue) {
+        setError("Le numéro de carte doit contenir exactement 6 chiffres");
+      } else {
+        setError(null);
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: truncatedValue
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -66,27 +93,28 @@ export default function DonneesPersonnelles() {
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Vérifier le type et la taille
-      if (!file.type.startsWith('image/')) {
-        setError('Veuillez sélectionner une image valide');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB max
-        setError('L\'image ne doit pas dépasser 5MB');
-        return;
-      }
+    if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target.result);
-        setFormData(prev => ({
-          ...prev,
-          photo: file
-        }));
-      };
-      reader.readAsDataURL(file);
+    // Vérifier le type et la taille
+    if (!file.type.startsWith('image/')) {
+      setError('Veuillez sélectionner une image valide');
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) { // 5MB max
+      setError('L\'image ne doit pas dépasser 5MB');
+      return;
+    }
+
+    // CORRECTION: Stocker le fichier séparément
+    setNewPhotoFile(file);
+    setError(null);
+
+    // Créer l'aperçu
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPhotoPreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
@@ -94,40 +122,84 @@ export default function DonneesPersonnelles() {
       setSaving(true);
       setError(null);
       
-      // Créer FormData si photo à uploader
-      let dataToSend;
-      if (formData.photo) {
-        dataToSend = new FormData();
-        Object.keys(formData).forEach(key => {
-          if (formData[key] !== null && formData[key] !== undefined) {
-            dataToSend.append(key, formData[key]);
-          }
-        });
-      } else {
-        // Données texte seulement
-        dataToSend = {
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          telephone: formData.telephone,
-          autre_prenom: formData.autre_prenom
-        };
+      // VALIDATION: Vérifier les champs requis
+      const champsRequis = ['email', 'first_name', 'last_name', 'telephone'];
+      const champsVides = champsRequis.filter(champ => !formData[champ]?.trim());
+      
+      if (champsVides.length > 0) {
+        setError("Veuillez remplir tous les champs obligatoires (nom, prénom, email, téléphone)");
+        setSaving(false);
+        return;
       }
       
-      // Utiliser le service pour mettre à jour
+      const dataToSend = new FormData();
+      
+      // Ajouter les champs texte obligatoires (ne peuvent pas être vides)
+      const champsObligatoires = ['email', 'first_name', 'last_name', 'telephone'];
+      champsObligatoires.forEach(key => {
+        const value = formData[key]?.trim();
+        if (value) {
+          dataToSend.append(key, value);
+        } else {
+          // Si vide, garder la valeur originale
+          dataToSend.append(key, studentData[key] || '');
+        }
+      });
+      
+      // Ajouter les champs optionnels (peuvent être vides)
+      const champsOptionnels = ['autre_prenom', 'num_carte'];
+      champsOptionnels.forEach(key => {
+        const value = formData[key]?.trim();
+        if (value) {
+          dataToSend.append(key, value);
+        }
+        // Si vide, on ne l'ajoute pas (sera vidé côté serveur)
+      });
+      
+      // CORRECTION: Gérer la photo uniquement si un nouveau fichier a été sélectionné
+      if (newPhotoFile) {
+        dataToSend.append('photo', newPhotoFile);
+        console.log('Nouvelle photo ajoutée au FormData');
+      }
+      
+      // Log pour déboguer
+      console.log('Données envoyées:', {
+        ...Object.fromEntries(dataToSend),
+        hasPhoto: !!newPhotoFile
+      });
+      
       const updatedData = await etudiantDashboardService.updateMyData(dataToSend);
-      console.log('Données mises à jour:', updatedData);
+      console.log('Données mises à jour reçues:', updatedData);
       
-      // Mettre à jour l'état avec les nouvelles données
+      // CORRECTION: Mettre à jour correctement les données et la photo
       setStudentData(updatedData);
-      setIsEditing(false);
-      setPhotoPreview(null);
+      setFormData({
+        email: updatedData.email || '',
+        first_name: updatedData.first_name || '',
+        last_name: updatedData.last_name || '',
+        telephone: updatedData.telephone || '',
+        autre_prenom: updatedData.autre_prenom || '',
+        num_carte: updatedData.num_carte || ''
+      });
       
-      // Notification de succès
-      alert(' Informations mises à jour avec succès !');
+      // Mettre à jour l'aperçu de la photo avec l'URL retournée par le serveur
+      if (updatedData.photo) {
+        const photoUrl = updatedData.photo.startsWith('http') 
+          ? updatedData.photo 
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${updatedData.photo}`;
+        setPhotoPreview(photoUrl);
+      }
+      
+      setNewPhotoFile(null); // Réinitialiser le nouveau fichier
+      setIsEditing(false);
+      
+      alert('Informations mises à jour avec succès !');
       
     } catch (err) {
       console.error('Erreur mise à jour:', err);
+      if (err.response?.data) {
+        console.error('Détails erreur:', err.response.data);
+      }
       setError("Erreur lors de la mise à jour de vos informations");
     } finally {
       setSaving(false);
@@ -140,10 +212,22 @@ export default function DonneesPersonnelles() {
       first_name: studentData.first_name || '',
       last_name: studentData.last_name || '',
       telephone: studentData.telephone || '',
-      autre_prenom: studentData.autre_prenom || ''
+      autre_prenom: studentData.autre_prenom || '',
+      num_carte: studentData.num_carte || ''
     });
+    
+    // CORRECTION: Restaurer la photo originale
+    if (studentData.photo) {
+      const photoUrl = studentData.photo.startsWith('http') 
+        ? studentData.photo 
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${studentData.photo}`;
+      setPhotoPreview(photoUrl);
+    } else {
+      setPhotoPreview(null);
+    }
+    
+    setNewPhotoFile(null);
     setIsEditing(false);
-    setPhotoPreview(null);
     setError(null);
   };
 
@@ -217,11 +301,15 @@ export default function DonneesPersonnelles() {
         {/* Photo de profil */}
         <div className="flex flex-col items-center">
           <div className="relative w-40 h-40 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 overflow-hidden border-4 border-white shadow-2xl group">
-            {photoPreview || studentData?.photo ? (
+            {photoPreview ? (
               <img 
-                src={photoPreview || studentData.photo} 
+                src={photoPreview} 
                 alt="Photo de profil" 
                 className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                onError={(e) => {
+                  console.error('Erreur chargement image:', photoPreview);
+                  e.target.style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
@@ -250,19 +338,23 @@ export default function DonneesPersonnelles() {
             <div className="flex items-center justify-center gap-2 text-sm">
               {studentData?.is_validated ? (
                 <>
-                  <FaCheckCircle className="text-green-500" />
-                  <span className="text-green-600 font-medium">Compte vérifié</span>
+                  <span className="text-green-600 font-medium">photo de profil</span>
                 </>
               ) : (
                 <>
-                  <span className="text-orange-600 font-medium">photo de profil</span>
+                  <span className="text-orange-600 font-medium">Photo de profil</span>
                 </>
               )}
             </div>
+            {isEditing && newPhotoFile && (
+              <p className="text-xs text-green-600 mt-2">
+                ✓ Nouvelle photo sélectionnée
+              </p>
+            )}
           </div>
         </div>
-        
-        {/* Informations personnelles */}
+                
+                {/* Informations personnelles */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8">
           
           {/* Champs modifiables */}
@@ -372,7 +464,7 @@ export default function DonneesPersonnelles() {
                   value={formData.telephone || ""}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder="+228 XX XX XX XX"
+                  placeholder="+XXX XX XX XX XX"
                 />
               ) : (
                 <div className="px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-800">
@@ -405,9 +497,27 @@ export default function DonneesPersonnelles() {
                 <FaIdCard className="text-gray-500" />
                 Numéro de carte étudiant
               </label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl font-mono text-gray-800 border-l-4 border-blue-500">
-                {displayValue(studentData?.num_carte, "Non attribué")}
-              </div>
+              {isEditing ? (
+                <div>
+                  <input
+                    type="text"
+                    name="num_carte"
+                    value={formData.num_carte || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    placeholder="Numéro de carte (6 chiffres)"
+                    maxLength={6}
+                    pattern="\d{6}"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Le numéro de carte doit contenir exactement 6 chiffres
+                  </p>
+                </div>
+              ) : (
+                <div className="px-4 py-3 bg-gray-50 rounded-xl font-mono text-gray-800 border-l-4 border-blue-500">
+                  {displayValue(studentData?.num_carte, "Non attribué")}
+                </div>
+              )}
             </div>
 
             {/* Date de naissance */}

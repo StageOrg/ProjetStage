@@ -3,17 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
+import { IoChevronDown } from "react-icons/io5";
 
-=======
-import { FaChevronDown } from "react-icons/fa";
-import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
-import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
-
-
->>>>>>> feature/inscription-thib
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -32,20 +25,21 @@ export default function Header() {
       setRole(storedRole);
     }
   }, []);
+  
   useEffect(() => {
-  const fetchPeriode = async () => {
-    if (role === "etudiant") {
-      const statut = await periodeInscriptionService.verifierStatutInscriptions();
-      if (!statut.ouvert) {
-        // Si période fermée ou expirée, redirige vers page FinInscription
-        setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
-      } else {
-        setInscriptionLink("/etudiant/inscription/etape-0");
+    const fetchPeriode = async () => {
+      if (role === "etudiant") {
+        const statut = await periodeInscriptionService.verifierStatutInscriptions();
+        if (!statut.ouvert) {
+          // Si période fermée ou expirée, redirige vers page FinInscription
+          setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
+        } else {
+          setInscriptionLink("/etudiant/inscription/etape-0");
+        }
       }
-    }
-  };
-  fetchPeriode();
-}, [role]);
+    };
+    fetchPeriode();
+  }, [role]);
 
 
   // Déterminer la route du menu Personnel selon rôle
@@ -62,7 +56,7 @@ export default function Header() {
       case "resp_notes":
         return "/resp-notes/dashboard";
       case "gestionnaire":
-        return "gestion/dashboard"
+        return "/gestion/dashboard";
       default:
         return "/";
     }
@@ -95,7 +89,7 @@ export default function Header() {
     { label: "Contactez-nous", href: "/contact" },
   ];
 
-  // Menus quand c’est un membre du personnel
+  // Menus quand c'est un membre du personnel
   const personnelMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
@@ -111,7 +105,7 @@ export default function Header() {
     role === "professeur" ||
     role === "secretaire" ||
     role === "responsable inscriptions" ||
-    role === "resp_notes"||
+    role === "resp_notes" ||
     role === "gestionnaire"
       ? personnelMenu
       : baseMenu;
@@ -126,11 +120,13 @@ export default function Header() {
     localStorage.setItem("personnel_redirect", href);
     router.push("/login");
   };
+
   useEffect(() => {
     AnneeAcademiqueService.getAll()
-    .then((data) => setAnnees(data))
-    .catch((error) => console.error("Erreur lors du chargement des années académiques :", error));
+      .then((data) => setAnnees(data))
+      .catch((error) => console.error("Erreur lors du chargement des années académiques :", error));
   }, []);
+
   useEffect(() => {
     if (annees.length > 0) {
       setAnneeChoisie(annees[0]);
@@ -138,6 +134,7 @@ export default function Header() {
       console.log("Année académique choisie :", annees[0]);
     }
   }, [annees]);
+
   const onChange = (e) => {
     const selectedId = e.target.value;
     const selectedAnnee = annees.find((annee) => annee.id.toString() === selectedId);
@@ -154,7 +151,7 @@ export default function Header() {
           href="/"
           className="font-extrabold text-blue-800 text-2xl tracking-wide"
         >
-          <img src="/images/logo-epl.png" className="h-10 w-auto" />
+          <img src="/images/logo-epl.png" className="h-10 w-auto" alt="EPL Logo" />
         </Link>
 
         {/* Menu principal */}
@@ -192,8 +189,10 @@ export default function Header() {
                     }`}
                   >
                     {item.label}
-                    <FaChevronDown
-                      className={`w-3 h-3 transition-transform duration-200 ${openDropdown === item.label ? 'rotate-180' : ''}`}
+                    <IoChevronDown 
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        openDropdown === item.label ? 'rotate-180' : 'rotate-0'
+                      }`}
                     />
                   </button>
                 ) : (
@@ -243,21 +242,25 @@ export default function Header() {
               </div>
             );
           })}
+
+          {/* Sélecteur d'année académique */}
           {role !== "visiteur" && (
-          <div className="h-6  " >
-            <select
-              onChange={(e) => {
-                onChange(e);}}
-              className="block w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
-            >
-              {annees.map((annee) => (
-              <option key={annee.id} value={annee.id} >
-                {annee.libelle}
-              </option>
-              ))}
-            </select>
-          </div>
+            <div className="h-6">
+              <select
+                onChange={(e) => {
+                  onChange(e);
+                }}
+                className="block w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+              >
+                {annees.map((annee) => (
+                  <option key={annee.id} value={annee.id}>
+                    {annee.libelle}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
+
           {/* Bouton Connexion */}
           <Link
             href="/login"
