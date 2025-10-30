@@ -102,13 +102,11 @@ export default function NouvelEtudiantStep4() {
     setLoading(true);
     setError("");
     try {
-      const response = await inscriptionService.getUEs({
+      const uesData = await inscriptionService.getUEs({
         parcours: params.parcours_id,
         filiere: params.filiere_id,
         annee_etude: params.annee_etude_id,
       });
-      
-      const uesData = Array.isArray(response) ? response : response.results || response;
       
       // Tri par semestre (du plus petit au plus grand) et par code si même semestre
       const sortedUes = uesData.sort((a, b) => {

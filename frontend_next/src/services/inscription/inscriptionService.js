@@ -8,7 +8,8 @@ const inscriptionService = {
       console.log("Envoi requête GET UE avec params:", params);
       const response = await api.get("/notes/ues/filtrer/", { params });
       console.log("Réponse UE reçue:", response.data);
-      return response.data.results;
+      // Gère à la fois les réponses paginées et non paginées
+      return Array.isArray(response.data) ? response.data : response.data.results || [];
     } catch (error) {
       console.error("Erreur dans getUEs:", error);
       throw error;
