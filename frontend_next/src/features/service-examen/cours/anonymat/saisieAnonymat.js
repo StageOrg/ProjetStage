@@ -57,11 +57,16 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
           </tr>
         </thead>
         <tbody>
-          {etudiants.map((etu, index) => (
-            <tr key={etu.id} className="even:bg-gray-50">
-              <td className="border px-2 py-1">{etu.nom}</td>
-              <td className="border px-2 py-1">{etu.prenom}</td>
-              <td className="border px-2 py-1 text-center">
+          {etudiants.length === 0 ? (
+            <tr>
+              <td className="border p-2" colSpan="3">Aucun étudiant inscrit. Revoyez l'année académique que vous avez sélectionnée.</td>
+            </tr>
+          ) : (
+            etudiants.map((etu, index) => (
+              <tr key={etu.id} className="even:bg-gray-50">
+                <td className="border px-2 py-1">{etu.nom}</td>
+                <td className="border px-2 py-1">{etu.prenom}</td>
+                <td className="border px-2 py-1 text-center">
                 <input
                   disabled={noteSaisie}
                   type="text"
@@ -71,7 +76,8 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
                 />
               </td>
             </tr>
-          ))}
+          ))
+          )}
         </tbody>
       </table>
 

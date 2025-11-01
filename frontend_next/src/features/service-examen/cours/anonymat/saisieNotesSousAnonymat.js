@@ -68,9 +68,14 @@ export default function SaisieNotesSousAnonymat({
           {/* Affichage de tous les étudiants.
               Si un étudiant n'a pas de numéro anonyme, la saisie est désactivée et une alerte
               informe l'utilisateur qu'il faut revenir plus tard. */}
-          {etudiants.map((etu, index) => {
-            const currentNote = etu.notes?.[evaluation.id] ?? "";
-            const canEdit = periodeActive && !!etu.num_anonymat;
+          {etudiants.length === 0 ? (
+            <tr>
+              <td className="border p-2" colSpan="3">Aucun étudiant inscrit. Revoyez l'année académique que vous avez sélectionnée.</td>
+            </tr>
+          ) : (
+            etudiants.map((etu, index) => {
+              const currentNote = etu.notes?.[evaluation.id] ?? "";
+              const canEdit = periodeActive && !!etu.num_anonymat;
 
             return (
               <tr key={etu.id} className="even:bg-gray-50">
@@ -123,7 +128,7 @@ export default function SaisieNotesSousAnonymat({
                 </td>
               </tr>
             );
-          })}
+          }))} 
         </tbody>
       </table>
       <div className="text-center mt-6">

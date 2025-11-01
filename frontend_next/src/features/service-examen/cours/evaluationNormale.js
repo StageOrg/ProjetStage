@@ -59,37 +59,46 @@ export default function EvaluationNormale({ueId, evaluations, evaluation, etudia
           </tr>
         </thead>
         <tbody>
-          {etudiants.map((etu, index) => (
-            <tr key={etu.id} className="even:bg-gray-50">
-              <td className="border px-2 py-1 text-center">{etu.num_carte}</td>
-              <td className="border px-2 py-1">{etu.nom}</td>
-              <td className="border px-2 py-1">{etu.prenom}</td>
-              <td className="border px-2 py-1 text-center">{etu.sexe}</td>
-              <td className="border px-2 py-1 text-center">
-                {editIndex === index ? (
-                  <input
-                    disabled={!periodeActive}
-                    type="number"
-                    min="0"
-                    max="20"
-                    value={editedData.note}
-                    onChange={(e) => setEditedData({ note: e.target.value })}
-                    onBlur={() => handleSave(index, etu)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSave(index, etu)}
-                    className="w-16 text-center border rounded"
-                    autoFocus
-                  />
-                ) : (
-                  <span onClick={() => handleEdit(index, etu)}>
-                    {etu.notes[evaluation.id] ?? "-"}
-                  </span>
-                )}
-              </td>
-              <td className="border px-2 py-1 text-center font-semibold">
-                {calculerMoyenne(etu)}
-              </td>
+          {etudiants.length === 0 ? (
+            <tr>
+              <td className="border p-2" colSpan="6">Aucun étudiant inscrit. Revoyez l'année académique que vous avez sélectionnée.</td>
             </tr>
-          ))}
+          ) : (
+            etudiants.map(function(etu, index) {
+              return (
+                <tr key={etu.id} className="even:bg-gray-50">
+                  <td className="border px-2 py-1 text-center">{etu.num_carte}</td>
+                  <td className="border px-2 py-1">{etu.nom}</td>
+                  <td className="border px-2 py-1">{etu.prenom}</td>
+                  <td className="border px-2 py-1 text-center">{etu.sexe}</td>
+                  <td className="border px-2 py-1 text-center">
+                    {editIndex === index ? (
+                      <input
+                        disabled={!periodeActive}
+                        type="number"
+                        min="0"
+                        max="20"
+                        value={editedData.note}
+                        onChange={(e) => setEditedData({ note: e.target.value })}
+                        onBlur={() => handleSave(index, etu)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSave(index, etu)}
+                        className="w-16 text-center border rounded"
+                        autoFocus
+                      />
+                    ) : (
+                      <span onClick={() => handleEdit(index, etu)}>
+                        {etu.notes[evaluation.id] ?? "-"}
+                      </span>
+                    )}
+                  </td>
+                  <td className="border px-2 py-1 text-center font-semibold">
+                    {calculerMoyenne(etu)}
+                  </td>
+                </tr>
+              );
+            })
+          )}
+
         </tbody>
       </table>
       <div className=" mt-6 text-center">

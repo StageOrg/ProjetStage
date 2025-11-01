@@ -120,6 +120,7 @@ class EtudiantViewSet(viewsets.ModelViewSet):
 class ProfesseurViewSet(viewsets.ModelViewSet):
     queryset = Professeur.objects.all().order_by('utilisateur__last_name')
     serializer_class = ProfesseurSerializer
+    pagination_class = None
     #permission_classes = [IsAdminOrReadOnly]
    
     def get_queryset(self):

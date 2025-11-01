@@ -103,19 +103,25 @@ const handleValidate = async ( ) => {
               </tr>
             </thead>
             <tbody>
-              {professeurs.map((prof) => (
-                <tr
-                  key={prof.id}
-                  className={`cursor-pointer hover:bg-gray-100 ${
-                    selectedProf?.id === prof.id ? "bg-blue-100" : ""
-                  }`}
-                  onClick={() => handleSelectProf(prof)}
-                >
-                  <td className="border p-2">{prof.utilisateur.first_name}</td>
-                  <td className="border p-2">{prof.utilisateur.last_name}</td>
-                  <td className="border p-2">{prof.titre}</td>
+              {professeurs && professeurs.length > 0 ? (
+                professeurs.map((prof) => (
+                  <tr
+                    key={prof.id}
+                    className={`cursor-pointer hover:bg-gray-100 ${
+                      selectedProf?.id === prof.id ? "bg-blue-100" : ""
+                    }`}
+                    onClick={() => handleSelectProf(prof)}
+                  >
+                    <td className="border p-2">{prof.utilisateur.first_name}</td>
+                    <td className="border p-2">{prof.utilisateur.last_name}</td>
+                    <td className="border p-2">{prof.titre}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="border p-2" colSpan="3">Aucun professeur disponible.</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
