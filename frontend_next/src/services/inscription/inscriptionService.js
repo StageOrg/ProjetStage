@@ -8,8 +8,14 @@ const inscriptionService = {
       console.log("Envoi requête GET UE avec params:", params);
       const response = await api.get("/notes/ues/filtrer/", { params });
       console.log("Réponse UE reçue:", response.data);
-      // Gère à la fois les réponses paginées et non paginées
-      return Array.isArray(response.data) ? response.data : response.data.results || [];
+
+      // Supporter les réponses paginées ({ results: [...] }) et non-paginées ([...])
+      const data = response.data;
+      if (!data) return [];
+      // Si c'est un tableau, renvoyer tel quel
+      if (Array.isArray(data)) return data;
+      // Si la réponse contient .results (DRF paginé), renvoyer results, sinon renvoyer l'objet lui-même
+      return data.results ?? data;
     } catch (error) {
       console.error("Erreur dans getUEs:", error);
       throw error;

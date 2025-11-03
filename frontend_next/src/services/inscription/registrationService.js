@@ -28,7 +28,7 @@ class RegistrationService {
    * Valide les données avant création
    */
   validateRegistrationData(data) {
-    console.log('📋 Toutes les données pour validation :', data); // Log debug (retire après)
+    console.log('📋 Toutes les données pour validation :', data);
     
     const errors = [];
 
@@ -37,20 +37,26 @@ class RegistrationService {
     if (!data.step1?.email) errors.push("Email manquant");
     if (!data.step1?.password) errors.push("Mot de passe manquant");
 
-    // Validation étape 2 : Clés alignées sur le formulaire (anglais)
+    // Validation étape 2
     if (!data.step2?.last_name) errors.push("Nom manquant");
     if (!data.step2?.first_name) errors.push("Prénom manquant");
     if (!data.step2?.date_naiss) errors.push("Date de naissance manquante");
     if (!data.step2?.lieu_naiss) errors.push("Lieu de naissance manquant");
-    if (!data.step2?.telephone) errors.push("Téléphone manquant");  // Ajouté si obligatoire
-    if (!data.step2?.sexe || !['M', 'F'].includes(data.step2.sexe)) errors.push("Sexe invalide (M ou F requis)");  // Nouveau : Validation sexe
+    if (!data.step2?.telephone) errors.push("Téléphone manquant");
+    if (!data.step2?.sexe || !['M', 'F'].includes(data.step2.sexe)) {
+      errors.push("Sexe invalide (M ou F requis)");
+    }
 
-    // Validation optionnelle num_carte (si fourni, doit être valide)
-    const numCarteValue = data.step2?.num_carte?.trim();
-    if (numCarteValue && numCarteValue !== '') {
-      const numAsInt = parseInt(numCarteValue, 10);
-      if (isNaN(numAsInt) || numCarteValue.length !== 6 || numAsInt < 1 || numAsInt > 999999) {
-        errors.push("Le numéro de carte doit être exactement 6 chiffres valides");
+    // ✅ CORRECTION : Validation num_carte sécurisée
+    if (data.step2?.num_carte !== null && data.step2?.num_carte !== undefined) {
+      const numCarteStr = String(data.step2.num_carte).trim();
+      
+      if (numCarteStr !== '') {
+        const numAsInt = parseInt(numCarteStr, 10);
+        
+        if (isNaN(numAsInt) || numCarteStr.length !== 6 || numAsInt < 100000 || numAsInt > 999999) {
+          errors.push("Le numéro de carte doit être exactement 6 chiffres (100000-999999)");
+        }
       }
     }
 
@@ -59,7 +65,7 @@ class RegistrationService {
     if (!data.step3?.filiere_id) errors.push("Filière non sélectionnée");
     if (!data.step3?.annee_etude_id) errors.push("Année d'étude non sélectionnée");
 
-    console.log('❌ Erreurs de validation :', errors); // Log debug (retire après)
+    console.log('❌ Erreurs de validation :', errors);
     return errors;
   }
 
@@ -86,19 +92,17 @@ class RegistrationService {
       formData.append('password', allData.step1.password);
       formData.append('email', allData.step1.email);
       
-      // Données utilisateur (étape 2) : Clés alignées sur le formulaire
-      formData.append('first_name', allData.step2.first_name);  // Prénom
-      formData.append('last_name', allData.step2.last_name);    // Nom
+      // Données utilisateur (étape 2)
+      formData.append('first_name', allData.step2.first_name);
+      formData.append('last_name', allData.step2.last_name);
       
-      // Téléphone
       if (allData.step2.telephone) {
         formData.append('telephone', allData.step2.telephone);
       }
       
-      // Nouveau : Sexe
       if (allData.step2.sexe) {
-        formData.append('sexe', allData.step2.sexe);  // "M" ou "F"
-        console.log('🔤 Sexe ajouté à FormData :', allData.step2.sexe);  // Log debug
+        formData.append('sexe', allData.step2.sexe);
+        console.log('🔤 Sexe ajouté à FormData :', allData.step2.sexe);
       }
       
       // Données étudiant (étape 2)
@@ -109,23 +113,29 @@ class RegistrationService {
         formData.append('autre_prenom', allData.step2.autre_prenom);
       }
 
-      // NETTOYAGE num_carte : Si vide ou invalide, n'ajoute pas (Django -> null)
-      const numCarteValue = allData.step2.num_carte?.trim();
-      if (numCarteValue && numCarteValue !== '') {
-        const numAsInt = parseInt(numCarteValue, 10);
-        if (!isNaN(numAsInt) && numCarteValue.length === 6 && numAsInt >= 1 && numAsInt <= 999999) {
-          formData.append('num_carte', numAsInt);  // En int pour Django
-          console.log('🆔 Numéro de carte ajouté :', numAsInt);  // Log debug
+      // ✅ CORRECTION : Nettoyage num_carte sécurisé
+      if (allData.step2.num_carte !== null && allData.step2.num_carte !== undefined) {
+        const numCarteStr = String(allData.step2.num_carte).trim();
+        
+        if (numCarteStr !== '') {
+          const numAsInt = parseInt(numCarteStr, 10);
+          
+          if (!isNaN(numAsInt) && numCarteStr.length === 6 && numAsInt >= 100000 && numAsInt <= 999999) {
+            formData.append('num_carte', numAsInt);
+            console.log('🆔 Numéro de carte ajouté :', numAsInt);
+          } else {
+            console.warn('⚠️ Numéro de carte invalide, ignoré :', numCarteStr);
+          }
         } else {
-          console.warn('⚠️ Numéro de carte invalide, ignoré :', numCarteValue);
+          console.log('ℹ️ Numéro de carte vide, ignoré (null)');
         }
       } else {
-        console.log('ℹ️ Numéro de carte vide, ignoré (null)');  // Log debug
+        console.log('ℹ️ Numéro de carte null/undefined, ignoré');
       }
       
       // Gérer la photo si elle existe
       if (allData.step2.photoBase64 && allData.step2.photoNom) {
-        console.log('🖼️ Photo détectée, conversion en File...');  // Log debug
+        console.log('🖼️ Photo détectée, conversion en File...');
         const photoFile = this.base64ToFile(
           allData.step2.photoBase64, 
           allData.step2.photoNom, 
@@ -133,17 +143,26 @@ class RegistrationService {
         );
         if (photoFile) {
           formData.append('photo', photoFile);
-          console.log('✅ Photo ajoutée à FormData');  // Log debug
+          console.log('✅ Photo ajoutée à FormData');
         } else {
-          console.warn('⚠️ Échec conversion photo');  // Log debug
+          console.warn('⚠️ Échec conversion photo');
         }
       } else {
-        console.log('ℹ️ Aucune photo fournie');  // Log debug
+        console.log('ℹ️ Aucune photo fournie');
       }
 
       // Étape 2 : Création utilisateur + étudiant
       if (progressCallback) progressCallback(40, "Création du compte utilisateur...");
       
+      // Nettoyage final du FormData : supprimer les champs vides ('')
+      // Cela évite d'envoyer des chaînes vides pour des champs numériques (ex: num_carte)
+      for (const [key, value] of formData.entries()) {
+        if (value === '') {
+          formData.delete(key);
+          console.log(`Champ FormData supprimé car vide: ${key}`);
+        }
+      }
+
       const userResponse = await authAPI.apiInstance().post('/auth/register-etudiant/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -177,7 +196,7 @@ class RegistrationService {
         annee_etude: allData.step3.annee_etude_id,
         anneeAcademique: anneeAcademiqueId,
         ues: selectedUEIds,
-        numero: `INS-${Date.now()}-${etudiant_id}`, // Numéro unique
+        numero: `INS-${Date.now()}-${etudiant_id}`,
       };
 
       const inscriptionResponse = await inscriptionService.createInscription(inscriptionData);
@@ -194,7 +213,6 @@ class RegistrationService {
     } catch (error) {
       console.error('❌ Erreur création inscription:', error);
 
-      // Gestion spécifique des erreurs
       let errorMessage = "Erreur lors de l'inscription";
       
       if (error.response?.status === 400) {
@@ -206,7 +224,6 @@ class RegistrationService {
         } else if (errors.num_carte) {
           errorMessage = "Le numéro de carte est invalide ou déjà utilisé";
         } else if (typeof errors === 'object') {
-          // Extraire le premier message d'erreur
           const firstError = Object.values(errors)[0];
           errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
         }
@@ -220,9 +237,6 @@ class RegistrationService {
     }
   }
 
-  /**
-   * Nettoie toutes les données d'inscription du localStorage
-   */
   clearRegistrationData() {
     const keysToRemove = [
       'inscription_step1',
@@ -235,9 +249,6 @@ class RegistrationService {
     });
   }
 
-  /**
-   * Récupère toutes les données d'inscription depuis localStorage
-   */
   getAllRegistrationData() {
     try {
       const step1Data = localStorage.getItem("inscription_step1");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import inscriptionService from "@/services/inscription/inscriptionService";
 import registrationService from "@/services/inscription/registrationService";
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import UETable from '@/components/ui/ueTable'; // utilise le composant UETable centralisé
 
 const LIMITE_CREDITS_MAX = 70;
 
@@ -33,11 +34,9 @@ export default function NouvelEtudiantStep4() {
 
   const router = useRouter();
 
-  // Fonction utilitaire pour nettoyer les données de Step 2
   const nettoyerDonneesStep2 = (step2Data) => {
     const nettoye = { ...step2Data };
    
-    // Pour num_carte : si vide ou non-numérique, passe à null
     if (!nettoye.num_carte || nettoye.num_carte.trim() === '' || isNaN(parseInt(nettoye.num_carte, 10))) {
       nettoye.num_carte = null;
     } else {
@@ -102,14 +101,26 @@ export default function NouvelEtudiantStep4() {
     setLoading(true);
     setError("");
     try {
-      const uesData = await inscriptionService.getUEs({
+      const response  = await inscriptionService.getUEs({
         parcours: params.parcours_id,
         filiere: params.filiere_id,
         annee_etude: params.annee_etude_id,
       });
       
-      // Tri par semestre (du plus petit au plus grand) et par code si même semestre
-      const sortedUes = uesData.sort((a, b) => {
+      const uesData = Array.isArray(response) ? response : response.results || response;
+      
+      // 👇 MODIFICATION: Enrichir les UE avec les détails des composantes
+      const uesEnrichies = uesData.map(ue => {
+        if (ue.composite && ue.ues_composantes && ue.ues_composantes.length > 0) {
+          // Si c'est juste un tableau d'IDs, récupérer les détails
+          if (typeof ue.ues_composantes[0] === 'number') {
+            ue.ues_composantes = uesData.filter(u => ue.ues_composantes.includes(u.id));
+          }
+        }
+        return ue;
+      });
+      
+      const sortedUes = uesEnrichies.sort((a, b) => {
         const semestreA = a.semestre || 0;
         const semestreB = b.semestre || 0;
         if (semestreA !== semestreB) {
@@ -136,12 +147,24 @@ export default function NouvelEtudiantStep4() {
         return;
       }
       
-      const uesCorrigees = ancienData.ues_disponibles.map(ue => ({
-        ...ue,
-        semestre: ue.semestre || { libelle: "Semestre non défini" }
-      }));
+      // 👇 MODIFICATION: Enrichir les UE avec les détails des composantes
+      const uesCorrigees = ancienData.ues_disponibles.map(ue => {
+        const ueCorrigee = {
+          ...ue,
+          semestre: ue.semestre || { libelle: "Semestre non défini" }
+        };
+        
+        if (ueCorrigee.composite && ueCorrigee.ues_composantes && ueCorrigee.ues_composantes.length > 0) {
+          if (typeof ueCorrigee.ues_composantes[0] === 'number') {
+            ueCorrigee.ues_composantes = ancienData.ues_disponibles.filter(u => 
+              ueCorrigee.ues_composantes.includes(u.id)
+            );
+          }
+        }
+        
+        return ueCorrigee;
+      });
       
-      // Tri par semestre (du plus petit au plus grand) et par code si même semestre
       const sortedUes = uesCorrigees.sort((a, b) => {
         const semestreA = a.semestre || 0;
         const semestreB = b.semestre || 0;
@@ -208,7 +231,6 @@ export default function NouvelEtudiantStep4() {
     return "text-green-600";
   };
 
-  // Validation et ouverture du modal
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -235,7 +257,6 @@ export default function NouvelEtudiantStep4() {
       return;
     }
 
-    // Préparer les données pour le modal
     const submitData = {
       selectedUEIds,
       totalCredits,
@@ -245,13 +266,11 @@ export default function NouvelEtudiantStep4() {
     setShowConfirmModal(true);
   };
 
-  // Annuler la confirmation
   const handleCancelModal = () => {
     setShowConfirmModal(false);
     setPendingSubmitData(null);
   };
 
-  // Confirmer et envoyer l'inscription
   const handleConfirmInscription = async () => {
     setShowConfirmModal(false);
     setLoading(true);
@@ -275,7 +294,7 @@ export default function NouvelEtudiantStep4() {
 
         const allData = {
           step1: JSON.parse(step1Data),
-          step2: nettoyerDonneesStep2(JSON.parse(step2DataRaw)),  // Nettoyage appliqué ici
+          step2: nettoyerDonneesStep2(JSON.parse(step2DataRaw)),
           step3: JSON.parse(step3Data)
         };
 
@@ -373,65 +392,15 @@ export default function NouvelEtudiantStep4() {
           </div>
         </div>
 
-        <div className="overflow-x-auto mt-6">
-          <table className="w-full border border-gray-300 text-sm text-gray-800">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="border border-gray-300 px-3 py-2 text-left">Code</th>
-                <th className="border border-gray-300 px-3 py-2 text-left">Libellé</th>
-                <th className="border border-gray-300 px-3 py-2 text-center">Semestre</th>
-                <th className="border border-gray-300 px-3 py-2 text-center">Crédit</th>
-                <th className="border border-gray-300 px-3 py-2 text-center">Choix</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {ues.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="text-center py-3 text-gray-500 border border-gray-300"
-                  >
-                    {loading ? "Chargement des UE..." : "Aucune UE disponible"}
-                  </td>
-                </tr>
-              ) : (
-                ues.map((ue, index) => {
-                  const wouldExceedLimit =
-                    !selectedUEs[ue.id] &&
-                    totalCreditsSelectionnes + ue.nbre_credit > LIMITE_CREDITS_MAX;
-
-                  return (
-                    <tr
-                      key={ue.id}
-                      className={`${index % 2 === 0 ? "bg-white" : "bg-gray-100"} ${
-                        wouldExceedLimit ? "opacity-50" : ""
-                      }`}
-                    >
-                      <td className="border border-gray-300 px-3 py-2">{ue.code}</td>
-                      <td className="border border-gray-300 px-3 py-2">{ue.libelle}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        {ue.semestre || "—"}
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        {ue.nbre_credit}
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          onChange={() => handleCheckboxChange(ue.id, false)}
-                          disabled={wouldExceedLimit}
-                          className="w-4 h-4 accent-blue-600 cursor-pointer"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Utilisation du composant UETable pour afficher les UEs (simples, composites et composantes) */}
+        <UETable
+          ues={ues}
+          selectedUEs={selectedUEs}
+          loading={loading}
+          onCheckboxChange={handleCheckboxChange}
+          totalCreditsSelectionnes={totalCreditsSelectionnes}
+          LIMITE_CREDITS_MAX={LIMITE_CREDITS_MAX}
+        />
 
         <div className="flex justify-between mt-8 gap-4">
           <Link
@@ -450,7 +419,6 @@ export default function NouvelEtudiantStep4() {
         </div>
       </form>
 
-      {/* Modal de confirmation */}
       <ConfirmationModal
         isOpen={showConfirmModal}
         data={modalData}

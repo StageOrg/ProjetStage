@@ -18,6 +18,7 @@ export default function NouvelEtudiantStep3() {
     filieres: [],
     annees: [],
   });
+  const [typeInscription, setTypeInscription] = useState(null);
   const [filtredFilieres, setFiltredFilieres] = useState([]);
   const [filtredAnnees, setFiltredAnnees] = useState([]);
   const [erreurs, setErreurs] = useState({});
@@ -54,6 +55,15 @@ export default function NouvelEtudiantStep3() {
     if (savedData) {
       setFormulaire(JSON.parse(savedData));
     }
+    // Charger le type d'inscription (nouveau/ancien)
+    const typeData = localStorage.getItem('type_inscription');
+    if (typeData) {
+      try {
+        setTypeInscription(JSON.parse(typeData));
+      } catch (e) {
+        console.warn('Impossible de parser type_inscription:', e);
+      }
+    }
   }, [router]);
 
   // Filtrer les filières et années quand le parcours change
@@ -64,9 +74,31 @@ export default function NouvelEtudiantStep3() {
       );
       setFiltredFilieres(filieresFiltrees);
 
-      const anneesFiltrees = options.annees.filter(
+      // Si l'étudiant est nouveau, on ne laisse que les années L1
+      const anneesParcours = options.annees.filter(
         (annee) => annee.parcours && annee.parcours.includes(parseInt(formulaire.parcours_id))
       );
+
+      let anneesFiltrees = anneesParcours;
+      if (typeInscription && typeInscription.typeEtudiant === 'nouveau') {
+        // Filtrer les années dont le libellé contient 'L1' (tolérance sur la casse)
+        const anneesL1 = anneesParcours.filter(a => {
+          const lib = (a.libelle || '').toString().toUpperCase();
+          return lib.includes('L1') || lib.startsWith('1') || lib.includes('LICENCE 1');
+        });
+        anneesFiltrees = anneesL1;
+
+        // Si aucune année L1 trouvée, fallback sur toutes les années du parcours
+        if (anneesFiltrees.length === 0) {
+          anneesFiltrees = anneesParcours;
+        } else {
+          // Préréglage: sélectionner automatiquement la première L1 si aucune sélection
+          if (!formulaire.annee_etude_id) {
+            setFormulaire(prev => ({ ...prev, annee_etude_id: String(anneesFiltrees[0].id), annee_etude_libelle: anneesFiltrees[0].libelle }));
+          }
+        }
+      }
+
       setFiltredAnnees(anneesFiltrees);
     } else {
       setFiltredFilieres([]);

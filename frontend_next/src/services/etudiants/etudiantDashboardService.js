@@ -19,18 +19,42 @@ const etudiantDashboardService = {
     try {
       console.log('Données envoyées pour mise à jour:', dataToSend);
       
-      let response;
-      if (dataToSend instanceof FormData) {
-        // Si c'est du FormData (avec photo), utiliser multipart/form-data
-        response = await authAPI.apiInstance().put("/utilisateurs/etudiants/me/", dataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-      } else {
-        // Si c'est un objet JSON simple
-        response = await authAPI.apiInstance().put("/utilisateurs/etudiants/me/", dataToSend);
+      // Toujours créer un nouveau FormData
+      const formData = new FormData();
+      
+      // Ajouter les champs texte requis
+      const requiredFields = ['email', 'first_name', 'last_name'];
+      for (const field of requiredFields) {
+        const value = dataToSend instanceof FormData ? dataToSend.get(field) : dataToSend[field];
+        if (!value) {
+          throw new Error(`Le champ ${field} est requis`);
+        }
+        formData.append(field, value);
       }
+
+      // Ajouter les champs optionnels
+      const optionalFields = ['telephone', 'autre_prenom', 'num_carte'];
+      for (const field of optionalFields) {
+        const value = dataToSend instanceof FormData ? dataToSend.get(field) : dataToSend[field];
+        if (value !== undefined && value !== null) {
+          formData.append(field, value);
+        }
+      }
+
+      // Gestion spéciale de la photo
+      const photo = dataToSend instanceof FormData ? dataToSend.get('photo') : dataToSend.photo;
+      if (photo instanceof File) {
+        formData.append('photo', photo);
+      } else if (photo && typeof photo === 'string' && !photo.startsWith('/media')) {
+        // Si c'est une nouvelle photo (pas une URL existante)
+        formData.append('photo', photo);
+      }
+      
+      const response = await authAPI.apiInstance().put("/utilisateurs/etudiants/me/", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       
       console.log('Réponse de mise à jour:', response.data);
       return response.data;
