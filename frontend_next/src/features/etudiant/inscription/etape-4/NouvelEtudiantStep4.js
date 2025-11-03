@@ -2,13 +2,18 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import inscriptionService from "@/services/inscriptionService";
-import { authAPI } from '@/services/authService';
-import api from "@/services/api";
+import inscriptionService from "@/services/inscription/inscriptionService";
+import registrationService from "@/services/inscription/registrationService";
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import UETable from '@/components/ui/ueTable'; // utilise le composant UETable centralisé
+
+const LIMITE_CREDITS_MAX = 70;
 
 export default function NouvelEtudiantStep4() {
   const [ues, setUes] = useState([]);
   const [selectedUEs, setSelectedUEs] = useState({});
+  const [typeInscription, setTypeInscription] = useState(null);
+  const [ancienEtudiantData, setAncienEtudiantData] = useState(null);
   const [infosPedagogiques, setInfosPedagogiques] = useState({
     parcours_id: null,
     filiere_id: null,
@@ -19,314 +24,408 @@ export default function NouvelEtudiantStep4() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [stats, setStats] = useState({
+    ues_validees: 0,
+    ues_non_validees: 0,
+    total_credits_obtenus: 0
+  });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingSubmitData, setPendingSubmitData] = useState(null);
+
   const router = useRouter();
 
-  // Charger les données des étapes précédentes
+  const nettoyerDonneesStep2 = (step2Data) => {
+    const nettoye = { ...step2Data };
+   
+    if (!nettoye.num_carte || nettoye.num_carte.trim() === '' || isNaN(parseInt(nettoye.num_carte, 10))) {
+      nettoye.num_carte = null;
+    } else {
+      nettoye.num_carte = parseInt(nettoye.num_carte.trim(), 10);
+    }  
+    return nettoye;
+  };
+
   useEffect(() => {
     const loadAllData = () => {
-      // Vérifier que toutes les données sont présentes
+      const typeData = localStorage.getItem("type_inscription");
+      if (typeData) {
+        const parsedType = JSON.parse(typeData);
+        setTypeInscription(parsedType);
+        
+        if (parsedType.typeEtudiant === 'ancien') {
+          const ancienData = localStorage.getItem("ancien_etudiant_complet");
+          if (ancienData) {
+            const parsedAncien = JSON.parse(ancienData);
+            setAncienEtudiantData(parsedAncien);
+            
+            if (parsedAncien.statistiques) {
+              setStats(parsedAncien.statistiques);
+            }
+            
+            if (parsedAncien.prochaine_annee) {
+              const mockStep3 = {
+                parcours_id: parsedAncien.derniere_inscription.parcours.id,
+                filiere_id: parsedAncien.derniere_inscription.filiere.id,
+                annee_etude_id: parsedAncien.prochaine_annee.id,
+                parcours_libelle: parsedAncien.derniere_inscription.parcours.libelle,
+                filiere_nom: parsedAncien.derniere_inscription.filiere.nom,
+                annee_etude_libelle: parsedAncien.prochaine_annee.libelle,
+              };
+              setInfosPedagogiques(mockStep3);
+              fetchUEsForAncienEtudiant(parsedAncien);
+              return;
+            }
+          }
+        }
+      }
+
       const step1Data = localStorage.getItem("inscription_step1");
       const step2Data = localStorage.getItem("inscription_step2");
       const step3Data = localStorage.getItem("inscription_step3");
       
       if (!step1Data || !step2Data || !step3Data) {
-        setError("Données d'inscription incomplètes. Veuillez reprendre depuis le début.");
+        setError("Les données d'inscription sont incomplètes. Veuillez recommencer depuis l'étape 1.");
         router.push("/etudiant/inscription/etape-1");
         return;
       }
 
       const parsedStep3 = JSON.parse(step3Data);
       setInfosPedagogiques(parsedStep3);
-      
-      // Charger les UEs pour cette configuration
-      fetchUEs({
-        parcours: parsedStep3.parcours_id,
-        filiere: parsedStep3.filiere_id,
-        annee_etude: parsedStep3.annee_etude_id,
-      });
+      fetchUEs(parsedStep3);
     };
     
     loadAllData();
   }, [router]);
 
-  // Récupérer les UEs depuis l'API (sans authentification)
   const fetchUEs = async (params) => {
     setLoading(true);
+    setError("");
     try {
-      const response = await inscriptionService.getUEs({
-        parcours: params.parcours,
-        filiere: params.filiere,
-        annee_etude: params.annee_etude,
+      const response  = await inscriptionService.getUEs({
+        parcours: params.parcours_id,
+        filiere: params.filiere_id,
+        annee_etude: params.annee_etude_id,
       });
-      setUes(response);
+      
+      const uesData = Array.isArray(response) ? response : response.results || response;
+      
+      // 👇 MODIFICATION: Enrichir les UE avec les détails des composantes
+      const uesEnrichies = uesData.map(ue => {
+        if (ue.composite && ue.ues_composantes && ue.ues_composantes.length > 0) {
+          // Si c'est juste un tableau d'IDs, récupérer les détails
+          if (typeof ue.ues_composantes[0] === 'number') {
+            ue.ues_composantes = uesData.filter(u => ue.ues_composantes.includes(u.id));
+          }
+        }
+        return ue;
+      });
+      
+      const sortedUes = uesEnrichies.sort((a, b) => {
+        const semestreA = a.semestre || 0;
+        const semestreB = b.semestre || 0;
+        if (semestreA !== semestreB) {
+          return semestreA - semestreB;
+        }
+        return (a.code || '').localeCompare(b.code || '');
+      });
+      
+      setUes(sortedUes);
     } catch (err) {
-      setError("Erreur lors de la récupération des UEs.");
-      console.error("Erreur dans fetchUEs:", err.response?.data || err.message);
+      setError("Une erreur s'est produite lors de la récupération des unités d'enseignement (UE). Veuillez réessayer.");
+      console.error("Erreur dans fetchUEs:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Gérer la sélection des UEs
-  const handleCheckboxChange = (ueId) => {
-    setSelectedUEs((prev) => ({
-      ...prev,
-      [ueId]: !prev[ueId],
-    }));
+  const fetchUEsForAncienEtudiant = async (ancienData) => {
+    setLoading(true);
+    setError("");
+    try {
+      if (!ancienData.ues_disponibles || ancienData.ues_disponibles.length === 0) {
+        setError("Aucune unité d'enseignement (UE) disponible pour cette inscription. Contactez l'administration.");
+        return;
+      }
+      
+      // 👇 MODIFICATION: Enrichir les UE avec les détails des composantes
+      const uesCorrigees = ancienData.ues_disponibles.map(ue => {
+        const ueCorrigee = {
+          ...ue,
+          semestre: ue.semestre || { libelle: "Semestre non défini" }
+        };
+        
+        if (ueCorrigee.composite && ueCorrigee.ues_composantes && ueCorrigee.ues_composantes.length > 0) {
+          if (typeof ueCorrigee.ues_composantes[0] === 'number') {
+            ueCorrigee.ues_composantes = ancienData.ues_disponibles.filter(u => 
+              ueCorrigee.ues_composantes.includes(u.id)
+            );
+          }
+        }
+        
+        return ueCorrigee;
+      });
+      
+      const sortedUes = uesCorrigees.sort((a, b) => {
+        const semestreA = a.semestre || 0;
+        const semestreB = b.semestre || 0;
+        if (semestreA !== semestreB) {
+          return semestreA - semestreB;
+        }
+        return (a.code || '').localeCompare(b.code || '');
+      });
+      
+      setUes(sortedUes);
+    } catch (err) {
+      setError("Une erreur s'est produite lors de la récupération des unités d'enseignement (UE). Veuillez réessayer.");
+      console.error("Erreur:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Convertir base64 en File object pour FormData
-  const base64ToFile = (base64String, filename, mimeType) => {
-    const byteCharacters = atob(base64String.split(',')[1]);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    return new File([byteArray], filename, { type: mimeType });
-  };
+  const handleCheckboxChange = (ueId, isComposite = false, composantesIds = []) => {
+    const ue = ues.find(u => u.id === ueId);
+    if (!ue) return;
 
-  // Création atomique complète : Utilisateur + Étudiant + Inscription
-  const createCompleteRegistration = async (allData, selectedUEIds) => {
-    // Préparer FormData pour l'étudiant
-    const formData = new FormData();
-    
-    // Données utilisateur (étape 1)
-    formData.append('username', allData.step1.username);
-    formData.append('password', allData.step1.password);
-    formData.append('email', allData.step1.email);
-    formData.append('first_name', allData.step2.prenom);
-    formData.append('last_name', allData.step2.nom);
-    formData.append('telephone', allData.step2.contact);
-    
-    // Données étudiant (étape 2)
-    formData.append('date_naiss', allData.step2.date_naissance);
-    formData.append('lieu_naiss', allData.step2.lieu_naiss);
-    if (allData.step2.autre_prenom) {
-      formData.append('autre_prenom', allData.step2.autre_prenom);
-    }
-    if (allData.step2.num_carte) {
-      formData.append('num_carte', allData.step2.num_carte);
-    }
-    
-    // Gérer la photo si elle existe
-    if (allData.step2.photoBase64 && allData.step2.photoNom) {
-      const photoFile = base64ToFile(
-        allData.step2.photoBase64, 
-        allData.step2.photoNom, 
-        'image/jpeg'
-      );
-      formData.append('photo', photoFile);
-    }
+    const idsToToggle = isComposite ? [ueId, ...composantesIds] : [ueId];
 
-    // Étape 1 : Créer l'utilisateur et l'étudiant
-    const userResponse = await authAPI.apiInstance().post('/auth/register-etudiant/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    setSelectedUEs((prev) => {
+      const newSelected = { ...prev };
+      const isSelecting = !prev[ueId];
+      
+      if (isSelecting) {
+        const creditsDesToggle = ues
+          .filter(u => idsToToggle.includes(u.id))
+          .reduce((sum, u) => sum + u.nbre_credit, 0);
+        
+        const totalCreditsActuels = ues
+          .filter((u) => prev[u.id] && !idsToToggle.includes(u.id))
+          .reduce((sum, u) => sum + u.nbre_credit, 0);
+        
+        if (totalCreditsActuels + creditsDesToggle > LIMITE_CREDITS_MAX) {
+          const messageErreur = `Impossible d'ajouter cette UE : vous dépasseriez la limite maximale de ${LIMITE_CREDITS_MAX} crédits. Veuillez désélectionner d'autres UE pour libérer de la place.`;
+          setError(messageErreur);
+          return prev;
+        }
+      }
+
+      idsToToggle.forEach(id => {
+        newSelected[id] = !prev[id];
+      });
+
+      if (error && error.includes("dépasseriez la limite")) {
+        setError("");
+      }
+
+      return newSelected;
     });
-
-    const { user_id, etudiant_id } = userResponse.data;
-
-    // Étape 2 : Récupérer l'année académique active
-    const anneeResponse = await api.get("/inscription/annee-academique/", {
-      params: { ordering: "-libelle" },
-    });
-    const anneeAcademiqueId = anneeResponse.data[0]?.id;
-
-    if (!anneeAcademiqueId) {
-      throw new Error("Aucune année académique disponible.");
-    }
-
-    // Étape 3 : Créer l'inscription pédagogique
-    const inscriptionData = {
-      etudiant: etudiant_id,
-      parcours: allData.step3.parcours_id,
-      filiere: allData.step3.filiere_id,
-      annee_etude: allData.step3.annee_etude_id,
-      anneeAcademique: anneeAcademiqueId,
-      ues: selectedUEIds,
-      numero: `INS-${Date.now()}`,
-    };
-
-    const inscriptionResponse = await inscriptionService.createInscription(inscriptionData);
-
-    return {
-      user: userResponse.data,
-      inscription: inscriptionResponse
-    };
   };
 
-  // Soumettre l'inscription complète
+  const totalCreditsSelectionnes = ues
+    .filter((ue) => selectedUEs[ue.id] && !ue.composite)
+    .reduce((sum, ue) => sum + ue.nbre_credit, 0);
+
+  const getCreditColor = (credits) => {
+    if (credits > LIMITE_CREDITS_MAX) return "text-red-600";
+    if (credits > LIMITE_CREDITS_MAX * 0.8) return "text-orange-600";
+    return "text-green-600";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    const selectedUEIds = Object.keys(selectedUEs)
+      .filter((id) => selectedUEs[id])
+      .map(Number)
+      .filter(id => {
+        const ue = ues.find(u => u.id === id);
+        return !ue?.composite;
+      });
+      
+    if (selectedUEIds.length === 0) {
+      setError("Vous devez sélectionner au moins une unité d'enseignement (UE) pour continuer.");
+      return;
+    }
+
+    const totalCredits = ues
+      .filter((ue) => selectedUEIds.includes(ue.id))
+      .reduce((sum, ue) => sum + ue.nbre_credit, 0);
+      
+    if (totalCredits > LIMITE_CREDITS_MAX) {
+      setError(`Le total des crédits sélectionnés (${totalCredits}) dépasse la limite autorisée de ${LIMITE_CREDITS_MAX}. Veuillez ajuster votre sélection.`);
+      return;
+    }
+
+    const submitData = {
+      selectedUEIds,
+      totalCredits,
+    };
+
+    setPendingSubmitData(submitData);
+    setShowConfirmModal(true);
+  };
+
+  const handleCancelModal = () => {
+    setShowConfirmModal(false);
+    setPendingSubmitData(null);
+  };
+
+  const handleConfirmInscription = async () => {
+    setShowConfirmModal(false);
     setLoading(true);
     setError("");
 
-    // Vérifier si au moins une UE est sélectionnée
-    const selectedUEIds = Object.keys(selectedUEs)
-      .filter((id) => selectedUEs[id])
-      .map(Number);
-      
-    if (selectedUEIds.length === 0) {
-      setError("Veuillez sélectionner au moins une UE.");
-      setLoading(false);
-      return;
-    }
-
-    // Vérifier le total des crédits
-    const totalCredits = ues
-      .filter((ue) => selectedUEs[ue.id])
-      .reduce((sum, ue) => sum + ue.nbre_credit, 0);
-      
-    if (totalCredits > 30) {
-      setError("Le total des crédits ne peut pas dépasser 30.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Récupérer toutes les données des étapes
-      const step1Data = JSON.parse(localStorage.getItem("inscription_step1"));
-      const step2Data = JSON.parse(localStorage.getItem("inscription_step2"));
-      const step3Data = JSON.parse(localStorage.getItem("inscription_step3"));
-
-      const allData = {
-        step1: step1Data,
-        step2: step2Data,
-        step3: step3Data
-      };
-
-      console.log("🚀 Début de la création atomique...");
-      
-      // Créer tout en une fois
-      const result = await createCompleteRegistration(allData, selectedUEIds);
-      
-      console.log("✅ Inscription complète réussie:", result);
-
-      // Nettoyer le localStorage
-      localStorage.removeItem("inscription_step1");
-      localStorage.removeItem("inscription_step2");
-      localStorage.removeItem("inscription_step3");
-
-      // Rediriger vers la page de confirmation
-      alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");      
-          
-      
-      // Gestion spécifique des erreurs
-      if (err.response?.status === 400) {
-        const errors = err.response.data;
-        if (errors.username) {
-          setError("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre.");
-        } else if (errors.email) {
-          setError("Cette adresse email est déjà utilisée.");
-        } else {
-          setError("Erreur de validation des données. Vérifiez vos informations.");
-        }
+      if (typeInscription?.typeEtudiant === 'ancien') {
+        await inscriptionService.inscriptionAncienEtudiant({
+          etudiant_id: ancienEtudiantData.etudiant.id,
+          prochaine_annee_id: ancienEtudiantData.prochaine_annee.id,
+          ues_selectionnees: pendingSubmitData.selectedUEIds
+        });
       } else {
-        setError("Erreur lors de la finalisation de l'inscription. Veuillez réessayer.");
+        const step1Data = localStorage.getItem("inscription_step1");
+        const step2DataRaw = localStorage.getItem("inscription_step2");
+        const step3Data = localStorage.getItem("inscription_step3");
+
+        if (!step1Data || !step2DataRaw || !step3Data) {
+          throw new Error("Les données d'inscription sont incomplètes. Veuillez recommencer depuis l'étape 1.");
+        }
+
+        const allData = {
+          step1: JSON.parse(step1Data),
+          step2: nettoyerDonneesStep2(JSON.parse(step2DataRaw)),
+          step3: JSON.parse(step3Data)
+        };
+
+        await registrationService.createCompleteRegistration(allData, pendingSubmitData.selectedUEIds);
       }
+
+      localStorage.removeItem('inscription_step1');
+      localStorage.removeItem('inscription_step2');
+      localStorage.removeItem('inscription_step3');
+      localStorage.removeItem('type_inscription');
+      localStorage.removeItem('ancien_etudiant_complet');
+
+      alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");
+      router.push('/');
+      
+    } catch (err) {
+      console.error("Erreur inscription:", err);
+      const messageErreur = err.response?.data?.message || err.response?.data?.erreur || err.message || "Une erreur inattendue s'est produite lors de la finalisation de votre inscription. Veuillez vérifier vos données et réessayer. Si le problème persiste, contactez l'administration.";
+      setError(messageErreur);
     } finally {
       setLoading(false);
+      setPendingSubmitData(null);
     }
   };
 
-  // Calculer le total des crédits sélectionnés
-  const totalCreditsSelectionnes = ues
-    .filter((ue) => selectedUEs[ue.id])
-    .reduce((sum, ue) => sum + ue.nbre_credit, 0);
+  const modalData = {
+    type: typeInscription?.typeEtudiant === 'ancien' ? 'Ancien étudiant' : 'Nouveau étudiant',
+    infos: infosPedagogiques,
+    uesCount: pendingSubmitData?.selectedUEIds?.length || 0,
+    totalCredits: pendingSubmitData?.totalCredits || 0,
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white p-8 rounded-xl shadow-lg w-full max-w-4xl"
-    >
-      <h2 className="text-2xl font-bold text-center mb-6">
-        Finalisation de l'inscription
-      </h2>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700">
-          <div className="flex items-center">
-            <span className="text-red-500 mr-2">❌</span>
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-transparent from-slate-50 to-slate-100 p-10 md:p-8 w-full max-w-none mx-auto"
+      >
+        <h2 className="text-3xl font-bold text-center mb-2 text-slate-800">
+          {typeInscription?.typeEtudiant === 'ancien' ? 'Inscription pour l\'année suivante' : 'Sélection des UE'}
+        </h2>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm">
             {error}
           </div>
-        </div>
-      )}
-
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-        <h3 className="text-lg font-semibold mb-3 text-blue-800">📋 Récapitulatif de votre inscription</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <p><strong>Filière:</strong> {infosPedagogiques.filiere_nom}</p>
-          <p><strong>Parcours:</strong> {infosPedagogiques.parcours_libelle}</p>
-          <p><strong>Année:</strong> {infosPedagogiques.annee_etude_libelle}</p>
-        </div>
-      </div>
-
-      <div className="mb-4 text-center">
-        <p className="text-lg font-semibold">
-          Crédits sélectionnés: <span className={totalCreditsSelectionnes > 30 ? "text-red-600" : "text-green-600"}>{totalCreditsSelectionnes}/30</span>
-        </p>
-        {totalCreditsSelectionnes > 70 && (
-          <p className="text-red-500 text-sm">⚠️ Le total des crédits ne peut pas dépasser 70</p>
         )}
-      </div>
 
-      {/* Tableau des UEs */}
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">Sélection</th>
-              <th className="border p-2">Code UE</th>
-              <th className="border p-2">Libellé</th>
-              <th className="border p-2">Crédits</th>
-              <th className="border p-2">Semestre</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ues.map((ue) => (
-              <tr key={ue.id} className="hover:bg-gray-50">
-                <td className="border p-2 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedUEs[ue.id] || false}
-                    onChange={() => handleCheckboxChange(ue.id)}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                </td>
-                <td className="border p-2">{ue.code}</td>
-                <td className="border p-2">{ue.libelle}</td>
-                <td className="border p-2 text-center">{ue.nbre_credit}</td>
-                <td className="border p-2 text-center">
-                  {ue.semestre?.libelle || "N/A"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        {typeInscription?.typeEtudiant === 'ancien' && ancienEtudiantData && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+              <p className="text-xs text-blue-600 font-semibold">PROCHAINE ANNÉE</p>
+              <p className="text-lg font-bold text-blue-900">{ancienEtudiantData.prochaine_annee?.libelle}</p>
+            </div>
+            <div className="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-500">
+              <p className="text-xs text-indigo-600 font-semibold">UE VALIDÉES</p>
+              <p className="text-lg font-bold text-indigo-900">{stats.ues_validees}</p>
+            </div>
+            <div className="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-500">
+              <p className="text-xs text-amber-600 font-semibold">UE NON VALIDÉES</p>
+              <p className="text-lg font-bold text-amber-900">{stats.ues_non_validees}</p>
+            </div>
+          </div>
+        )}
 
-      {ues.length === 0 && (
-        <div className="text-center text-gray-500 mb-6">
-          Aucune UE disponible pour ces critères.
+        {typeInscription?.typeEtudiant !== 'ancien' && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-100 p-4 rounded-lg border-l-4 border-slate-400">
+              <p className="text-xs text-slate-600 font-semibold">FILIÈRE</p>
+              <p className="text-sm font-bold text-slate-800">{infosPedagogiques.filiere_nom}</p>
+            </div>
+            <div className="bg-slate-100 p-4 rounded-lg border-l-4 border-slate-400">
+              <p className="text-xs text-slate-600 font-semibold">PARCOURS</p>
+              <p className="text-sm font-bold text-slate-800">{infosPedagogiques.parcours_libelle}</p>
+            </div>
+            <div className="bg-slate-100 p-4 rounded-lg border-l-4 border-slate-400">
+              <p className="text-xs text-slate-600 font-semibold">ANNÉE</p>
+              <p className="text-sm font-bold text-slate-800">{infosPedagogiques.annee_etude_libelle}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="mb-6 ">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm text-slate-600">Crédits sélectionnés</p>
+              <p className={`text-2xl font-bold ${getCreditColor(totalCreditsSelectionnes)}`}>
+                {totalCreditsSelectionnes}/{LIMITE_CREDITS_MAX}
+              </p>
+            </div>
+            <div className="text-right">
+              {totalCreditsSelectionnes > LIMITE_CREDITS_MAX && (
+                <p className="text-red-600 text-xs font-semibold">Dépassement limite</p>
+              )}
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Boutons d'action */}
-      <div className="flex justify-between mt-6 gap-4">
-        <Link
-          href="/etudiant/inscription/etape-3"
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center"
-        >
-          Retour
-        </Link>
-        <button
-          type="submit"
-          disabled={loading || ues.length === 0}
-          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Enregistrement..." : "Finaliser l'inscription"}
-        </button>
-      </div>
-    </form>
+        {/* Utilisation du composant UETable pour afficher les UEs (simples, composites et composantes) */}
+        <UETable
+          ues={ues}
+          selectedUEs={selectedUEs}
+          loading={loading}
+          onCheckboxChange={handleCheckboxChange}
+          totalCreditsSelectionnes={totalCreditsSelectionnes}
+          LIMITE_CREDITS_MAX={LIMITE_CREDITS_MAX}
+        />
+
+        <div className="flex justify-between mt-8 gap-4">
+          <Link
+            href="/etudiant/inscription/etape-3"
+            className="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg transition-all text-center text-sm"
+          >
+            Retour
+          </Link>
+          <button
+            type="submit"
+            disabled={loading || ues.length === 0 || totalCreditsSelectionnes > LIMITE_CREDITS_MAX}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-8 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {loading ? "Enregistrement..." : "Finaliser inscription"}
+          </button>
+        </div>
+      </form>
+
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        data={modalData}
+        onConfirm={handleConfirmInscription}
+        onCancel={handleCancelModal}
+        limitCredits={LIMITE_CREDITS_MAX}
+      />
+    </>
   );
 }

@@ -5,7 +5,7 @@ from apps.page_professeur.models import Projet, Recherche, Article, Encadrement,
 from apps.page_professeur.serializers import AffectationUeSerializer, NoteSerializer
 from .models import (
     Utilisateur, Etudiant, Professeur, Administrateur,
-    RespInscription, ResponsableSaisieNote, Secretaire, Connexion
+    RespInscription, ResponsableSaisieNote, Secretaire, Connexion, Gestionnaire, ChefDepartement
 )
 
 # -------- UTILS --------
@@ -69,21 +69,23 @@ class UtilisateurInfoSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'sexe', 'telephone']
         
 # -------- ETUDIANT --------     
+# Dans apps/utilisateurs/serializers.py - Version complètement corrigée
 
-class EtudiantSerializer(BaseProfilSerializer):
-    # Informations utilisateur (read-only pour la plupart)
-    email = serializers.EmailField(source='utilisateur.email')
+class EtudiantSerializer(serializers.ModelSerializer):
+    # Informations utilisateur (accessibles directement)
+    email = serializers.EmailField(source='utilisateur.email', read_only=False)
     username = serializers.CharField(source='utilisateur.username', read_only=True)
-    first_name = serializers.CharField(source='utilisateur.first_name')
-    last_name = serializers.CharField(source='utilisateur.last_name')
-    telephone = serializers.CharField(source='utilisateur.telephone')
-    sexe = serializers.CharField(source='utilisateur.sexe', read_only=True)
-    
-    # Informations étudiant
-    num_carte = serializers.CharField(read_only=True)  # Non modifiable
-    date_naiss = serializers.DateField(read_only=True)  # Non modifiable
-    lieu_naiss = serializers.CharField(read_only=True)  # Non modifiable
-    autre_prenom = serializers.CharField(required=False)  # Modifiable
+    first_name = serializers.CharField(source='utilisateur.first_name', read_only=False)  
+    last_name = serializers.CharField(source='utilisateur.last_name', read_only=False)   
+    telephone = serializers.CharField(source='utilisateur.telephone', read_only=False, allow_blank=True, allow_null=True)    
+    sexe = serializers.CharField(source='utilisateur.sexe', read_only=False, allow_blank=True)               
+    role = serializers.CharField(source='utilisateur.role', read_only=True)
+    num_carte = serializers.IntegerField(required=False,allow_null=True,read_only=False)
+    date_naiss = serializers.DateField(read_only=False, allow_null=True)
+    lieu_naiss = serializers.CharField(read_only=False, allow_blank=True, allow_null=True)
+    autre_prenom = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    photo = serializers.ImageField(required=False, allow_null=True)
+    is_validated = serializers.BooleanField(read_only=True)
     
     # Informations d'inscription (read-only)
     parcours_info = serializers.SerializerMethodField()
@@ -94,24 +96,111 @@ class EtudiantSerializer(BaseProfilSerializer):
         model = Etudiant
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 
-            'telephone', 'sexe', 'num_carte', 'date_naiss', 
+            'telephone', 'sexe', 'role', 'num_carte', 'date_naiss', 
             'lieu_naiss', 'autre_prenom', 'photo', 'is_validated',
             'parcours_info', 'filiere_info', 'annee_etude_info'
         ]
         
     def get_parcours_info(self, obj):
         inscription = obj.inscriptions.first()
-        return inscription.parcours.libelle if inscription else None
+        return inscription.parcours.libelle if inscription and inscription.parcours else None
         
     def get_filiere_info(self, obj):
         inscription = obj.inscriptions.first()
-        return inscription.filiere.nom if inscription else None
+        return inscription.filiere.nom if inscription and inscription.filiere else None
         
     def get_annee_etude_info(self, obj):
         inscription = obj.inscriptions.first()
-        return inscription.annee_etude.libelle if inscription else None
+        return inscription.annee_etude.libelle if inscription and inscription.annee_etude else None
 
+    def validate_num_carte(self, value):
+        """
+        Gère les valeurs vides ET vérifie l'unicité
+        Le numéro doit contenir exactement 6 chiffres
+        """
+        # Si vide/null/
+        if value in [None, '', ' ']:
+            return None
+        
+        # Si c'est une chaîne, la convertir en int
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                return None
+            try:
+                value = int(value)
+            except ValueError:
+                raise serializers.ValidationError(
+                    "Le numéro de carte doit contenir uniquement des chiffres"
+                )
+        
+        if value < 100000 or value > 999999:
+            raise serializers.ValidationError(
+                "Le numéro de carte doit contenir exactement 6 chiffres"
+            )
+        
+        # Vérifier l'unicité
+        queryset = Etudiant.objects.filter(num_carte=value)
+        
+        # Si mise à jour, exclure l'étudiant actuel
+        if self.instance:
+            queryset = queryset.exclude(id=self.instance.id)
+        
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "Ce numéro de carte est déjà utilisé par un autre étudiant"
+            )
+        
+        return value
 
+    def update(self, instance, validated_data):
+        """
+        Méthode de mise à jour corrigée qui gère correctement 
+        les champs avec source='utilisateur.*'
+        """
+        # Extraire les données utilisateur si elles existent
+        utilisateur_data = validated_data.pop('utilisateur', None)
+        
+        # Mettre à jour l'utilisateur associé si nécessaire
+        if utilisateur_data:
+            utilisateur = instance.utilisateur
+            for attr, value in utilisateur_data.items():
+                setattr(utilisateur, attr, value)
+            utilisateur.save()
+        
+        # Mettre à jour les champs spécifiques à l'étudiant
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        """S'assurer que les données sont correctement représentées"""
+        representation = super().to_representation(instance)
+        
+        # S'assurer que tous les champs utilisateur sont bien renseignés
+        if instance.utilisateur:
+            representation['first_name'] = instance.utilisateur.first_name or ''
+            representation['last_name'] = instance.utilisateur.last_name or ''
+            representation['email'] = instance.utilisateur.email or ''
+            representation['telephone'] = instance.utilisateur.telephone or ''
+            representation['sexe'] = instance.utilisateur.sexe or ''
+        
+        # S'assurer que tous les champs étudiant sont bien renseignés
+        representation['date_naiss'] = instance.date_naiss.isoformat() if instance.date_naiss else None
+        representation['lieu_naiss'] = instance.lieu_naiss or ''
+        representation['autre_prenom'] = instance.autre_prenom or ''
+        representation['num_carte'] = instance.num_carte if instance.num_carte else None
+        
+        # Gérer la photo
+        if instance.photo:
+            representation['photo'] = instance.photo.url if hasattr(instance.photo, 'url') else str(instance.photo)
+        else:
+            representation['photo'] = None
+        
+        return representation
+        
 # -------- PROFESSEUR --------
 class ProfesseurSerializer(BaseProfilSerializer):
     role = serializers.CharField(default='professeur', read_only=True)
@@ -165,6 +254,25 @@ class AdministrateurSerializer(BaseProfilSerializer):
     class Meta:
         model = Administrateur
         role = 'admin'
+        fields = '__all__'
+        
+#--------------GESTIONNAIRE-----------------
+class GestionnaireSerializer(BaseProfilSerializer):
+    role = serializers.CharField(default='gestionnaire', read_only=True)
+    
+    class Meta:
+        model = Gestionnaire
+        role = 'gestionnaire'
+        fields = '__all__'
+        
+
+# -------- CHEF DEPARTEMENT --------
+class ChefDepartementSerializer(BaseProfilSerializer):
+    role = serializers.CharField(default='chef_dpt', read_only=True)
+
+    class Meta:
+        model = ChefDepartement
+        role = 'chef_dpt'
         fields = '__all__'
 
 

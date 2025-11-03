@@ -1,25 +1,22 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {FaSearch,FaFileExport,FaArrowLeft,FaArrowRight,FaSync,FaEdit,FaTrash,} from "react-icons/fa";
+import { FaSearch, FaFileExport, FaSync, FaEdit, FaTrash } from "react-icons/fa";
 import * as XLSX from "xlsx";
-import etudiantService from "@/services/etudiants/etudiantService";
+import etudiantService from "@/services/etudiants/GestionEtudiantAdminService";
+
 
 export default function GestionEtudiantsAdmin() {
-  
   const [etudiants, setEtudiants] = useState([]);
-  const [parcoursData, setParcoursData] = useState([]); //  Parcours avec relations
+  const [parcoursData, setParcoursData] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [filters, setFilters] = useState({
-    search: "",parcours: "",filiere: "",annee_etude: "",page: 1,page_size: 10,
+    search: "",
+    parcours: "1", // Par défaut pour tester avec vos inscriptions
+    filiere: "2",
+    annee_etude: "1",
   });
 
-  const [pagination, setPagination] = useState({
-    count: 0,
-total_pages: 1,
-  });
-
-  //  États pour filtres dépendants
   const [filieresDuParcours, setFilieresDuParcours] = useState([]);
   const [anneesDuParcours, setAnneesDuParcours] = useState([]);
 
@@ -32,37 +29,32 @@ total_pages: 1,
       console.log("Chargement parcours...");
       const parcours = await etudiantService.getParcoursAvecRelations();
       setParcoursData(parcours);
-      console.log(" Parcours chargés:", parcours);
+      console.log("Parcours chargés:", parcours);
     } catch (err) {
-      console.error(" Erreur parcours:", err);
+      console.error("Erreur parcours:", err);
     }
   };
 
   useEffect(() => {
     if (!filters.parcours) {
-      // Aucun parcours sélectionné → vider les filtres dépendants
       setFilieresDuParcours([]);
       setAnneesDuParcours([]);
       setFilters(prev => ({ ...prev, filiere: "", annee_etude: "" }));
       return;
     }
 
-    // Trouver le parcours sélectionné
     const parcoursTrouve = parcoursData.find(
       p => p.id.toString() === filters.parcours.toString()
     );
 
     if (parcoursTrouve) {
-      console.log(" Parcours sélectionné:", parcoursTrouve);
-      
-      // Mettre à jour les options des filtres dépendants
+      console.log("Parcours sélectionné:", parcoursTrouve);
       setFilieresDuParcours(parcoursTrouve.filieres || []);
       setAnneesDuParcours(parcoursTrouve.annees_etude || []);
-      
-      // Réinitialiser les filtres si les valeurs actuelles ne sont plus valides
+
       const filiereValide = parcoursTrouve.filieres?.some(f => f.id.toString() === filters.filiere);
       const anneeValide = parcoursTrouve.annees_etude?.some(a => a.id.toString() === filters.annee_etude);
-      
+
       if (!filiereValide) setFilters(prev => ({ ...prev, filiere: "" }));
       if (!anneeValide) setFilters(prev => ({ ...prev, annee_etude: "" }));
     }
@@ -72,108 +64,78 @@ total_pages: 1,
     try {
       setLoading(true);
       console.log("Chargement étudiants :", filters);
-      const data = await etudiantService.getAllEtudiants(filters);
+      const data = await etudiantService.getAllEtudiants(filters); // Pas de pagination
+      console.log("Données normalisées reçues :", data);
       setEtudiants(data.results || []);
-      setPagination({
-        count: data.count || 0,
-        total_pages: data.total_pages || 1,
-      });
-      
       console.log("Étudiants chargés:", data.results?.length || 0);
+      // Débogage : structure de chaque étudiant
+      data.results.forEach((etudiant, index) => {
+        console.log(`Étudiant ${index + 1}:`, etudiant);
+      });
     } catch (error) {
-      console.error(" Erreur chargement étudiants:", error);
+      console.error("Erreur chargement étudiants:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Rechargement automatique quand les filtres changent
   useEffect(() => {
     const timer = setTimeout(() => {
       chargerEtudiants();
-    }, 300); // Debounce 100ms pour la recherche
-
+    }, 100);
     return () => clearTimeout(timer);
   }, [filters]);
 
-  // -------------------------------
-  // HANDLERS SIMPLES
-  // -------------------------------
   const changerFiltre = (cle, valeur) => {
-    console.log(`🔧 Filtre ${cle} = ${valeur}`);
-    setFilters(prev => ({ 
-      ...prev, 
-      [cle]: valeur, 
-      page: 1 // Toujours revenir à la page 1
-    }));
+    console.log(`Filtre ${cle} = ${valeur}`);
+    setFilters(prev => ({ ...prev, [cle]: valeur }));
   };
 
-  const viderFiltres = () => {
-    setFilters({
-      search: "",
-      parcours: "",
-      filiere: "",
-      annee_etude: "",
-      page: 1,
-      page_size: 10,
-    });
-  };
-
-  // -------------------------------
-  // EXPORT FUNCTIONS
-  // -------------------------------
   const exporterExcel = () => {
     try {
       const donnees = etudiants.map(e => ({
         "Num Carte": e.num_carte || '',
-        "Nom": e.utilisateur?.last_name || '',
-        "Prénom": e.utilisateur?.first_name || '',
-        "Email": e.utilisateur?.email || '',
-        "Téléphone": e.utilisateur?.telephone || '',
+        "Nom": e.utilisateur?.last_name || e.last_name || '',
+        "Prénom": e.utilisateur?.first_name || e.first_name || '',
+        "Email": e.utilisateur?.email || e.email || '',
+        "Téléphone": e.utilisateur?.telephone || e.telephone || '',
         "Date Naissance": e.date_naiss || '',
         "Lieu Naissance": e.lieu_naiss || '',
       }));
-      
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(donnees);
       XLSX.utils.book_append_sheet(wb, ws, "Étudiants");
       XLSX.writeFile(wb, `etudiants_${new Date().toISOString().split('T')[0]}.xlsx`);
-      
-      console.log("✅ Export Excel réussi");
+      console.log("Export Excel réussi");
     } catch (err) {
-      console.error("❌ Erreur export Excel:", err);
+      console.error("Erreur export Excel:", err);
       alert("Erreur lors de l'export Excel");
     }
   };
 
-  // -------------------------------
-  // CRUD
-  // -------------------------------
   const supprimerEtudiant = async (id) => {
     if (!confirm("Voulez-vous vraiment supprimer cet étudiant ?")) return;
-
     try {
       await etudiantService.deleteEtudiant(id);
       alert("Étudiant supprimé avec succès !");
       chargerEtudiants();
     } catch (err) {
-      console.error("❌ Erreur suppression:", err);
+      console.error("Erreur suppression:", err);
       alert("Erreur lors de la suppression.");
     }
   };
 
-  // -------------------------------
-  // RENDER SIMPLE
-  // -------------------------------
+  // Fonction utilitaire pour afficher les noms (fallback si utilisateur n'est pas imbriqué)
+  const getNom = (etudiant) => etudiant.utilisateur?.last_name || etudiant.last_name || '';
+  const getPrenom = (etudiant) => etudiant.utilisateur?.first_name || etudiant.first_name || '';
+  const getEmail = (etudiant) => etudiant.utilisateur?.email || etudiant.email || '';
+  const getTelephone = (etudiant) => etudiant.utilisateur?.telephone || etudiant.telephone || '';
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
       <h2 className="text-2xl font-bold mb-4">Gestion des Étudiants</h2>
-
-      {/* Filtres */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div className="flex flex-wrap gap-4 mb-4 items-center">
-          {/* Recherche */}
           <div className="flex items-center border rounded-lg p-2 bg-gray-50">
             <FaSearch className="text-gray-400 mr-2" />
             <input
@@ -184,8 +146,6 @@ total_pages: 1,
               className="outline-none bg-transparent"
             />
           </div>
-
-          {/* ✅ Parcours */}
           <select
             value={filters.parcours}
             onChange={(e) => changerFiltre("parcours", e.target.value)}
@@ -198,8 +158,6 @@ total_pages: 1,
               </option>
             ))}
           </select>
-
-          {/* ✅ Filières (dépendant du parcours) */}
           <select
             value={filters.filiere}
             onChange={(e) => changerFiltre("filiere", e.target.value)}
@@ -213,8 +171,6 @@ total_pages: 1,
               </option>
             ))}
           </select>
-
-          {/* ✅ Années (dépendant du parcours) */}
           <select
             value={filters.annee_etude}
             onChange={(e) => changerFiltre("annee_etude", e.target.value)}
@@ -228,8 +184,6 @@ total_pages: 1,
               </option>
             ))}
           </select>
-
-          {/* Actions */}
           <button
             onClick={exporterExcel}
             disabled={etudiants.length === 0}
@@ -238,25 +192,15 @@ total_pages: 1,
             <FaFileExport className="mr-2" /> Excel
           </button>
 
-          <button
-            onClick={viderFiltres}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
-          >
-            Vider filtres
-          </button>
         </div>
       </div>
-
-      {/* Stats */}
       <div className="mb-4 text-sm text-gray-600">
-        {pagination.count > 0 ? (
-          `${pagination.count} étudiant${pagination.count > 1 ? 's' : ''} trouvé${pagination.count > 1 ? 's' : ''}`
+        {etudiants.length > 0 ? (
+          `${etudiants.length} étudiant${etudiants.length > 1 ? 's' : ''} trouvé${etudiants.length > 1 ? 's' : ''}`
         ) : (
           'Aucun étudiant trouvé'
         )}
       </div>
-
-      {/* Tableau */}
       <div className="overflow-x-auto bg-white shadow rounded-lg">
         {loading ? (
           <div className="p-8 text-center">
@@ -280,15 +224,15 @@ total_pages: 1,
               {etudiants.length > 0 ? (
                 etudiants.map((etudiant, index) => (
                   <tr key={etudiant.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{(filters.page - 1) * filters.page_size + index + 1}</td>
+                    <td className="p-3">{index + 1}</td>
                     <td className="p-3">{etudiant.num_carte || '-'}</td>
-                    <td className="p-3">{etudiant.utilisateur?.last_name || '-'}</td>
-                    <td className="p-3">{etudiant.utilisateur?.first_name || '-'}</td>
-                    <td className="p-3">{etudiant.utilisateur?.email || '-'}</td>
-                    <td className="p-3">{etudiant.utilisateur?.telephone || '-'}</td>
+                    <td className="p-3">{getNom(etudiant)}</td>
+                    <td className="p-3">{getPrenom(etudiant)}</td>
+                    <td className="p-3">{getEmail(etudiant)}</td>
+                    <td className="p-3">{getTelephone(etudiant)}</td>
                     <td className="p-3 flex gap-2">
                       <button
-                        onClick={() => alert(`Modifier ${etudiant.utilisateur?.first_name}`)}
+                        onClick={() => alert(`Modifier ${getPrenom(etudiant)} ${getNom(etudiant)}`)}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         <FaEdit />
@@ -313,27 +257,8 @@ total_pages: 1,
           </table>
         )}
       </div>
-
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          disabled={filters.page <= 1}
-          onClick={() => changerFiltre("page", filters.page - 1)}
-          className="flex items-center px-3 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
-        >
-          <FaArrowLeft className="mr-1" /> Précédent
-        </button>
-
-        <span>Page {filters.page} / {pagination.total_pages}</span>
-
-        <button
-          disabled={filters.page >= pagination.total_pages}
-          onClick={() => changerFiltre("page", filters.page + 1)}
-          className="flex items-center px-3 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
-        >
-          Suivant <FaArrowRight className="ml-1" />
-        </button>
-      </div>
     </div>
   );
 }
+
+ 

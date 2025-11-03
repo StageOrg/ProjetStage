@@ -56,7 +56,7 @@ const EncadrementService = {
                 lien 
             };
             const response = await api.put(`/notes/encadrements/${id}/`, encadrementData);
-            return response.data;
+            return response.data ;
         } catch (error) {
             console.error("Erreur lors de la mise à jour de l'encadrement:", error);
             throw error;

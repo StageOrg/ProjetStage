@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaFileAlt } from "react-icons/fa";
-import ArticleService from "@/services/articleService"; // À adapter selon ton service
+import ProjetService from "@/services/projetService"; // À adapter selon ton service
 
-export default function ArticlesPublic({ profId }) {
+export default function ProjetsPublic({ profId }) {
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -16,11 +16,13 @@ export default function ArticlesPublic({ profId }) {
   const loadArticles = async () => {
     try {
       setLoading(true);
-      const data = await ArticleService.getArticleByProfId(profId); // Méthode qui récupère tous les articles
+      const data = await ProjetService.getProjetsByProfId(profId); // Méthode qui récupère tous les projets
+      console.log("data",data);
+
       setArticles(data);
     } catch (error) {
-      console.error("Erreur lors du chargement des articles:", error);
-      alert("Erreur lors du chargement des articles");
+      console.error("Erreur lors du chargement des projets:", error);
+      alert("Erreur lors du chargement des projets");
     } finally {
       setLoading(false);
     }
@@ -45,12 +47,12 @@ export default function ArticlesPublic({ profId }) {
 
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
       <h2 className="flex items-center gap-3 text-2xl font-bold text-blue-900 mb-6">
-        <FaFileAlt className="text-blue-700" /> Articles publiés
+        <FaFileAlt className="text-blue-700" /> Projets Publics
       </h2>
 
       {/* Filtre recherche */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <input
           type="text"
           placeholder="Rechercher par titre ou résumé"

@@ -6,7 +6,7 @@ from apps.utilisateurs.models import Etudiant, RespInscription
 
 
 class AnneeAcademiqueSerializer(serializers.ModelSerializer):
-    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True )
+    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True,required=False)
     class Meta:
         model = AnneeAcademique
         fields = '__all__'
@@ -17,7 +17,7 @@ class SemestreSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AnneeEtudeSerializer(serializers.ModelSerializer):
-    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True)
+    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True, required=False)
     semestre = serializers.PrimaryKeyRelatedField(queryset=Semestre.objects.all(), many=True, required=True)
     class Meta:
         model = AnneeEtude
@@ -25,14 +25,14 @@ class AnneeEtudeSerializer(serializers.ModelSerializer):
 
 class FiliereSerializer(serializers.ModelSerializer):
     departement = serializers.PrimaryKeyRelatedField(queryset=Departement.objects.all(),required=True)
-    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True)
+    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True, required=False)
     parcours = serializers.PrimaryKeyRelatedField(queryset=Parcours.objects.all(),many=True, required=True)
     class Meta:
         model = Filiere
         fields = '__all__'
 
 class ParcoursSerializer(serializers.ModelSerializer):
-    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True)
+    inscriptions = serializers.PrimaryKeyRelatedField(queryset=Inscription.objects.all(),many=True, required=False)
     class Meta:
         model = Parcours
         fields = '__all__'
@@ -45,7 +45,7 @@ class EtablissementSerializer(serializers.ModelSerializer):
 
 class DepartementSerializer(serializers.ModelSerializer):
     etablissement = serializers.PrimaryKeyRelatedField(queryset=Etablissement.objects.all(), required=True)
-    filieres = serializers.PrimaryKeyRelatedField(queryset=Filiere.objects.all(), many=True)
+    filieres = serializers.PrimaryKeyRelatedField(queryset=Filiere.objects.all(), many=True, required=False)
     class Meta:
         model = Departement
         fields = '__all__'
@@ -62,8 +62,23 @@ class InscriptionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PeriodeInscriptionSerializer(serializers.ModelSerializer):
-    responsable = serializers.PrimaryKeyRelatedField(queryset=RespInscription.objects.all(), required=True)
+    responsable = serializers.PrimaryKeyRelatedField(
+        queryset=RespInscription.objects.all(), 
+        required=False,      # Optionnel
+        allow_null=True      # Peut être NULL
+    )
+    
     class Meta:
         model = PeriodeInscription
         fields = '__all__'
+    
+    def create(self, validated_data):
+        """Attribution automatique du responsable si connecté"""
+        request = self.context.get('request')
+        
+        # Si pas de responsable fourni ET utilisateur est un responsable d'inscription
+        if not validated_data.get('responsable') and request and hasattr(request.user, 'resp_inscription'):
+            validated_data['responsable'] = request.user.resp_inscription
+        
+        return super().create(validated_data)
         

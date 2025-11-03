@@ -31,7 +31,7 @@ export default function MenuLateralProfPublic({ profId }) {
                 (pathname === link.href
                   ? "bg-black-100 text-black-900 font-bold shadow-md "
                   : "text-black-700 hover:bg-black-50 hover:text-black-900 ") +
-                " px-4 py-2 transition flex items-center gap-3 mt-4 mb-3"
+                " px-4 py-2 transition flex items-center gap-3 mt-3 mb-3"
               }
             >
               <span className="text-xl">{link.icon}</span>

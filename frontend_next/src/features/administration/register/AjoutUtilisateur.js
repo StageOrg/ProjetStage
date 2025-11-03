@@ -55,19 +55,15 @@ export default function RegisterForm() {
       role: role,
       data: formData
     };
-
-    // Appel au backend via ton service
     const res = await authAPI.register(payload);
 
     alert("Compte créé avec succès !");
     console.log("Réponse backend :", res);
 
-    // Optionnel : rediriger vers la page de login
-    // router.push("/connexion");
-    
   } catch (error) {
     console.error("Erreur à l'inscription :", error.response?.data || error.message);
     alert("Erreur lors de l'inscription.");
+
   }
 };
 
@@ -99,6 +95,8 @@ export default function RegisterForm() {
           <option value="resp_inscription">Responsable Inscription</option>
           <option value="resp_notes">Responsable Saisie Note</option>
           <option value="admin">Administrateur</option>
+          <option value="gestionnaire">Gestionnaire</option>
+          <option value="chef_dpt">Chef de Département</option>
         </select>
       </div>
 

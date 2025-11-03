@@ -1,5 +1,6 @@
-// frontend/services/authService.js
+"use client";
 import api from "./api"; 
+
 const TokenStorage = {
   getAccess: () => localStorage.getItem("access"),
   getRefresh: () => localStorage.getItem("refresh"),
@@ -13,12 +14,21 @@ const TokenStorage = {
   },
 };
 
-/* ---------------------------
-  Interceptor : ajoute Authorization automatiquement
-  et gère le refresh quand on reçoit 401.
----------------------------- */
+// Liste des endpoints publics 
+const PUBLIC_ENDPOINTS = [
+  '/token/refresh/',           // Refresh token (utilise payload, pas header)
+  '/notes/ues/filtrer/',       // Filtrage UEs (public pour inscription)
+  '/auth/register-etudiant/',  // Création étudiant (public)
+  '/auth/register/',           // Inscription basique
+  '/auth/login/',              // Login (pas de token requis)
+  '/inscription/annee-academique/', // Récup année active
+  '/inscription/inscription/', // Création inscription
+  '/inscription/verifier-ancien-etudiant/', // Vérif ancien étudiant
+  '/inscription/ancien-etudiant/', // Inscription ancien
+];
+
 let isRefreshing = false;
-let refreshQueue = []; // queue des requêtes en attendant le refresh
+let refreshQueue = [];
 
 function processQueue(error, token = null) {
   refreshQueue.forEach(prom => {
@@ -30,7 +40,13 @@ function processQueue(error, token = null) {
 
 api.interceptors.request.use((config) => {
   const token = TokenStorage.getAccess();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  // Ne pas ajouter le token pour les endpoints publics
+  const isPublic = PUBLIC_ENDPOINTS.some(endpoint => config.url.endsWith(endpoint));
+  if (token && !isPublic) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
   return config;
 }, (error) => Promise.reject(error));
 
@@ -38,7 +54,6 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // Si 401 et que ce n'est pas la requête refresh elle-même
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = TokenStorage.getRefresh();
@@ -48,7 +63,6 @@ api.interceptors.response.use(
       }
 
       if (isRefreshing) {
-        // attendre la fin d'un refresh en cours
         return new Promise((resolve, reject) => {
           refreshQueue.push({ resolve, reject });
         }).then((token) => {
@@ -59,6 +73,7 @@ api.interceptors.response.use(
 
       isRefreshing = true;
       try {
+        // Note : Grâce à PUBLIC_ENDPOINTS, pas d'header ajouté ici
         const res = await api.post("token/refresh/", { refresh: refreshToken });
         const newAccess = res.data.access;
         TokenStorage.setTokens({ access: newAccess });
@@ -78,36 +93,21 @@ api.interceptors.response.use(
   }
 );
 
-/* ---------------------------
-  Fonctions exportées
----------------------------- */
 
 export const authAPI = {
-  /**
-   * login(username, password)
-   * attend { access, refresh } en retour
-   */
   login: async (username, password) => {
+    // ici on envoie les bons noms de champs
     const res = await api.post("auth/login/", { username, password });
     const { access, refresh, user } = res.data;
     TokenStorage.setTokens({ access, refresh });
     return { access, refresh, user };
   },
 
-  /**
-   * register(userPayload)
-   * envoie toutes les données d'inscription (utilisateur + profil) à l'endpoint /auth/register/
-   * ex: { username, email, password, role, num_carte, date_naiss, ... }
-   */
   register: async (userPayload) => {
     const res = await api.post("auth/register/", userPayload);
     return res.data;
   },
 
-  /**
-   * refresh()
-   * rafraîchit manuellement le token si besoin
-   */
   refresh: async () => {
     const refresh = TokenStorage.getRefresh();
     if (!refresh) throw new Error("Pas de refresh token");
@@ -117,39 +117,66 @@ export const authAPI = {
     return res.data;
   },
 
-  /**
-   * logout()
-   * - supprime les tokens côté client
-   * - (optionnel) appeler un endpoint pour invalider le refresh côté backend si tu l'as implémenté
-   */
   logout: async (callBackendInvalidate = false) => {
     const refresh = TokenStorage.getRefresh();
     TokenStorage.clear();
     if (callBackendInvalidate && refresh) {
       try {
         await api.post("auth/logout/", { refresh });
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
   },
 
-  /**
-   * getProfile()
-   * récupère /utilisateurs/me/ (ou l'endpoint profil que tu as)
-   */
   getProfile: async () => {
-    const res = await api.get("/utilisateurs/etudiants/me/");
+    const res = await api.get("utilisateurs/me/");
+    return res.data;
+  },
+  
+  // ====== MÉTHODES POUR RESET PASSWORD =====
+  
+  /**
+   * Demande de réinitialisation de mot de passe
+   * @param {string} email - Email de l'utilisateur
+   * @returns {Promise} Réponse du serveur
+   */
+  demandeResetPassword: async (email) => {
+    const res = await api.post("auth/password-reset/demande/", { email });
     return res.data;
   },
 
   /**
-   * utilitaire pour récupérer l'api instance (utile si tu veux faire d'autres appels)
+   * Vérifie si le token de réinitialisation est valide
+   * @param {string} uid - ID utilisateur encodé
+   * @param {string} token - Token de réinitialisation
+   * @returns {Promise} Validation du token
    */
+  verifierTokenReset: async (uid, token) => {
+    const res = await api.post("auth/password-reset/verifier/", { uid, token });
+    return res.data;
+  },
+
+  /**
+   * Réinitialise le mot de passe avec le token
+   * @param {string} uid - ID utilisateur encodé
+   * @param {string} token - Token de réinitialisation
+   * @param {string} password - Nouveau mot de passe
+   * @param {string} password_confirmation - Confirmation du mot de passe
+   * @returns {Promise} Confirmation de la réinitialisation
+   */
+  resetPassword: async (uid, token, password, password_confirmation) => {
+    const res = await api.post("auth/password-reset/confirmer/", { 
+      uid, 
+      token, 
+      password, 
+      password_confirmation 
+    });
+    return res.data;
+  },
+
+
   apiInstance: () => api,
 };
 
-/* Optionnel : auto-refresh périodique (ex: avant expiration)
-   Tu peux mettre un setInterval pour appeler refresh() si tu veux.
-*/
+
+
 export default authAPI;

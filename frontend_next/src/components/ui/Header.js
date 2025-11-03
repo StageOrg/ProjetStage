@@ -3,13 +3,21 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { FaChevronDown } from "react-icons/fa";
+import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
+import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
+import { IoChevronDown } from "react-icons/io5";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [annees, setAnnees] = useState([]);
+  const [anneeChoisie, setAnneeChoisie] = useState(null);
   const [role, setRole] = useState("visiteur");
+  const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-0");
+
 
   // Charger rôle depuis localStorage
   useEffect(() => {
@@ -18,6 +26,22 @@ export default function Header() {
       setRole(storedRole);
     }
   }, []);
+  
+  useEffect(() => {
+    const fetchPeriode = async () => {
+      if (role === "etudiant") {
+        const statut = await periodeInscriptionService.verifierStatutInscriptions();
+        if (!statut.ouvert) {
+          // Si période fermée ou expirée, redirige vers page FinInscription
+          setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
+        } else {
+          setInscriptionLink("/etudiant/inscription/etape-0");
+        }
+      }
+    };
+    fetchPeriode();
+  }, [role]);
+
 
   // Déterminer la route du menu Personnel selon rôle
   const getPersonnelHref = (role) => {
@@ -27,11 +51,13 @@ export default function Header() {
       case "professeur":
         return "/prof/dashboard";
       case "secretaire":
-        return "/secretaire/dashboard";
+        return "/secretariat/dashboard/ue-exam";
       case "responsable inscriptions":
         return "/resp-inscriptions/dashboard";
       case "resp_notes":
         return "/resp-notes/dashboard";
+      case "gestionnaire":
+        return "/gestion/dashboard";
       default:
         return "/";
     }
@@ -46,7 +72,7 @@ export default function Header() {
     {
       label: "Étudiant",
       children: [
-        { label: "Inscriptions", href: "/etudiant/inscription/etape-1" },
+        { label: "Inscriptions", href: inscriptionLink },
         {
           label: "Données personnelles",
           protected: true,
@@ -64,7 +90,7 @@ export default function Header() {
     { label: "Contactez-nous", href: "/contact" },
   ];
 
-  // Menus quand c’est un membre du personnel
+  // Menus quand c'est un membre du personnel
   const personnelMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
@@ -74,15 +100,19 @@ export default function Header() {
     { label: "Service examen", href: "/service-examen/notes/mes-ues" },
   ];
 
-  // Sélectionner menu selon rôle
-  const menuItems =
-    role === "admin" ||
-    role === "professeur" ||
-    role === "secretaire" ||
-    role === "responsable inscriptions" ||
-    role === "resp_notes"
-      ? personnelMenu
-      : baseMenu;
+  const PersonnelSaisieMenu = [
+    { label: "Accueil", href: "/" },
+    { label: "Nos Professeurs", href: "/nos-profs" },
+    { label: "Nos programmes", href: "/programmes" },
+    { label: "Contactez-nous", href: "/contact" },
+    { label: "Personnel", href: personnelHref },
+  ];
+  // Sélectionner menu selon rôle : si c'est professeur, afficher menu personnel, sinon PersonnelSaisieMenu; mais si c'est visiteur, afficher baseMenu
+  const menuItems = (() => {
+    if (role === "visiteur" || !role) return baseMenu;
+    if (role === "professeur") return personnelMenu;
+    return PersonnelSaisieMenu;
+  })();
 
   // Redirections protégées
   const handleProtectedRoute = (href) => {
@@ -95,6 +125,28 @@ export default function Header() {
     router.push("/login");
   };
 
+  useEffect(() => {
+    AnneeAcademiqueService.getAll()
+      .then((data) => setAnnees(data))
+      .catch((error) => console.error("Erreur lors du chargement des années académiques :", error));
+  }, []);
+
+  useEffect(() => {
+    if (annees.length > 0) {
+      setAnneeChoisie(annees[0]);
+      localStorage.setItem("annee_id", annees[0].id);
+      console.log("Année académique choisie :", annees[0]);
+    }
+  }, [annees]);
+
+  const onChange = (e) => {
+    const selectedId = e.target.value;
+    const selectedAnnee = annees.find((annee) => annee.id.toString() === selectedId);
+    setAnneeChoisie(selectedAnnee);
+    localStorage.setItem("annee_id", selectedAnnee.id);
+    console.log("Année académique choisie :", selectedAnnee);
+  };
+
   return (
     <header className="w-full bg-white/80 backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
       <div className="flex justify-between items-center">
@@ -103,7 +155,7 @@ export default function Header() {
           href="/"
           className="font-extrabold text-blue-800 text-2xl tracking-wide"
         >
-          <img src="/images/logo-epl.png" className="h-10 w-auto" />
+          <img src="/images/logo-epl.png" className="h-10 w-auto" alt="EPL Logo" />
         </Link>
 
         {/* Menu principal */}
@@ -118,6 +170,7 @@ export default function Header() {
                 role === "professeur" ||
                 role === "secretaire" ||
                 role === "responsable inscriptions" ||
+                role === "gestionnaire" ||
                 role === "resp_notes") &&
               item.label === "Personnel"
             ) {
@@ -141,7 +194,11 @@ export default function Header() {
                     }`}
                   >
                     {item.label}
-                    <span className="text-xs">▼</span>
+                    <IoChevronDown 
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        openDropdown === item.label ? 'rotate-180' : 'rotate-0'
+                      }`}
+                    />
                   </button>
                 ) : (
                   <Link
@@ -191,13 +248,40 @@ export default function Header() {
             );
           })}
 
-          {/* Bouton Connexion */}
-          <Link
-            href="/login"
-            className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1"
-          >
-            Connexion
-          </Link>
+          {/* Sélecteur d'année académique */}
+          {role !== "visiteur" && (
+            <div className="h-6">
+              <select
+                onChange={(e) => {
+                  onChange(e);
+                }}
+                className="block w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+              >
+                {annees.map((annee) => (
+                  <option key={annee.id} value={annee.id}>
+                    {annee.libelle}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {/* Bouton Deconnexion */}
+          {role !== "visiteur" ? (
+            <Link
+              href="/logout"
+              className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1"
+            >
+              Deconnexion
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1"
+            >
+              Connexion
+            </Link>
+          )}
+
         </nav>
       </div>
     </header>

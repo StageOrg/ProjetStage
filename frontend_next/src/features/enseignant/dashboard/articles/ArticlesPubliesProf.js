@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaFileAlt, FaEdit, FaSave, FaTimes, FaTrash, FaPlus } from "react-icons/fa";
+import ArticleService from "@/services/articleService"
 
 const initialArticles = [
   { id: 1, titre: "Optimisation des algorithmes", revue: "Revue Info Togo", annee: "2023", lien: "#" },
@@ -7,11 +8,9 @@ const initialArticles = [
 ];
 
 export default function ArticlesPubliesProf() {
-  // État des articles (la liste complète)
-  const [articles, setArticles] = useState(initialArticles);
-  
-  // Recherche (filtre dynamique)
+  const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
+  const journal = "";
   
   // Gestion édition (id de l’article édité ou null si aucun)
   const [editingId, setEditingId] = useState(null);
@@ -29,6 +28,15 @@ export default function ArticlesPubliesProf() {
       a.revue.toLowerCase().includes(search.toLowerCase())
   );
 
+  useEffect(()=>{
+    ArticleService.getMesArticles()
+      .then((data)=>{setArticles(data)})
+      .catch((err)=>{console.error(err)});
+  },[]);
+
+  
+
+  
   // Ouvrir le mode édition sur un article existant
   const handleEdit = (article) => {
     setEditingId(article.id);
@@ -44,7 +52,7 @@ export default function ArticlesPubliesProf() {
   };
 
   // Sauvegarder les modifications ou ajout
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editArticle.titre || !editArticle.revue || !editArticle.annee) {
       alert("Merci de remplir tous les champs (titre, revue, année).");
       return;
@@ -54,9 +62,9 @@ export default function ArticlesPubliesProf() {
       // Ajouter un nouvel article (id généré simple)
       const newArticle = {
         ...editArticle,
-        id: articles.length > 0 ? Math.max(...articles.map(a => a.id)) + 1 : 1,
       };
       setArticles([...articles, newArticle]);
+      const article = await ArticleService.create(newArticle.titre, journal, newArticle.annee, newArticle.lien);
     } else {
       // Modifier un article existant
       setArticles(

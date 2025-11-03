@@ -10,7 +10,7 @@ function EvaluationUE({ ueId, onRetour }) {
   const [error, setError] = useState("");
   const Router = useRouter();
   // Récupération des évaluations (sécurisée)
-  useEffect(() => {
+  /* useEffect(() => {
     const fetch = async () => {
       try {
         const res = await EvaluationService.getEvaluationsByUE(ueId);
@@ -21,7 +21,31 @@ function EvaluationUE({ ueId, onRetour }) {
       }
     };
     if (ueId) fetch();
-  }, [ueId]);
+  }, [ueId]); */
+  useEffect(() => {
+  const fetchEvaluations = async () => {
+    try {
+      if (!ueId) return;
+      console.log("🔍 Chargement des évaluations pour l’UE :", ueId);
+      const res = await EvaluationService.getEvaluationsByUE(ueId);
+      console.log("✅ Évaluations chargées :", res);
+      setEvaluations(Array.isArray(res) ? res: []);
+    } catch (err) {
+      console.error("Erreur récupération évaluations :", err);
+    }
+  };
+
+  fetchEvaluations();
+
+  // ✅ Ajoute un listener pour recharger quand on revient sur la page
+  const handleFocus = () => fetchEvaluations();
+  window.addEventListener("focus", handleFocus);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+  };
+}, [ueId]);
+
 
   // Somme des poids (force Number pour éviter concaténation de strings)
   const totalPoids = useMemo(
@@ -51,7 +75,7 @@ function EvaluationUE({ ueId, onRetour }) {
         alert("Poids invalide.");
         return;
       }
-
+      console.log("Creating evaluation with type:", type, "poids:", poidsValue, "for UE ID:", ueId);
       const res = await EvaluationService.createEvaluation(type, poidsValue, ueId);
 
       setEvaluations((prev) =>
@@ -73,6 +97,7 @@ function EvaluationUE({ ueId, onRetour }) {
       setEvaluations((prev) =>
         Array.isArray(prev) ? prev.map((ev) => (ev.id === id ? res.data : ev)) : [res.data]
       );
+      
 
       setError(""); // efface l'erreur après correction
     } catch (err) {
@@ -87,7 +112,7 @@ function EvaluationUE({ ueId, onRetour }) {
       if (onRetour) onRetour();
       else {
         alert("OK : somme = 100, retour à la saisie des notes.");
-       Router.push(`/enseignant/dashboard/cours/${ueId}/etudiants-inscrits`);
+       Router.push(`/service-examen/notes/${ueId}/etudiants-inscrits`);
       }
     } else {
       setError(`La somme des poids est ${Number(totalPoids.toFixed(2))}%. Elle doit être égale à 100%.`);
@@ -124,8 +149,9 @@ function EvaluationUE({ ueId, onRetour }) {
         >
           <option value="">-- Type --</option>
           <option value="Devoir">Devoir</option>
-          <option value="Examen">Examen</option>
+          <option value="TP">TP</option>
           <option value="Projet">Projet</option>
+          <option value="Examen">Examen</option>
         </select>
         <input
           type="number"

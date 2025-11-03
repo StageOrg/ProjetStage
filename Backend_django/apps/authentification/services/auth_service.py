@@ -7,25 +7,6 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-""" class AuthService:
-
-    @staticmethod
-    def login(username, password):
-        user = authenticate(username=username, password=password)
-        if not user:
-            return None  # Mauvais identifiants
-
-        refresh = RefreshToken.for_user(user)
-        return {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.role
-            }
-        } """
 
 
 User = get_user_model()
@@ -58,7 +39,31 @@ class AuthService:
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "role":  user.role  # au cas où le champ existe
+                "role":  user.role ,
+                "sexe": user.sexe,
+                "telephone": user.telephone,
             },
             "message": f"Bienvenue {user.first_name} !"
         }
+        
+        
+
+""" class AuthService:
+
+    @staticmethod
+    def login(username, password):
+        user = authenticate(username=username, password=password)
+        if not user:
+            return None  # Mauvais identifiants
+
+        refresh = RefreshToken.for_user(user)
+        return {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role
+            }
+        } """

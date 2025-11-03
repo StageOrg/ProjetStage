@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.password_validation  import validate_password
-
+from django.core.validators import MaxValueValidator
 from ..utilisateurs.managers import UtilisateurManager
 
 class Utilisateur(AbstractUser):
@@ -12,6 +12,8 @@ class Utilisateur(AbstractUser):
         ('resp_notes', 'Responsable des notes'),
         ('resp_inscription', 'Responsable des inscriptions'),
         ('secretaire', 'Secrétaire'),
+        ('gestionnaire', 'Gestionnaire'),
+        ('chef_dpt', 'Chef de département'),
     ]
     SEXE = [
         ('M', 'Masculin'),
@@ -53,6 +55,12 @@ class Utilisateur(AbstractUser):
     @property
     def is_admin_personnalise(self):
         return hasattr(self, 'admin')
+    @property
+    def is_gestionnaire(self):
+        return hasattr(self, 'gestionnaire')
+    @property
+    def is_chef_dpt(self):
+        return hasattr(self, 'chef_dpt')
 
 
 # -----------------------------
@@ -61,9 +69,8 @@ class Utilisateur(AbstractUser):
 
 class Etudiant(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="etudiant")
-    num_carte = models.CharField(max_length=20,unique=True, null=True, blank=True)
+    num_carte = models.PositiveIntegerField(unique=True, null=True, blank=True, validators=[MaxValueValidator(999999)])  
     autre_prenom = models.CharField(max_length=50, null =True)
-
     photo = models.ImageField(upload_to='photos_etudiants/', null=True,blank=True)
     date_naiss = models.DateField()
     lieu_naiss = models.CharField(max_length=100)
@@ -88,6 +95,12 @@ class ResponsableSaisieNote(models.Model):
 
 class Secretaire(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="secretaire")
+
+class Gestionnaire(models.Model):
+    utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="gestionnaire")
+
+class ChefDepartement(models.Model):
+    utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="chef_dpt")
 
 class Connexion(models.Model):
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='connexions')

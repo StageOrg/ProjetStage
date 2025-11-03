@@ -5,7 +5,7 @@ const RechercheService = {
     getMesRecherches: async () => {
         try {
             const response = await api.get("/notes/recherches/");
-            return response.data;
+            return response.data  ;
         } catch (error) {
             console.error("Erreur lors de la récupération de la liste des recherches:", error);
             throw error;
@@ -16,7 +16,7 @@ const RechercheService = {
     getRechercheById: async (id) => {
         try {
             const response = await api.get(`/notes/recherches/${id}/`);
-            return response.data;
+            return response.data  ;
         } catch (error) {
             console.error(`Erreur lors de la récupération de la recherche ${id}:`, error);
             throw error;
@@ -60,7 +60,7 @@ const RechercheService = {
     getRecherchesByProfId: async (profId) => {
         try {
             const response = await api.get(`/notes/recherches/par-professeur/${profId}/`);
-            return response.data;
+            return response.data  ;
         } catch (error) {
             console.error(`Erreur lors de la récupération des recherches pour le professeur ${profId}:`, error);
             throw error;

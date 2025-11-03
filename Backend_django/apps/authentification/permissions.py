@@ -87,3 +87,15 @@ class IsAdminOrRespNotesOnly(BasePermission):
 
         user = request.user
         return user.is_staff or hasattr(user, 'resp_notes')
+
+#Le gestionnaire peut tout faire, mais seul le superUtilisateur peut creer des utilisateurs.
+class IsSuperUserOrGestionnaire(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_superuser or hasattr(request.user, 'gestionnaire')
+    
+
+#SEULS le responsable ou la secretaire peuvent acceder
+class IsRespInscriptionOrSecretaire(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return hasattr(user, 'resp_notes') or hasattr(user, 'secretaire')
