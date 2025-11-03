@@ -93,10 +93,22 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
 
         # Créer l'étudiant avec les données restantes
         try:
+            # Normaliser num_carte : accepter '', None ou nombre
+            raw_num_carte = validated_data.pop('num_carte', None)
+            if raw_num_carte in [None, '']:
+                num_carte_val = None
+            else:
+                try:
+                    num_carte_val = int(str(raw_num_carte).strip())
+                except (ValueError, TypeError):
+                    # Si la conversion échoue, lever une ValidationError claire
+                    user.delete()
+                    raise serializers.ValidationError("Le numéro de carte doit être un entier valide de 6 chiffres")
+
             etudiant = Etudiant.objects.create(
                 utilisateur=user,
                 autre_prenom=validated_data.pop('autre_prenom', ''),
-                num_carte=validated_data.pop('num_carte', ''),
+                num_carte=num_carte_val,
                 photo=validated_data.pop('photo', None),
                 date_naiss=validated_data.pop('date_naiss', None),
                 lieu_naiss=validated_data.pop('lieu_naiss', '')
