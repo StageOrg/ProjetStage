@@ -462,4 +462,5 @@ def etudiant_mes_ues_avec_notes(request):
         
     except Exception as e:
         return Response({"error": f"Erreur serveur: {str(e)}"}, status=500)
-    })
+    
+
