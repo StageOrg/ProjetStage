@@ -1,6 +1,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from . import views
 from apps.utilisateurs.views import (
    UtilisateurViewSet, AdministrateurViewSet, ConnexionViewSet, ProfesseurViewSet, EtudiantViewSet,
     RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, check_num_carte,
@@ -21,5 +22,6 @@ router.register(r'chefs-departement', ChefDepartementViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('etudiants/mes-ues-avec-notes/', views.etudiant_mes_ues_avec_notes, name='etudiant-mes-ues-avec-notes'),
     path('check-num-carte/', check_num_carte, name='check-num-carte'),
 ]
