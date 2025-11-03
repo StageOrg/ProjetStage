@@ -15,7 +15,6 @@ import SemestreForm from "./formulaires/SemestreForm";
 import AnneeEtudeForm from "./formulaires/AnneeEtudeForm";
 import AnneeAcademiqueForm from "./formulaires/AnneeAcademiqueForm";
 
-// Tu ajouteras AnnéeEtudeForm également
 
 export default function GestionEtablissement({ parcoursOptions, filiereOptions, departementOptions, anneeOptions, semestreOptions }) {
   const [parcours, setParcours] = useState([]);
@@ -87,7 +86,7 @@ export default function GestionEtablissement({ parcoursOptions, filiereOptions, 
         ))}
       </div>
 
-      {/* ✅ MODALE DYNAMIQUE */}
+      {/* ✅ MODALE DYNAMIQUE  */}
       {activeForm && (
         <div className="fixed inset-0 bg-transparent flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg relative">

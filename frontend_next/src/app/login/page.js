@@ -57,7 +57,7 @@ export default function Connexion() {
       } else if (data.user.role === "resp_inscription") {
         router.push("/resp_inscription/dashboard/gestionEtudiant");  
       } else if (data.user.role === "gestionnaire") {
-        router.push("/gestion/dashboard");
+        router.push("/gestion/dashboard/mon-etablissement");
       } else if (data.user.role === "secretaire") {
         router.push("/secretariat/dashboard/ue-exam");
       } else {

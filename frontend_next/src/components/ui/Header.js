@@ -100,16 +100,19 @@ export default function Header() {
     { label: "Service examen", href: "/service-examen/notes/mes-ues" },
   ];
 
-  // Sélectionner menu selon rôle
-  const menuItems =
-    role === "admin" ||
-    role === "professeur" ||
-    role === "secretaire" ||
-    role === "responsable inscriptions" ||
-    role === "resp_notes" ||
-    role === "gestionnaire"
-      ? personnelMenu
-      : baseMenu;
+  const PersonnelSaisieMenu = [
+    { label: "Accueil", href: "/" },
+    { label: "Nos Professeurs", href: "/nos-profs" },
+    { label: "Nos programmes", href: "/programmes" },
+    { label: "Contactez-nous", href: "/contact" },
+    { label: "Personnel", href: personnelHref },
+  ];
+  // Sélectionner menu selon rôle : si c'est professeur, afficher menu personnel, sinon PersonnelSaisieMenu; mais si c'est visiteur, afficher baseMenu
+  const menuItems = (() => {
+    if (role === "visiteur" || !role) return baseMenu;
+    if (role === "professeur") return personnelMenu;
+    return PersonnelSaisieMenu;
+  })();
 
   // Redirections protégées
   const handleProtectedRoute = (href) => {
@@ -167,6 +170,7 @@ export default function Header() {
                 role === "professeur" ||
                 role === "secretaire" ||
                 role === "responsable inscriptions" ||
+                role === "gestionnaire" ||
                 role === "resp_notes") &&
               item.label === "Personnel"
             ) {

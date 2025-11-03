@@ -92,35 +92,40 @@ function ListeEtudiantsUE({ ueId }) {
         </button>
       </div>
 
-      {/* Affichage du tableau selon le type d’évaluation */}
-      {selectedEvaluation ? (
-        selectedEvaluation.type === "Examen" && selectedEvaluation.anonyme === true ? (
-          <EvaluationExamen
-            ueId={ueId}
-            evaluations={evaluations}
-            evaluation={selectedEvaluation}
-            etudiants={etudiants}
-            setEtudiants={setEtudiants}
-            calculerMoyenne={calculerMoyenne}
-            annee={annee}
-            semestre={semestre}
-            annee_id={annee_id}
-          />
-        ) : (
-          <EvaluationNormale
-            ueId={ueId}
-            evaluations={evaluations}
-            evaluation={selectedEvaluation}
-            etudiants={etudiants}
-            setEtudiants={setEtudiants}
-            annee={annee}
-            semestre={semestre}
-            calculerMoyenne={calculerMoyenne}
-          />
-        )
-      ) : (
-        <p className="text-gray-500 italic">Veuillez sélectionner une évaluation.</p>
-      )}
+      {/* Affichage du tableau selon le type d’évaluation  */}
+     {selectedEvaluation ? (
+      selectedEvaluation.type === "Examen" && selectedEvaluation.anonyme === null ? (
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded">
+      ⚠️ Le responsable de saisie des notes doit d’abord décider si cette évaluation est anonyme ou non.
+        </div>
+  ) : selectedEvaluation.type === "Examen" && selectedEvaluation.anonyme === true ? (
+    <EvaluationExamen
+      ueId={ueId}
+      evaluations={evaluations}
+      evaluation={selectedEvaluation}
+      etudiants={etudiants}
+      setEtudiants={setEtudiants}
+      calculerMoyenne={calculerMoyenne}
+      annee={annee}
+      semestre={semestre}
+      annee_id={annee_id}
+    />
+  ) : (
+    <EvaluationNormale
+      ueId={ueId}
+      evaluations={evaluations}
+      evaluation={selectedEvaluation}
+      etudiants={etudiants}
+      setEtudiants={setEtudiants}
+      annee={annee}
+      semestre={semestre}
+      calculerMoyenne={calculerMoyenne}
+    />
+  )
+) : (
+  <p className="text-gray-500 italic">Veuillez sélectionner une évaluation.</p>
+)}
+
     </div>
   );
 }
