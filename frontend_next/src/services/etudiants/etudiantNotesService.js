@@ -14,7 +14,7 @@ const etudiantNotesService = {
 
   getMyUEsWithNotes: async () => {
     try {
-      const response = await api.get("/utilisateurs/etudiants/mes-ues-avec-notes/");
+      const response = await api.get("/utilisateurs/etudiants/mes_ues_avec_notes/");
       console.log("Réponse de l'endpoint UEs avec notes:", response.data);
 
       if (!response.data || response.data.length === 0) return [];
@@ -93,7 +93,7 @@ const etudiantNotesService = {
 
   getUEDetails: async (ueId) => {
     try {
-      const uesResponse = await api.get("/utilisateurs/etudiants/mes-ues-avec-notes/");
+      const uesResponse = await api.get("/utilisateurs/etudiants/mes_ues_avec_notes/");
       const ueDetails = uesResponse.data.find(ue => ue.id === parseInt(ueId));
       if (!ueDetails) throw new Error("UE non trouvée dans vos inscriptions");
       return ueDetails;
