@@ -173,10 +173,7 @@ export const authAPI = {
     return res.data;
   },
 
-
   apiInstance: () => api,
 };
-
-
 
 export default authAPI;
