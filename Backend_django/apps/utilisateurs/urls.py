@@ -1,27 +1,25 @@
-
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
-from apps.utilisateurs.views import (
-   UtilisateurViewSet, AdministrateurViewSet, ConnexionViewSet, ProfesseurViewSet, EtudiantViewSet,
-    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, check_num_carte,
-    RespInscriptionViewSet, ResponsableSaisieNoteViewSet, SecretaireViewSet, GestionnaireViewSet, ChefDepartementViewSet
-)
 
+# Supprimez tous les imports individuels et utilisez seulement views
 router = DefaultRouter()
-router.register(r'utilisateurs', UtilisateurViewSet)
-router.register(r'etudiants', EtudiantViewSet)
-router.register(r'professeurs', ProfesseurViewSet)
-router.register(r'secretaires', SecretaireViewSet)
-router.register(r'responsables-inscription', RespInscriptionViewSet)
-router.register(r'responsables-notes', ResponsableSaisieNoteViewSet)
-router.register(r'administrateurs', AdministrateurViewSet)
-router.register(r'gestionnaires', GestionnaireViewSet)
-router.register(r'connexions', ConnexionViewSet)
-router.register(r'chefs-departement', ChefDepartementViewSet)
+router.register(r'utilisateurs', views.UtilisateurViewSet)
+router.register(r'etudiants', views.EtudiantViewSet)
+router.register(r'professeurs', views.ProfesseurViewSet)
+router.register(r'secretaires', views.SecretaireViewSet)
+router.register(r'responsables-inscription', views.RespInscriptionViewSet)
+router.register(r'responsables-notes', views.ResponsableSaisieNoteViewSet)
+router.register(r'administrateurs', views.AdministrateurViewSet)
+router.register(r'gestionnaires', views.GestionnaireViewSet)
+router.register(r'connexions', views.ConnexionViewSet)
+router.register(r'chefs-departement', views.ChefDepartementViewSet)
 
 urlpatterns = [
+    # Routes personnalisées EN PREMIER (très important)
+    path('etudiants/mes_ues_avec_notes/', views.etudiant_mes_ues_avec_notes, name='etudiant_mes_ues_avec_notes'),
+    path('check-num-carte/', views.check_num_carte, name='check-num-carte'),
+    
+    # Router EN DERNIER
     path('', include(router.urls)),
-    path('etudiants/mes-ues-avec-notes/', views.etudiant_mes_ues_avec_notes, name='etudiant-mes-ues-avec-notes'),
-    path('check-num-carte/', check_num_carte, name='check-num-carte'),
 ]
