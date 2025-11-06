@@ -157,8 +157,11 @@ export default function UEsNotes() {
                       <td className="px-6 py-3">{ue.libelle}</td>
                       <td className="px-6 py-3">{group.semestre}</td>
                       <td className="px-6 py-3 text-center">
-                        {ue.creditValide ?? "-"}
+                          {ue.statut === "Validé"
+                          ? ue.creditValide ?? ue.credits
+                          : ue.credits ?? "-"}
                       </td>
+
                       <td className="px-6 py-3 text-center font-semibold">
                         {ue.moyenne !== null ? ue.moyenne.toFixed(2) : "-"}
                       </td>
