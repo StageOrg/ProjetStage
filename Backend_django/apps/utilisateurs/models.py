@@ -109,3 +109,4 @@ class Connexion(models.Model):
     statut = models.CharField(max_length=50)
     navigateur = models.CharField(max_length=200)
     resultat = models.TextField(blank=True)
+    

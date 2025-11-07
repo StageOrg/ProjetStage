@@ -8,7 +8,7 @@ from rest_framework import status, views
 from django.contrib.auth.tokens import default_token_generator
 from .serializers import RegisterSerializer, StudentRegisterSerializer
 from rest_framework.permissions import AllowAny
-from .services.auth_service import AuthService
+from .services.auth_service import AuthService, User
 from rest_framework.views import APIView
 from apps.utilisateurs.models import Utilisateur
 from django.contrib.auth import authenticate
@@ -17,6 +17,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 
 
 class RegisterView(views.APIView):
@@ -29,6 +31,11 @@ class RegisterView(views.APIView):
 
 class LoginView(APIView):
     def post(self, request):
+        user = authenticate(username=request.data['username'], password=request.data['password'])
+        if user and user.doit_changer_mdp:
+            return Response({
+                'error': 'Utilisez le lien de première connexion envoyé par email.'
+            }, status=403)
         username = request.data.get("username")
         password = request.data.get("password")
         data = AuthService.login(username, password)
@@ -286,4 +293,23 @@ def reset_password(request):
             'error': 'Erreur lors de la réinitialisation du mot de passe'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    
+user = get_user_model()
+
+class SetPasswordView(APIView):
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+
+        try:
+            uid = urlsafe_base64_decode(uid).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Lien invalide'}, status=400)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({'error': 'Lien expiré ou invalide'}, status=400)
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'success': True})

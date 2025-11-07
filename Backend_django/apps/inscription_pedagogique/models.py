@@ -1,5 +1,5 @@
 from django.db import models
-from ..utilisateurs.models import Etudiant, RespInscription
+from ..utilisateurs.models import Etudiant, RespInscription, Utilisateur
 from ..page_professeur.models import UE  
 
 
@@ -70,3 +70,14 @@ class PeriodeInscription(models.Model):
     active = models.BooleanField(default=False)
     responsable = models.ForeignKey(RespInscription, on_delete=models.SET_NULL, null=True, related_name = 'periodes_inscription')
 
+class ImportEtudiant(models.Model):
+    admin = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
+    fichier = models.FileField(upload_to='imports_etudiants/')
+    type_fichier = models.CharField(max_length=10)  # csv, xlsx, pdf
+    reussis = models.PositiveIntegerField(default=0)
+    echoues = models.PositiveIntegerField(default=0)
+    date_import = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(null=True, blank=True)  # {reussis: [...], echoues: [...]}
+
+    def __str__(self):
+        return f"Import {self.id} - {self.date_import.strftime('%d/%m/%Y %H:%M')}"

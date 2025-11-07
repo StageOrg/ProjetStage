@@ -26,7 +26,7 @@ export default function ResetPassword() {
   useEffect(() => {
     const verifierToken = async () => {
       try {
-        // CORRECTION : Vérification que uid et token existent
+      // Vérification que uid et token existent
         if (!uid || !token) {
           setError("Lien de réinitialisation invalide");
           setValidToken(false);
@@ -65,7 +65,7 @@ export default function ResetPassword() {
       return;
     }
 
-    // CORRECTION : Vérification supplémentaire avant envoi
+    //  Vérification supplémentaire avant envoi
     if (!uid || !token) {
       setError("Lien de réinitialisation invalide");
       return;
@@ -74,10 +74,10 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      // CORRECTION : Les paramètres uid et token sont maintenant correctement extraits
+      //  Les paramètres uid et token sont maintenant correctement extraits
       await authAPI.resetPassword(uid, token, password, confirmPassword);
       setSuccess(true);
-      setTimeout(() => router.push("/connexion"), 3000);
+      setTimeout(() => router.push("/login"), 3000);
     } catch (err) {
       setError(err.message || "Erreur lors de la réinitialisation");
     } finally {

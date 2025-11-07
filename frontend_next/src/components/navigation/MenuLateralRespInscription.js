@@ -8,6 +8,9 @@ const links = [
   { href: "/resp_inscription/dashboard/gestionEtudiant", label: "Gestion étudiants", icon: <FaUserGraduate /> },
   { href: "/resp_inscription/dashboard/statistiqueInscription", label: "Statistiques Inscription", icon: <FaChartBar /> },
   { href: "/resp_inscription/dashboard/periodeInscription", label: "Gestion Période Inscription", icon: <FaBook /> },
+  { href: "/resp_inscription/dashboard/inscrire_etudiants", label: "Inscription Etudiant", icon: <FaBook /> },
+
+
 ];
 
 export default function MenuLateralRespInscription() {
