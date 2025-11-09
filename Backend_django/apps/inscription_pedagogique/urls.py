@@ -1,9 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
 from apps.inscription_pedagogique.views.apiviews.stats_views import StatistiquesInscriptionsAPIView
-
-# === VIEWSETS ===
 from .views.viewset.views import (
     AnneeAcademiqueViewSet, 
     AnneeEtudeViewSet, 
@@ -19,12 +16,13 @@ from .views.viewset.views import (
     verifier_ancien_etudiant,  
 )
 
-# === API VIEWS ===
 from .views.apiviews.parcours_relations_view import parcours_avec_relations
 from .views.apiviews.inscriptions_filtre_view import FiltrerEtudiantsAPIView, EtudiantsParUEView 
 from .views.apiviews.inscription_admin.inscription import InscriptionEtudiantView
-from .views.apiviews.inscription_admin.email import EnvoyerLienConnexionView  # ← CORRIGÉ
-from .views.apiviews.inscription_admin.premiere_connexion import PremiereConnexionView
+from .views.apiviews.inscription_admin.set_password import SetPasswordView
+#from .views.apiviews.inscription_admin.premiere_connexion import PremiereConnexionView
+#from apps.inscription_pedagogique.views.apiviews.inscription_admin.historique import HistoriqueImportView
+
 
 # === ROUTER ===
 router = DefaultRouter()
@@ -34,7 +32,7 @@ router.register(r'filiere', FiliereViewSet)
 router.register(r'parcours', ParcoursViewSet)
 router.register(r'etablissement', EtablissementViewSet)
 router.register(r'departement', DepartementViewSet)
-router.register(r'inscription', InscriptionViewSet, basename='inscription')  # ← basename
+router.register(r'inscription', InscriptionViewSet)
 router.register(r'periode-inscription', PeriodeInscriptionViewSet)
 router.register(r'semestre', SemestreViewSet)
 
@@ -42,22 +40,20 @@ router.register(r'semestre', SemestreViewSet)
 urlpatterns = [
     path('', include(router.urls)),
 
-    # === FILTRES & STATS ===
+    # Filtres & Stats
     path('etudiants/filtrer/', FiltrerEtudiantsAPIView.as_view(), name='filtrer_etudiants'), 
     path('etudiants/ue/<int:ue_id>/', EtudiantsParUEView.as_view(), name='etudiants_par_ue'),
     path('parcours-relations/', parcours_avec_relations, name='parcours-relations'),
     path('stats/', StatistiquesInscriptionsAPIView.as_view(), name='statistiques-inscriptions'),
 
-    # === RÉINSCRIPTION ANCIEN ÉTUDIANT ===
+    # Réinscription ancien étudiant
     path('verifier-ancien-etudiant/<str:num_carte>/', verifier_ancien_etudiant, name='verifier_ancien_etudiant'),
     path('ancien-etudiant/', inscription_ancien_etudiant, name='inscription_ancien_etudiant'),
     path('inscription/check-annee-etude/', check_annee_etude, name='check-annee-etude'),
 
-    # === INSCRIPTION PAR ADMIN ===
+    # === INSCRIPTION PAR RESPONSABLE ===
     path('inscrire-etudiant/', InscriptionEtudiantView.as_view(), name='inscrire_etudiant'),
-    path('envoyer-lien/<int:etudiant_id>/', EnvoyerLienConnexionView.as_view(), name='envoyer-lien'),  # ← CORRIGÉ
-
-    # === PREMIÈRE CONNEXION ===
-    path('premiere-connexion/', PremiereConnexionView.as_view(), name='premiere_connexion'),
+    path('set-password/', SetPasswordView.as_view(), name='set-password'),
+    #path('premiere-connexion/', PremiereConnexionView.as_view(), name='premiere_connexion'),
     #path('historique-imports/', HistoriqueImportView.as_view(), name='historique_imports'),
 ]

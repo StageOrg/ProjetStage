@@ -21,7 +21,8 @@ router.register(r'connexions', ConnexionViewSet)
 router.register(r'chefs-departement', ChefDepartementViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('etudiants/mes-ues-avec-notes/', views.etudiant_mes_ues_avec_notes, name='etudiant-mes-ues-avec-notes'),
     path('check-num-carte/', check_num_carte, name='check-num-carte'),
+    path('', include(router.urls)),
+
 ]

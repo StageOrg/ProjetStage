@@ -13,6 +13,7 @@ from django.contrib.auth.password_validation import validate_password
 from apps.utilisateurs.models import Etudiant, Utilisateur
 from apps.page_professeur.models import UE, Note, ResultatUE
 from apps.page_professeur.services import obtenir_ues_validees
+from django.db.models import Q
 
 class AnneeAcademiqueViewSet(viewsets.ModelViewSet):
     queryset = AnneeAcademique.objects.all().order_by('libelle')
@@ -84,28 +85,18 @@ class PeriodeInscriptionViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def verifier_ancien_etudiant(request, num_carte):
-    """
-    Vérifie si un numéro de carte existe déjà pour les anciens étudiants
-    et retourne toutes les informations nécessaires pour la réinscription
-    """
     try:
-        # Récupérer l'étudiant
         etudiant = Etudiant.objects.select_related('utilisateur').filter(num_carte=num_carte).first()
-        
         if not etudiant:
             return Response({
-                'existe': False, 
+                'existe': False,
                 'message': 'Numéro de carte non trouvé'
             }, status=404)
-        
-        # Récupérer la dernière inscription
+
         derniere_inscription = Inscription.objects.filter(
             etudiant=etudiant
-        ).select_related(
-            'parcours', 'filiere', 'annee_etude', 'anneeAcademique'
-        ).order_by('-anneeAcademique__libelle').first()
-        
-        # Fonction helper pour créer les données étudiant
+        ).select_related('parcours', 'filiere', 'annee_etude', 'anneeAcademique').order_by('-anneeAcademique__libelle').first()
+
         def get_etudiant_data():
             return {
                 'id': etudiant.id,
@@ -115,13 +106,13 @@ def verifier_ancien_etudiant(request, num_carte):
                 'nom': etudiant.utilisateur.last_name,
                 'prenom': etudiant.utilisateur.first_name,
                 'email': etudiant.utilisateur.email,
-                'telephone': etudiant.utilisateur.telephone,
+                'telephone': etudiant.utilisateur.telephone or 'Non renseigné',
                 'date_naissance': etudiant.date_naiss,
                 'lieu_naissance': etudiant.lieu_naiss,
                 'autre_prenom': etudiant.autre_prenom,
                 'photo': etudiant.photo.url if etudiant.photo else None
             }
-        
+
         if not derniere_inscription:
             return Response({
                 'existe': True,
@@ -132,119 +123,96 @@ def verifier_ancien_etudiant(request, num_carte):
                 'ues_validees': [],
                 'ues_non_validees': []
             })
-        
-        # Récupérer les UEs validées et non validées via ResultatUE
+
+        # RÉSULTATS
         resultats_ues = ResultatUE.objects.filter(
             etudiant=etudiant,
             inscription=derniere_inscription
         ).select_related('ue')
-        
+
         ues_validees = resultats_ues.filter(est_valide=True)
         ues_non_validees = resultats_ues.filter(est_valide=False)
-        
-        # Déterminer la prochaine année d'étude
-        annee_etude_actuelle = derniere_inscription.annee_etude
-        ordre_annees = {
-            'Licence 1': 1, 'Licence 2': 2, 'Licence 3': 3,
-            'Master 1': 4, 'Master 2': 5
-        }
-        
-        ordre_actuel = ordre_annees.get(annee_etude_actuelle.libelle, 0)
+
+        # PROCHAINE ANNÉE
+        ordre_annees = {'Licence 1': 1, 'Licence 2': 2, 'Licence 3': 3, 'Master 1': 4, 'Master 2': 5}
+        ordre_actuel = ordre_annees.get(derniere_inscription.annee_etude.libelle, 0)
         prochaine_annee = None
-        
-        if ordre_actuel < 5:  # S'il n'est pas en Master 2
-            for libelle, ordre in ordre_annees.items():
+        if ordre_actuel < 5:
+            for lib, ordre in ordre_annees.items():
                 if ordre == ordre_actuel + 1:
-                    prochaine_annee = AnneeEtude.objects.filter(libelle=libelle).first()
+                    prochaine_annee = AnneeEtude.objects.filter(libelle=lib).first()
                     break
-        
-        # Récupérer les UEs disponibles pour la prochaine année (non validées)
-        ues_disponibles = []
-        if prochaine_annee:
-            ues_disponibles = UE.objects.filter(
+
+        # UES DISPONIBLES : PROCHAINE ANNÉE + NON VALIDÉES
+        ues_non_validees_ids = ues_non_validees.values_list('ue_id', flat=True)
+        ues_validees_ids = ues_validees.values_list('ue_id', flat=True)
+
+        ues_disponibles = UE.objects.filter(
+            Q(
                 parcours=derniere_inscription.parcours,
                 filiere=derniere_inscription.filiere,
                 annee_etude=prochaine_annee
-            ).exclude(id__in=ues_validees.values_list('ue_id', flat=True))
-        
-        # Inclure les UEs non validées de l'inscription précédente
-        ues_disponibles = ues_disponibles | UE.objects.filter(
-            id__in=ues_non_validees.values_list('ue_id', flat=True)
-        )
-        
+            ) & ~Q(id__in=ues_validees_ids)
+            |
+            Q(id__in=ues_non_validees_ids)
+        ).distinct() if prochaine_annee else UE.objects.filter(id__in=ues_non_validees_ids)
+
+        # MARQUER LES UES À RATTRAPER
+        ues_disponibles_list = []
+        for ue in ues_disponibles:
+            is_from_previous = ue.id in ues_non_validees_ids
+            moyenne_precedente = None
+            if is_from_previous:
+                res = ues_non_validees.filter(ue_id=ue.id).first()
+                moyenne_precedente = res.moyenne if res else None
+
+            ues_disponibles_list.append({
+                'id': ue.id,
+                'code': ue.code,
+                'libelle': ue.libelle,
+                'nbre_credit': ue.nbre_credit,
+                'composite': ue.composite,
+                'from_previous_year': is_from_previous,
+                'moyenne_precedente': moyenne_precedente
+            })
+
         return Response({
             'existe': True,
             'etudiant': get_etudiant_data(),
             'derniere_inscription': {
                 'id': derniere_inscription.id,
-                'parcours': {
-                    'id': derniere_inscription.parcours.id,
-                    'libelle': derniere_inscription.parcours.libelle,
-                    'abbreviation': derniere_inscription.parcours.abbreviation
-                },
-                'filiere': {
-                    'id': derniere_inscription.filiere.id,
-                    'nom': derniere_inscription.filiere.nom,
-                    'abbreviation': derniere_inscription.filiere.abbreviation
-                },
-                'annee_etude': {
-                    'id': derniere_inscription.annee_etude.id,
-                    'libelle': derniere_inscription.annee_etude.libelle
-                },
-                'annee_academique': {
-                    'id': derniere_inscription.anneeAcademique.id,
-                    'libelle': derniere_inscription.anneeAcademique.libelle
-                }
+                'parcours': {'id': derniere_inscription.parcours.id, 'libelle': derniere_inscription.parcours.libelle},
+                'filiere': {'id': derniere_inscription.filiere.id, 'nom': derniere_inscription.filiere.nom},
+                'annee_etude': {'id': derniere_inscription.annee_etude.id, 'libelle': derniere_inscription.annee_etude.libelle},
+                'annee_academique': {'id': derniere_inscription.anneeAcademique.id, 'libelle': derniere_inscription.anneeAcademique.libelle}
             },
             'prochaine_annee': {
                 'id': prochaine_annee.id if prochaine_annee else None,
                 'libelle': prochaine_annee.libelle if prochaine_annee else None
             } if prochaine_annee else None,
-            'ues_disponibles': [
-                {
-                    'id': ue.id,
-                    'libelle': ue.libelle,
-                    'code': ue.code,
-                    'nbre_credit': ue.nbre_credit,
-                    'description': ue.description,
-                    'composite': ue.composite,
-                    'composantes': [
-                        {'id': comp.id, 'code': comp.code, 'libelle': comp.libelle, 'nbre_credit': comp.nbre_credit}
-                        for comp in ue.ues_composantes.all()
-                    ] if ue.composite else []
-                } for ue in ues_disponibles.distinct()
-            ],
+            'ues_disponibles': ues_disponibles_list,
             'ues_validees': [
                 {
-                    'id': resultat.ue.id,
-                    'code': resultat.ue.code,
-                    'libelle': resultat.ue.libelle,
-                    'nbre_credit': resultat.ue.nbre_credit,
-                    'moyenne': resultat.moyenne,
-                    'credits_obtenus': resultat.credits_obtenus,
-                    'composite': resultat.ue.composite,
-                    'details_validation': resultat.details_validation
-                } for resultat in ues_validees
+                    'id': r.ue.id,
+                    'code': r.ue.code,
+                    'libelle': r.ue.libelle,
+                    'nbre_credit': r.ue.nbre_credit,
+                    'moyenne': r.moyenne
+                } for r in ues_validees
             ],
             'ues_non_validees': [
                 {
-                    'id': resultat.ue.id,
-                    'code': resultat.ue.code,
-                    'libelle': resultat.ue.libelle,
-                    'nbre_credit': resultat.ue.nbre_credit,
-                    'moyenne': resultat.moyenne,
-                    'credits_obtenus': resultat.credits_obtenus,
-                    'composite': resultat.ue.composite,
-                    'details_validation': resultat.details_validation
-                } for resultat in ues_non_validees
+                    'id': r.ue.id,
+                    'code': r.ue.code,
+                    'libelle': r.ue.libelle,
+                    'moyenne': r.moyenne
+                } for r in ues_non_validees
             ]
         })
-        
+
     except Exception as e:
-        print(f"Erreur dans verifier_ancien_etudiant: {str(e)}")
-        return Response({
-            'error': f'Erreur serveur: {str(e)}'
-        }, status=500)
+        print(f"Erreur: {e}")
+        return Response({'error': f'Erreur serveur: {str(e)}'}, status=500)
         
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -423,3 +391,4 @@ def check_annee_etude(request):
         'valide': True,
         'message': 'Année d\'étude autorisée'
     })       
+    

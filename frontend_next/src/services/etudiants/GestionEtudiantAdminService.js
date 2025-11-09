@@ -79,13 +79,21 @@ const etudiantService = {
   },
 
   deleteEtudiant: async (id) => {
-    try {
+  try {
+    // Récupérer d'abord l'étudiant pour obtenir l'ID utilisateur
+    const etudiantResponse = await api.get(`/utilisateurs/etudiants/${id}/`);
+    const utilisateurId = etudiantResponse.data.utilisateur?.id || etudiantResponse.data.utilisateur;
+    
+    if (utilisateurId) {
+      await api.delete(`/utilisateurs/${utilisateurId}/`);
+    } else {
       await api.delete(`/utilisateurs/etudiants/${id}/`);
-    } catch (error) {
-      console.error(" Erreur deleteEtudiant:", error);
-      throw error;
     }
-  },
+  } catch (error) {
+    console.error("Erreur deleteEtudiant:", error);
+    throw error;
+  }
+},
 
   updateEtudiant: async (id, data) => {
     try {

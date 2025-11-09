@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Lock, Unlock, Edit2, Save, Info } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Lock, Unlock, Edit2, Save } from 'lucide-react';
 import periodeInscriptionService from '@/services/inscription/periodeInscriptionService';
 
 export default function GestionPeriodeInscription() {
@@ -38,13 +38,11 @@ export default function GestionPeriodeInscription() {
       const periodeActive = periodes.find(p => p.active) || periodes[0] || null;
       const normalized = normalizeDates(periodeActive);
       setPeriode(normalized);
-      if (normalized) {
-        setFormData(normalized);
-      }
-      setLoading(false);
+      if (normalized) setFormData(normalized);
     } catch (error) {
       console.error('Erreur:', error);
       showMessage('error', 'Erreur lors du chargement');
+    } finally {
       setLoading(false);
     }
   };
@@ -92,13 +90,13 @@ export default function GestionPeriodeInscription() {
         showMessage('success', 'Période créée avec succès');
       }
       const normalized = normalizeDates(result);
-      setPeriode({ ...normalized });
-      setFormData({ ...normalized });
+      setPeriode(normalized);
+      setFormData(normalized);
       setIsEditing(false);
-      setSaving(false);
     } catch (error) {
-      console.error('❌ Erreur:', error);
+      console.error('Erreur:', error);
       showMessage('error', 'Erreur lors de l\'enregistrement');
+    } finally {
       setSaving(false);
     }
   };
@@ -108,11 +106,11 @@ export default function GestionPeriodeInscription() {
       const newStatus = !periode.active;
       const result = await periodeInscriptionService.toggleActive(periode.id, newStatus);
       const normalized = normalizeDates(result);
-      setPeriode({ ...normalized });
-      setFormData({ ...normalized });
+      setPeriode(normalized);
+      setFormData(normalized);
       showMessage('success', newStatus ? 'Inscriptions activées' : 'Inscriptions désactivées');
     } catch (error) {
-      console.error('❌ Erreur toggle:', error);
+      console.error('Erreur toggle:', error);
       showMessage('error', 'Erreur lors de la modification');
     }
   };
@@ -120,9 +118,7 @@ export default function GestionPeriodeInscription() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const formatDate = (dateString) => {
@@ -134,167 +130,97 @@ export default function GestionPeriodeInscription() {
     });
   };
 
-  // 🟢 NOUVELLE FONCTION : Calculer l'état réel des inscriptions
   const getEtatReel = () => {
     if (!periode) return null;
-
     const now = new Date();
     const debut = new Date(periode.date_debut);
     const fin = new Date(periode.date_fin);
-
-    // Réinitialiser les heures pour comparaison précise
     now.setHours(0, 0, 0, 0);
     debut.setHours(0, 0, 0, 0);
     fin.setHours(0, 0, 0, 0);
 
     if (!periode.active) {
-      return {
-        type: 'fermee',
-        icon: Lock,
-        color: 'text-red-600',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-300',
-        titre: 'Fermé manuellement',
-        description: 'Les inscriptions sont désactivées par le responsable',
-        badge: '🔴 Fermé'
-      };
+      return { type: 'fermee', icon: Lock, color: 'text-red-600', titre: 'Fermé manuellement', description: 'Les inscriptions sont désactivées par le responsable' };
     }
-
     if (now < debut) {
-      return {
-        type: 'programmee',
-        icon: Clock,
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-300',
-        titre: 'Programmé',
-        description: `Les inscriptions s'ouvriront le ${formatDate(periode.date_debut)}`,
-        badge: '🔵 Programmé'
-      };
+      return { type: 'programmee', icon: Clock, color: 'text-blue-600', titre: 'Programmé', description: `Ouverture le ${formatDate(periode.date_debut)}` };
     }
-
     if (now > fin) {
-      return {
-        type: 'expiree',
-        icon: XCircle,
-        color: 'text-orange-600',
-        bgColor: 'bg-orange-50',
-        borderColor: 'border-orange-300',
-        titre: 'Période expirée',
-        description: `La période s'est terminée le ${formatDate(periode.date_fin)}`,
-        badge: '⚠️ Expiré'
-      };
+      return { type: 'expiree', icon: XCircle, color: 'text-orange-600', titre: 'Période expirée', description: `Terminée le ${formatDate(periode.date_fin)}` };
     }
-
-    return {
-      type: 'ouverte',
-      icon: CheckCircle,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-300',
-      titre: 'Ouvert',
-      description: `Les étudiants peuvent s'inscrire jusqu'au ${formatDate(periode.date_fin)}`,
-      badge: '✅ En cours'
-    };
+    return { type: 'ouverte', icon: CheckCircle, color: 'text-green-600', titre: 'Ouvert', description: `Inscriptions ouvertes jusqu'au ${formatDate(periode.date_fin)}` };
   };
 
-  const getStatutInfo = () => {
-    if (!periode) {
-      return {
-        icon: XCircle,
-        color: 'text-gray-600',
-        bgColor: 'bg-gray-100',
-        text: 'Aucune période configurée',
-        description: 'Créez une période d\'inscription'
-      };
-    }
-
-    const etatReel = getEtatReel();
-    return {
-      icon: etatReel.icon,
-      color: etatReel.color,
-      bgColor: etatReel.bgColor === 'bg-red-50' ? 'bg-red-100' : 
-               etatReel.bgColor === 'bg-blue-50' ? 'bg-blue-100' :
-               etatReel.bgColor === 'bg-orange-50' ? 'bg-orange-100' : 'bg-green-100',
-      text: etatReel.titre,
-      description: etatReel.description
-    };
-  };
-
-  const statutInfo = getStatutInfo();
-  const StatutIcon = statutInfo.icon;
   const etatReel = getEtatReel();
+  const StatutIcon = etatReel?.icon;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-white p-6 rounded shadow-lg text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-          <p className="text-gray-600 text-sm">Chargement...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-3 border-gray-300 border-t-blue-600 mb-4"></div>
+        <p className="text-gray-600 font-medium text-lg">Chargement...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="text-center mt-2 mb-4">
-        <h1 className="text-3xl font-extrabold text-white flex items-center justify-center gap-3 underline underline-offset-8 decoration-blue-600">
-          <Calendar className="w-7 h-7 text-blue-600" />
+    <div className="max-w-6xl mx-auto px-6 py-10"> 
+      {/* Titre */}
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-extrabold text-gray-900 flex items-center justify-center gap-4">
+          <Calendar className="w-10 h-10 text-blue-600" />
           Gestion de la Période d'Inscription
         </h1>
-        <p className="text-gray-600 text-sm mt-1">
-          Configuration, activation et suivi des inscriptions
-        </p>
+        <p className="text-gray-600 text-base mt-3">Configuration, activation et suivi des inscriptions</p>
       </div>
 
+      {/* Message */}
       {message.text && (
-        <div className={`mb-4 p-3 flex items-center gap-2 text-sm rounded ${
-          message.type === 'success'
-            ? 'bg-green-100 text-green-800 border border-green-200'
-            : 'bg-red-100 text-red-800 border border-red-200'
+        <div className={`mb-8 p-5 flex items-center gap-4 text-base rounded-xl ${
+          message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
         }`}>
-          {message.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-          <span>{message.text}</span>
+          {message.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+          <span className="font-medium">{message.text}</span>
         </div>
       )}
 
-      {/* Statut actuel */}
-      <div className={`${statutInfo.bgColor} p-6 mb-5 rounded border ${statutInfo.color} border-opacity-30`}>
-        <div className="flex items-center gap-3">
-          <div className={`p-3 ${statutInfo.bgColor} rounded-full`}>
-            <StatutIcon className={`w-8 h-8 ${statutInfo.color}`} />
-          </div>
-          <div>
-            <h2 className={`text-xl font-bold ${statutInfo.color}`}>{statutInfo.text}</h2>
-            <p className="text-gray-700 text-sm">{statutInfo.description}</p>
+      {/* État actuel */}
+      {etatReel && (
+        <div className="mb-10 p-6 rounded-xl bg-gray-50">
+          <div className="flex items-center gap-5">
+            <div className="p-4 bg-white rounded-full shadow-md">
+              <StatutIcon className={`w-9 h-9 ${etatReel.color}`} />
+            </div>
+            <div>
+              <h2 className={`text-2xl font-bold ${etatReel.color}`}>{etatReel.titre}</h2>
+              <p className="text-gray-700 text-base mt-1">{etatReel.description}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Configuration */}
-      <div className="bg-white shadow rounded p-5 mb-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            Configuration
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+            <Calendar className="w-6 h-6 text-blue-600" />
+            Configuration de la période
           </h3>
           {!isEditing && periode && (
             <button
               onClick={handleEdit}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-semibold flex items-center gap-1 transition"
+              className="flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition text-base font-semibold shadow-sm"
             >
-              <Edit2 className="w-3 h-3" />
+              <Edit2 className="w-5 h-5" />
               Modifier
             </button>
           )}
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8"> {/* ESPACEMENT AUGMENTÉ */}
+          {/* Numéro */}
           <div>
-            <label className="block text-gray-700 font-semibold text-sm mb-1">
-              Numéro de période*
-            </label>
+            <label className="block text-gray-700 font-semibold text-base mb-2">Numéro de période *</label>
             {isEditing ? (
               <>
                 <input
@@ -303,28 +229,27 @@ export default function GestionPeriodeInscription() {
                   value={formData.numero}
                   onChange={handleChange}
                   placeholder="Ex: P-2024-2025-S1"
-                  className={`w-full px-3 py-2 rounded text-sm border focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                  className={`w-full px-4 py-3 rounded-xl text-base border-2 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                     errors.numero ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
                 {errors.numero && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
                     {errors.numero}
                   </p>
                 )}
               </>
             ) : (
-              <div className="px-3 py-2 bg-gray-50 rounded text-gray-800 font-semibold text-sm">
+              <div className="px-4 py-3 bg-gray-100 rounded-xl text-gray-800 font-semibold text-base">
                 {periode?.numero || 'Non défini'}
               </div>
             )}
           </div>
 
+          {/* Date début */}
           <div>
-            <label className="block text-gray-700 font-semibold text-sm mb-1">
-              Date de début*
-            </label>
+            <label className="block text-gray-700 font-semibold text-base mb-2">Date de début *</label>
             {isEditing ? (
               <>
                 <input
@@ -332,28 +257,27 @@ export default function GestionPeriodeInscription() {
                   name="date_debut"
                   value={formData.date_debut}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 rounded text-sm border focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                  className={`w-full px-4 py-3 rounded-xl text-base border-2 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                     errors.date_debut ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
                 {errors.date_debut && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
                     {errors.date_debut}
                   </p>
                 )}
               </>
             ) : (
-              <div className="px-3 py-2 bg-gray-50 rounded text-gray-800 font-semibold text-sm">
+              <div className="px-4 py-3 bg-gray-100 rounded-xl text-gray-800 font-semibold text-base">
                 {formatDate(periode?.date_debut)}
               </div>
             )}
           </div>
 
+          {/* Date fin */}
           <div>
-            <label className="block text-gray-700 font-semibold text-sm mb-1">
-              Date de fin*
-            </label>
+            <label className="block text-gray-700 font-semibold text-base mb-2">Date de fin *</label>
             {isEditing ? (
               <>
                 <input
@@ -361,121 +285,96 @@ export default function GestionPeriodeInscription() {
                   name="date_fin"
                   value={formData.date_fin}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 rounded text-sm border focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                  className={`w-full px-4 py-3 rounded-xl text-base border-2 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                     errors.date_fin ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
                 {errors.date_fin && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
                     {errors.date_fin}
                   </p>
                 )}
               </>
             ) : (
-              <div className="px-3 py-2 bg-gray-50 rounded text-gray-800 font-semibold text-sm">
+              <div className="px-4 py-3 bg-gray-100 rounded-xl text-gray-800 font-semibold text-base">
                 {formatDate(periode?.date_fin)}
               </div>
             )}
           </div>
-
-          {isEditing && (
-            <div className="flex gap-2 pt-3">
-              <button
-                onClick={handleCancel}
-                className="flex-1 px-3 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition font-semibold text-sm flex items-center justify-center gap-1"
-              >
-                <XCircle className="w-4 h-4" />
-                Annuler
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition font-semibold text-sm flex items-center justify-center gap-1 disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Enregistrement...' : 'Enregistrer'}
-              </button>
-            </div>
-          )}
         </div>
+
+        {/* Boutons édition */}
+        {isEditing && (
+          <div className="flex gap-4 justify-end pt-4">
+            <button
+              onClick={handleCancel}
+              className="px-8 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold text-base"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold text-base disabled:opacity-50 flex items-center gap-3"
+            >
+              <Save className="w-5 h-5" />
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 🟢 NOUVEAU : Contrôle ON/OFF amélioré avec badge d'état */}
-      {periode && !isEditing && etatReel && (
-        <div className="bg-white shadow rounded p-6">
-          <div className="flex items-center justify-between mb-4">
+      {/* Contrôle ON/OFF */}
+      {periode && !isEditing && (
+        <div className="mt-12 p-8 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-800">Activation manuelle</h3>
-              <p className="text-gray-600 text-sm">Activer/Désactiver les inscriptions</p>
+              <h3 className="text-xl font-bold text-gray-800">Activation manuelle</h3>
+              <p className="text-gray-600 text-base">Activer ou désactiver les inscriptions</p>
             </div>
-            
             <button
               onClick={toggleActive}
-              className={`relative inline-flex h-12 w-24 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 ${
+              className={`relative inline-flex h-14 w-28 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 ${
                 periode.active ? 'bg-green-600 focus:ring-green-300' : 'bg-gray-400 focus:ring-gray-300'
               }`}
             >
-              <span className={`inline-block h-10 w-10 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
-                periode.active ? 'translate-x-13' : 'translate-x-1'
+              <span className={`inline-block h-12 w-12 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                periode.active ? 'translate-x-15' : 'translate-x-1'
               }`}>
                 {periode.active ? (
-                  <Unlock className="w-6 h-6 text-green-600 m-2" />
+                  <Unlock className="w-7 h-7 text-green-600 m-2.5" />
                 ) : (
-                  <Lock className="w-6 h-6 text-gray-400 m-2" />
+                  <Lock className="w-7 h-7 text-gray-400 m-2.5" />
                 )}
               </span>
             </button>
           </div>
 
-          {/* 🟢 Badge d'état réel */}
-          <div className={`p-4 rounded-lg border-2 ${etatReel.borderColor} ${etatReel.bgColor}`}>
-            <div className="flex items-start gap-3">
-              <etatReel.icon className={`w-6 h-6 ${etatReel.color} flex-shrink-0 mt-0.5`} />
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className={`font-bold ${etatReel.color} text-base`}>
-                    État actuel : {etatReel.titre}
-                  </h4>
-                  <span className="text-xs font-semibold px-2 py-1 rounded bg-white/50">
-                    {etatReel.badge}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-700 mb-2">
-                  {etatReel.description}
-                </p>
-                
-                {/* Info supplémentaire selon l'état */}
-                {etatReel.type === 'programmee' && (
-                  <div className="mt-3 p-2 bg-white/60 rounded text-xs">
-                    <Info className="w-4 h-4 inline mr-1" />
-                    <strong>Note :</strong> L'activation est prévue. Les étudiants verront cette période comme "à venir".
-                  </div>
-                )}
-                
-                {etatReel.type === 'expiree' && (
-                  <div className="mt-3 p-2 bg-white/60 rounded text-xs">
-                    <Info className="w-4 h-4 inline mr-1" />
-                    <strong>Recommandation :</strong> Désactivez manuellement ou créez une nouvelle période.
-                  </div>
-                )}
+          <div className="p-5 bg-white rounded-xl shadow-sm">
+            <div className="flex items-start gap-4">
+              <StatutIcon className={`w-7 h-7 ${etatReel.color} mt-0.5`} />
+              <div>
+                <h4 className={`font-bold ${etatReel.color} text-lg`}>État actuel : {etatReel.titre}</h4>
+                <p className="text-base text-gray-700 mt-1">{etatReel.description}</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Aucune période */}
       {!periode && (
-        <div className="bg-white shadow rounded p-8 text-center">
-          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-gray-800 mb-1">Aucune période configurée</h3>
-          <p className="text-gray-600 text-sm mb-4">Créez une période pour commencer</p>
-          <button 
+        <div className="text-center py-16">
+          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-5" />
+          <h3 className="text-2xl font-bold text-gray-800 mb-3">Aucune période configurée</h3>
+          <p className="text-gray-600 text-lg mb-8">Créez une période pour commencer</p>
+          <button
             onClick={() => {
               setIsEditing(true);
               setFormData({ numero: '', date_debut: '', date_fin: '', active: false, responsable: null });
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-semibold transition"
+            className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-lg shadow-md"
           >
             Créer une période
           </button>
