@@ -1,9 +1,13 @@
-// frontend_next/src/features/etudiant/dashboard/statistiques/Statistiques.js
 "use client";
 import React, { useState, useEffect } from "react";
-import { 
-  FaCheckCircle, FaChartBar, FaMedal, FaStar, 
-  FaTrophy, FaSpinner, FaGraduationCap, FaClipboardList 
+import {
+  FaCheckCircle,
+  FaChartBar,
+  FaMedal,
+  FaStar,
+  FaSpinner,
+  FaGraduationCap,
+  FaClipboardList
 } from "react-icons/fa";
 import etudiantStatsService from "@/services/etudiants/etudiantStatsService";
 
@@ -22,13 +26,14 @@ export default function Statistiques() {
       const statsData = await etudiantStatsService.calculateMyStats();
       setStats(statsData);
     } catch (err) {
-      console.error('Erreur chargement statistiques:', err);
+      console.error("Erreur chargement statistiques:", err);
       setError("Erreur lors du chargement de vos statistiques");
     } finally {
       setLoading(false);
     }
   };
 
+  // === Fonctions utilitaires ===
   const getMoyenneColor = (moyenne) => {
     if (moyenne >= 16) return "text-green-700";
     if (moyenne >= 14) return "text-green-600";
@@ -54,12 +59,15 @@ export default function Statistiques() {
     return "bg-red-600";
   };
 
+  // === États ===
   if (loading) {
     return (
       <div className="bg-transparent backdrop-blur-2xl shadow-1xl px-10 py-12 w-full animate-fade-in">
         <div className="flex items-center justify-center h-64">
           <FaSpinner className="animate-spin text-4xl text-blue-600" />
-          <span className="ml-3 text-lg text-black">Calcul de vos statistiques...</span>
+          <span className="ml-3 text-lg text-black">
+            Calcul de vos statistiques...
+          </span>
         </div>
       </div>
     );
@@ -70,7 +78,7 @@ export default function Statistiques() {
       <div className="bg-transparent backdrop-blur-2xl shadow-1xl px-10 py-12 w-full animate-fade-in">
         <div className="text-center text-black">
           <p className="text-lg">{error}</p>
-          <button 
+          <button
             onClick={fetchStats}
             className="mt-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700"
           >
@@ -81,25 +89,31 @@ export default function Statistiques() {
     );
   }
 
+  // === Rendu principal ===
+  const g = stats?.global || {};
+
   return (
     <div className="bg-transparent backdrop-blur-2xl shadow-1xl px-10 py-12 w-full animate-fade-in">
       <h2 className="flex items-center gap-3 text-3xl font-extrabold text-black mb-8 drop-shadow justify-center">
-        <FaChartBar className="text-blue-700 text-3xl" /> 
+        <FaChartBar className="text-blue-700 text-3xl" />
         Statistiques personnelles
       </h2>
-      
+
       {/* Statistiques principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
-        
         {/* UEs validées */}
         <div className="flex flex-col items-center p-6 bg-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur">
           <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full mb-4">
             <FaCheckCircle className="text-3xl text-green-600" />
           </div>
-          <span className="text-4xl font-extrabold text-black">{stats?.uesValidees || 0}</span>
-          <span className="text-black text-center font-medium">UE validées</span>
+          <span className="text-4xl font-extrabold text-black">
+            {g.uesValidees || 0}
+          </span>
+          <span className="text-black text-center font-medium">
+            UE validées
+          </span>
           <span className="text-xs text-black mt-1">
-            / {stats?.nombreUEsInscrites || 0} inscrites
+            / {g.nombreUEsInscrites || 0} inscrites
           </span>
         </div>
 
@@ -108,41 +122,57 @@ export default function Statistiques() {
           <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-4">
             <FaStar className="text-3xl text-blue-600" />
           </div>
-          <span className="text-4xl font-extrabold text-black">{stats?.creditsObtenus || 0}</span>
-          <span className="text-black text-center font-medium">Crédits obtenus</span>
+          <span className="text-4xl font-extrabold text-black">
+            {g.creditsObtenus || 0}
+          </span>
+          <span className="text-black text-center font-medium">
+            Crédits obtenus
+          </span>
           <span className="text-xs text-black mt-1">
-            / {stats?.totalCredits || 0} possibles
+            / {g.totalCredits || 0} possibles
           </span>
         </div>
 
         {/* Moyenne générale */}
         <div className="flex flex-col items-center p-6 bg-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur">
-          <div className={`flex items-center justify-center w-16 h-16 bg-gradient-to-br ${getMoyenneBackground(stats?.moyenneGenerale || 0)} rounded-full mb-4`}>
+          <div
+            className={`flex items-center justify-center w-16 h-16 bg-gradient-to-br ${getMoyenneBackground(
+              g.moyenneGenerale || 0
+            )} rounded-full mb-4`}
+          >
             <FaMedal className="text-3xl text-orange-500" />
           </div>
-          <span className={`text-4xl font-extrabold ${getMoyenneColor(stats?.moyenneGenerale || 0)}`}>
-            {stats?.moyenneGenerale || 0}
+          <span
+            className={`text-4xl font-extrabold ${getMoyenneColor(
+              g.moyenneGenerale || 0
+            )}`}
+          >
+            {g.moyenneGenerale || 0}
           </span>
-          <span className="text-black text-center font-medium">Moyenne générale</span>
+          <span className="text-black text-center font-medium">
+            Moyenne générale
+          </span>
           <span className="text-xs text-black mt-1">/ 20</span>
         </div>
 
-        {/* UEs avec notes */}
+        {/* UEs notées */}
         <div className="flex flex-col items-center p-6 bg-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur">
           <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full mb-4">
             <FaClipboardList className="text-3xl text-purple-600" />
           </div>
-          <span className="text-4xl font-extrabold text-black">{stats?.nombreUEsAvecNotes || 0}</span>
+          <span className="text-4xl font-extrabold text-black">
+            {g.nombreUEsAvecNotes || 0}
+          </span>
           <span className="text-black text-center font-medium">UEs notées</span>
-          <span className="text-xs text-black mt-1">Évaluations disponibles</span>
+          <span className="text-xs text-black mt-1">
+            Évaluations disponibles
+          </span>
         </div>
       </div>
 
-      {/* Informations supplémentaires */}
-      {stats?.moyenneGenerale > 0 && (
+      {/* Détails */}
+      {g.moyenneGenerale > 0 && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Détails numériques */}
           <div className="bg-gray-200 rounded-2xl shadow-lg p-8 backdrop-blur">
             <h3 className="text-xl font-bold text-black mb-6 flex items-center gap-3">
               <FaChartBar className="text-blue-600 text-2xl" />
@@ -151,24 +181,26 @@ export default function Statistiques() {
             <div className="space-y-4">
               <div className="flex justify-between items-center p-4 bg-gray-300 rounded-lg">
                 <span className="text-black">UEs inscrites</span>
-                <span className="font-bold text-black">{stats?.nombreUEsInscrites || 0}</span>
+                <span className="font-bold text-black">
+                  {g.nombreUEsInscrites || 0}
+                </span>
               </div>
               <div className="flex justify-between items-center p-4 bg-gray-300 rounded-lg">
                 <span className="text-black">UEs évaluées</span>
-                <span className="font-bold text-black">{stats?.nombreUEsAvecNotes || 0}</span>
+                <span className="font-bold text-black">
+                  {g.nombreUEsAvecNotes || 0}
+                </span>
               </div>
               <div className="flex justify-between items-center p-4 bg-gray-300 rounded-lg">
                 <span className="text-black">Taux de réussite</span>
                 <span className="font-bold text-black">
-                  {stats?.totalCredits > 0 
-                    ? Math.round((stats?.creditsObtenus / stats?.totalCredits) * 100) 
-                    : 0}%
+                  {g.tauxReussite || 0}%
                 </span>
               </div>
               <div className="flex justify-between items-center p-4 bg-gray-300 rounded-lg">
                 <span className="text-black">Crédits restants</span>
                 <span className="font-bold text-black">
-                  {(stats?.totalCredits || 0) - (stats?.creditsObtenus || 0)}
+                  {(g.totalCredits || 0) - (g.creditsObtenus || 0)}
                 </span>
               </div>
             </div>
@@ -176,7 +208,7 @@ export default function Statistiques() {
         </div>
       )}
 
-      {/* Barre de progression */}
+      {/* Progression académique */}
       <div className="mt-10 bg-gray-200 rounded-2xl shadow-lg p-6 backdrop-blur">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-black flex items-center gap-2">
@@ -184,24 +216,26 @@ export default function Statistiques() {
             Progression académique
           </h3>
           <span className="text-2xl font-bold text-black">
-            {stats?.progressionPourcentage || 0}%
+            {g.progressionPourcentage || 0}%
           </span>
         </div>
-        
+
         <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden shadow-inner">
-          <div 
-            className={`h-6 rounded-full transition-all duration-1000 ease-out ${getProgressionColor(stats?.progressionPourcentage || 0)}`}
-            style={{ width: `${stats?.progressionPourcentage || 0}%` }}
+          <div
+            className={`h-6 rounded-full transition-all duration-1000 ease-out ${getProgressionColor(
+              g.progressionPourcentage || 0
+            )}`}
+            style={{ width: `${g.progressionPourcentage || 0}%` }}
           >
             <div className="h-full bg-white/20 rounded-full animate-pulse"></div>
           </div>
         </div>
-        
+
         <div className="flex justify-between items-center mt-3 text-sm text-black">
-          <span>Crédits validés : {stats?.creditsObtenus || 0}</span>
-          <span>Objectif : {stats?.totalCredits || 0} crédits</span>
+          <span>Crédits validés : {g.creditsObtenus || 0}</span>
+          <span>Objectif : {g.totalCredits || 0} crédits</span>
         </div>
       </div>
     </div>
-  );   
+  );
 }

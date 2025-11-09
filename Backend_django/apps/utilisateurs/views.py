@@ -299,39 +299,6 @@ class ChefDepartementViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
     
-    
-    @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
-    def me(self, request):
-        instance = request.user.gestionnaire
-        serializer = self.get_serializer(instance, data=request.data if request.method == 'PUT' else None, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        elif request.method == 'PUT':
-            return Response(serializer.errors, status=400)
-        return Response(serializer.data)
-
-# ----- CHEF DEPARTEMENT -----
-class ChefDepartementViewSet(viewsets.ModelViewSet):
-    queryset = ChefDepartement.objects.all()
-    serializer_class = ChefDepartementSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated and user.is_chef_dpt:
-            return ChefDepartement.objects.filter(utilisateur=user)
-        return super().get_queryset()
-    
-    @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
-    def me(self, request):
-        instance = request.user.chef_dpt
-        serializer = self.get_serializer(instance, data=request.data if request.method == 'PUT' else None, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        elif request.method == 'PUT':
-            return Response(serializer.errors, status=400)
-        return Response(serializer.data)
-
 # ----- CONNEXION -----
 class ConnexionViewSet(viewsets.ModelViewSet):
     queryset = Connexion.objects.all().order_by('-date_connexion')
@@ -388,14 +355,20 @@ def check_num_carte(request):
 def etudiant_mes_ues_avec_notes(request):
     """
     Endpoint pour qu'un étudiant récupère ses UEs avec notes
-    URL: GET /api/utilisateurs/etudiants/mes-ues-avec-notes/
+    URL: GET /api/utilisateurs/etudiants/mes_ues_avec_notes/
     """
+    print("🔍 DEBUG: Fonction etudiant_mes_ues_avec_notes appelée!")
+    print(f"🔍 DEBUG: Utilisateur: {request.user}")
+    print(f"🔍 DEBUG: Authentifié: {request.user.is_authenticated}")
+    print(f"🔍 DEBUG: Est étudiant: {hasattr(request.user, 'etudiant')}")
+    
     try:
         if not hasattr(request.user, 'etudiant'):
             return Response({"error": "Accès réservé aux étudiants"}, status=403)
             
         etudiant = request.user.etudiant
         
+        # Récupérer toutes les inscriptions de l'étudiant
         inscriptions = Inscription.objects.filter(etudiant=etudiant).select_related(
             'anneeAcademique', 'annee_etude', 'parcours', 'filiere'
         )
@@ -406,8 +379,17 @@ def etudiant_mes_ues_avec_notes(request):
         result = []
         
         for inscription in inscriptions:
-            for ue in inscription.ues.all().select_related('semestre'):
-                evaluations = Evaluation.objects.filter(ue=ue)
+            ues = inscription.ues.all().select_related('semestre')
+            
+            # Précharger toutes les évaluations et notes d'un coup
+            evaluations = Evaluation.objects.filter(ue__in=ues)
+            notes = Note.objects.filter(etudiant=etudiant, evaluation__in=evaluations)
+            
+            # Dictionnaire pour accès rapide aux notes
+            notes_dict = {note.evaluation_id: note.note for note in notes}
+            
+            for ue in ues:
+                ue_evaluations = [ev for ev in evaluations if ev.ue_id == ue.id]
                 
                 notes_par_evaluation = []
                 somme_notes_ponderees = 0
@@ -415,24 +397,19 @@ def etudiant_mes_ues_avec_notes(request):
                 moyenne_ue = None
                 has_notes = False
                 
-                for evaluation in evaluations:
-                    note_obj = Note.objects.filter(
-                        etudiant=etudiant, 
-                        evaluation=evaluation
-                    ).first()
-                    
-                    note_value = note_obj.note if note_obj else None
+                for ev in ue_evaluations:
+                    note_value = notes_dict.get(ev.id)
                     
                     notes_par_evaluation.append({
-                        'id': evaluation.id,
-                        'type': evaluation.type,
-                        'poids': evaluation.poids,
+                        'id': ev.id,
+                        'type': ev.type,
+                        'poids': ev.poids,
                         'note': note_value,
                     })
                     
                     if note_value is not None:
-                        somme_notes_ponderees += note_value * evaluation.poids
-                        poids_total += evaluation.poids
+                        somme_notes_ponderees += note_value * ev.poids
+                        poids_total += ev.poids
                         has_notes = True
                 
                 if poids_total > 0 and has_notes:
@@ -440,6 +417,7 @@ def etudiant_mes_ues_avec_notes(request):
                 
                 statut = "Validé" if (moyenne_ue and moyenne_ue >= 10) else "Non validé" if moyenne_ue else "En cours"
                 
+                # CORRECTION : Utilisez les bons noms d'attributs
                 result.append({
                     'id': ue.id,
                     'code': ue.code,
@@ -452,15 +430,24 @@ def etudiant_mes_ues_avec_notes(request):
                     'notes': notes_par_evaluation,
                     'moyenne': moyenne_ue,
                     'statut': statut,
-                    'parcours': inscription.parcours.nom if inscription.parcours else None,
-                    'filiere': inscription.filiere.nom if inscription.filiere else None,
-                    'annee_etude': inscription.annee_etude.nom if inscription.annee_etude else None,
-                    'annee_academique': inscription.anneeAcademique.libelle if inscription.anneeAcademique else None
+                    # CORRECTION : Vérifiez les noms d'attributs réels
+                    'parcours': getattr(inscription.parcours, 'nom', 
+                                       getattr(inscription.parcours, 'libelle', 
+                                              getattr(inscription.parcours, 'name', None))),
+                    'filiere': getattr(inscription.filiere, 'nom', 
+                                     getattr(inscription.filiere, 'libelle', 
+                                            getattr(inscription.filiere, 'name', None))),
+                    'annee_etude': getattr(inscription.annee_etude, 'nom', 
+                                         getattr(inscription.annee_etude, 'libelle', 
+                                                getattr(inscription.annee_etude, 'name', None))),
+                    'annee_academique': getattr(inscription.anneeAcademique, 'libelle', 
+                                              getattr(inscription.anneeAcademique, 'nom', 
+                                                     getattr(inscription.anneeAcademique, 'name', None)))
                 })
         
         return Response(result)
         
     except Exception as e:
+        import traceback
+        print(f"Erreur serveur: {str(e)}\n{traceback.format_exc()}")
         return Response({"error": f"Erreur serveur: {str(e)}"}, status=500)
-    
-
