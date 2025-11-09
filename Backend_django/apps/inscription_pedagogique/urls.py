@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from apps.inscription_pedagogique.views.apiviews.inscription_admin.import_anciens_etudiants import import_anciens_etudiants
 from apps.inscription_pedagogique.views.apiviews.stats_views import StatistiquesInscriptionsAPIView
 from .views.viewset.views import (
     AnneeAcademiqueViewSet, 
@@ -20,8 +21,6 @@ from .views.apiviews.parcours_relations_view import parcours_avec_relations
 from .views.apiviews.inscriptions_filtre_view import FiltrerEtudiantsAPIView, EtudiantsParUEView 
 from .views.apiviews.inscription_admin.inscription import InscriptionEtudiantView
 from .views.apiviews.inscription_admin.set_password import SetPasswordView
-#from .views.apiviews.inscription_admin.premiere_connexion import PremiereConnexionView
-#from apps.inscription_pedagogique.views.apiviews.inscription_admin.historique import HistoriqueImportView
 
 
 # === ROUTER ===
@@ -52,8 +51,7 @@ urlpatterns = [
     path('inscription/check-annee-etude/', check_annee_etude, name='check-annee-etude'),
 
     # === INSCRIPTION PAR RESPONSABLE ===
-    path('inscrire-etudiant/', InscriptionEtudiantView.as_view(), name='inscrire_etudiant'),
+    path('inscription/import-anciens-etudiants/', import_anciens_etudiants, name='import_anciens_etudiants'),    path('inscrire-etudiant/', InscriptionEtudiantView.as_view(), name='inscrire_etudiant'),
     path('set-password/', SetPasswordView.as_view(), name='set-password'),
-    #path('premiere-connexion/', PremiereConnexionView.as_view(), name='premiere_connexion'),
-    #path('historique-imports/', HistoriqueImportView.as_view(), name='historique_imports'),
+    
 ]
