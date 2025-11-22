@@ -16,7 +16,7 @@ class SetPasswordView(APIView):
         uid = request.data.get('uid')
         token = request.data.get('token')
         new_password = request.data.get('new_password')
-        old_password = request.data.get('old_password')  # ✅ Nouveau
+        old_password = request.data.get('old_password')  
         
         if not all([uid, token, new_password]):
             return Response(
@@ -35,7 +35,7 @@ class SetPasswordView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # ✅ Valider le mot de passe temporaire (optionnel)
+            #  Valider le mot de passe temporaire (optionnel)
             if old_password and not user.check_password(old_password):
                 return Response(
                     {'error': 'Le mot de passe temporaire est incorrect'}, 
@@ -56,7 +56,7 @@ class SetPasswordView(APIView):
             user.doit_changer_mdp = False
             user.save()
             
-            print(f"✅ Mot de passe changé pour {user.username}")
+            print(f" Mot de passe changé pour {user.username}")
             
             return Response(
                 {'message': 'Mot de passe défini avec succès'}, 
@@ -69,7 +69,7 @@ class SetPasswordView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            print(f"❌ Erreur set_password: {e}")
+            print(f" Erreur set_password: {e}")
             return Response(
                 {'error': 'Erreur lors de la définition du mot de passe'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -253,10 +253,10 @@ export default function NouvelEtudiantStep3() {
       {/* Boutons d'action */}
       <div className="flex justify-between mt-6 gap-4">
         <Link
-          href="/etudiant/inscription/etape-2"
+          href="/"
           className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center"
         >
-          Retour
+          Annuler
         </Link>
         <button
           type="submit"

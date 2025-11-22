@@ -92,11 +92,11 @@ def verifier_ancien_etudiant(request, num_carte):
                 'existe': False,
                 'message': 'Numéro de carte non trouvé'
             }, status=404)
-
+        
         derniere_inscription = Inscription.objects.filter(
             etudiant=etudiant
         ).select_related('parcours', 'filiere', 'annee_etude', 'anneeAcademique').order_by('-anneeAcademique__libelle').first()
-
+        
         def get_etudiant_data():
             return {
                 'id': etudiant.id,
@@ -112,7 +112,7 @@ def verifier_ancien_etudiant(request, num_carte):
                 'autre_prenom': etudiant.autre_prenom,
                 'photo': etudiant.photo.url if etudiant.photo else None
             }
-
+        
         if not derniere_inscription:
             return Response({
                 'existe': True,
@@ -123,16 +123,16 @@ def verifier_ancien_etudiant(request, num_carte):
                 'ues_validees': [],
                 'ues_non_validees': []
             })
-
+        
         # RÉSULTATS
         resultats_ues = ResultatUE.objects.filter(
             etudiant=etudiant,
             inscription=derniere_inscription
         ).select_related('ue')
-
+        
         ues_validees = resultats_ues.filter(est_valide=True)
         ues_non_validees = resultats_ues.filter(est_valide=False)
-
+        
         # PROCHAINE ANNÉE
         ordre_annees = {'Licence 1': 1, 'Licence 2': 2, 'Licence 3': 3, 'Master 1': 4, 'Master 2': 5}
         ordre_actuel = ordre_annees.get(derniere_inscription.annee_etude.libelle, 0)
@@ -142,11 +142,12 @@ def verifier_ancien_etudiant(request, num_carte):
                 if ordre == ordre_actuel + 1:
                     prochaine_annee = AnneeEtude.objects.filter(libelle=lib).first()
                     break
-
+        
         # UES DISPONIBLES : PROCHAINE ANNÉE + NON VALIDÉES
         ues_non_validees_ids = ues_non_validees.values_list('ue_id', flat=True)
         ues_validees_ids = ues_validees.values_list('ue_id', flat=True)
-
+        
+        # 🔥 IMPORTANT: Utiliser prefetch_related pour charger les composantes
         ues_disponibles = UE.objects.filter(
             Q(
                 parcours=derniere_inscription.parcours,
@@ -155,8 +156,40 @@ def verifier_ancien_etudiant(request, num_carte):
             ) & ~Q(id__in=ues_validees_ids)
             |
             Q(id__in=ues_non_validees_ids)
-        ).distinct() if prochaine_annee else UE.objects.filter(id__in=ues_non_validees_ids)
-
+        ).prefetch_related('ues_composantes', 'semestre').distinct() if prochaine_annee else UE.objects.filter(
+            id__in=ues_non_validees_ids
+        ).prefetch_related('ues_composantes', 'semestre')
+        
+        # 🔥 FONCTION POUR SERIALISER UNE UE AVEC SES COMPOSANTES
+        def serialize_ue(ue, is_from_previous=False, moyenne_precedente=None):
+            ue_data = {
+                'id': ue.id,
+                'code': ue.code,
+                'libelle': ue.libelle,
+                'nbre_credit': ue.nbre_credit,
+                'composite': ue.composite,
+                'semestre': ue.semestre.libelle if ue.semestre else None,
+                'from_previous_year': is_from_previous,
+                'moyenne_precedente': moyenne_precedente
+            }
+            
+            # 🔥 AJOUTER LES COMPOSANTES SI UE COMPOSITE
+            if ue.composite:
+                ue_data['ues_composantes'] = [
+                    {
+                        'id': comp.id,
+                        'code': comp.code,
+                        'libelle': comp.libelle,
+                        'nbre_credit': comp.nbre_credit,
+                        'semestre': comp.semestre.libelle if comp.semestre else None,
+                    }
+                    for comp in ue.ues_composantes.all()
+                ]
+            else:
+                ue_data['ues_composantes'] = []
+            
+            return ue_data
+        
         # MARQUER LES UES À RATTRAPER
         ues_disponibles_list = []
         for ue in ues_disponibles:
@@ -165,17 +198,9 @@ def verifier_ancien_etudiant(request, num_carte):
             if is_from_previous:
                 res = ues_non_validees.filter(ue_id=ue.id).first()
                 moyenne_precedente = res.moyenne if res else None
-
-            ues_disponibles_list.append({
-                'id': ue.id,
-                'code': ue.code,
-                'libelle': ue.libelle,
-                'nbre_credit': ue.nbre_credit,
-                'composite': ue.composite,
-                'from_previous_year': is_from_previous,
-                'moyenne_precedente': moyenne_precedente
-            })
-
+            
+            ues_disponibles_list.append(serialize_ue(ue, is_from_previous, moyenne_precedente))
+        
         return Response({
             'existe': True,
             'etudiant': get_etudiant_data(),
@@ -209,9 +234,11 @@ def verifier_ancien_etudiant(request, num_carte):
                 } for r in ues_non_validees
             ]
         })
-
+        
     except Exception as e:
         print(f"Erreur: {e}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': f'Erreur serveur: {str(e)}'}, status=500)
         
 @api_view(['POST'])

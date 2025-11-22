@@ -71,13 +71,20 @@ class PeriodeInscription(models.Model):
     responsable = models.ForeignKey(RespInscription, on_delete=models.SET_NULL, null=True, related_name = 'periodes_inscription')
 
 class ImportEtudiant(models.Model):
-    admin = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
+    admin = models.ForeignKey(
+    RespInscription,
+    related_name='imports_etudiants',
+    verbose_name="Responsable inscription",
+    on_delete=models.SET_NULL,   
+    null=True,                   
+    blank=True
+    )
     fichier = models.FileField(upload_to='imports_etudiants/')
     type_fichier = models.CharField(max_length=10)  # csv, xlsx, pdf
     reussis = models.PositiveIntegerField(default=0)
     echoues = models.PositiveIntegerField(default=0)
     date_import = models.DateTimeField(auto_now_add=True)
-    details = models.JSONField(null=True, blank=True)  # {reussis: [...], echoues: [...]}
+    details = models.JSONField(null=True, blank=True)
 
     def __str__(self):
-        return f"Import {self.id} - {self.date_import.strftime('%d/%m/%Y %H:%M')}"
+        return f"Import {self.id} par {self.admin.utilisateur} - {self.date_import:%d/%m/%Y %H:%M}"

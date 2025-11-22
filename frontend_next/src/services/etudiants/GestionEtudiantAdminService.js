@@ -65,6 +65,13 @@ const etudiantService = {
       throw error;
     }
   },
+  getInscriptions: (etudiantId) =>{
+   console.log("Appel API: /inscription/etudiants/" + etudiantId + "/inscriptions/");
+  return api.get(`/inscription/etudiants/${etudiantId}/inscriptions/`).then((res) => res.data);  },
+
+
+  getUEsInscription: (inscriptionId) =>
+    api.get(`/inscription/inscriptions/${inscriptionId}/ues/`).then((res) => res.data),
 
   getAnneesByParcours: async (parcoursId) => {
     try {
@@ -104,6 +111,7 @@ const etudiantService = {
       throw error;
     }
   },
+  
   
   getStatistiquesInscriptions: async (filters = {}) => {
     try {

@@ -1,5 +1,7 @@
 // frontend_next/src/pages/res_inscrip/modification/EditStudent.js
 "use client";
+import { FaEye } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { FaSearch, FaFileExport, FaSync, FaEdit, FaTrash } from "react-icons/fa";
 import etudiantService from "@/services/etudiants/GestionEtudiantAdminService";
@@ -7,6 +9,8 @@ import EditStudentModal from "@/features/res_inscrip/modificationEtudiant/EditSt
 import ExportButton from "@/components/ui/ExportButton";  // Import du bouton d'export
 
 export default function GestionEtudiantsAdmin() {
+
+  const router = useRouter();
   const [etudiants, setEtudiants] = useState([]);
   const [parcoursData, setParcoursData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -304,6 +308,12 @@ export default function GestionEtudiantsAdmin() {
                         className="text-red-600 hover:text-red-500"
                       >
                         <FaTrash />
+                      </button>
+                      <button
+                        onClick={() => router.push(`/resp_inscription/etudiants/${etudiant.id}/inscriptions`)}
+                        className="text-green-600 hover:text-green-500"
+                      >
+                        <FaEye />
                       </button>
                     </td>
                   </tr>

@@ -16,6 +16,23 @@ function UERow({ ue, index, isSelected, wouldExceedLimit, onCheckboxChange, isCo
     }
   };
 
+  // 🔥 FONCTION POUR RÉCUPÉRER LE SEMESTRE (comme dans NouvelEtudiantStep4)
+  const getSemestreLibelle = (ue) => {
+    if (!ue.semestre) return "—";
+    
+    // Si semestre est un objet avec libelle
+    if (typeof ue.semestre === 'object' && ue.semestre.libelle) {
+      return ue.semestre.libelle;
+    }
+    
+    // Si semestre est un nombre ou une string
+    if (typeof ue.semestre === 'number' || typeof ue.semestre === 'string') {
+      return `S${ue.semestre}`;
+    }
+    
+    return "—";
+  };
+
   return (
     <>
       {/* Ligne principale de l'UE */}
@@ -61,7 +78,7 @@ function UERow({ ue, index, isSelected, wouldExceedLimit, onCheckboxChange, isCo
         
         <td className="border border-gray-300 px-3 py-2 text-center">
           <span className={isComposante ? "text-sm text-gray-600" : ""}>
-            {ue.semestre || "—"}
+            {getSemestreLibelle(ue)}
           </span>
         </td>
         
@@ -153,7 +170,9 @@ export default function UETable({
           {/* Section: UEs non validées (ancien étudiant) */}
           {ancienPrincipales.length > 0 && (
             <tr>
-              <td colSpan="5" className="px-3 py-2 bg-yellow-50 text-sm text-yellow-800 font-semibold">UE non validées</td>
+              <td colSpan="5" className="px-3 py-2 bg-yellow-50 text-sm text-yellow-800 font-semibold border border-gray-300">
+                UE non validées (à rattraper)
+              </td>
             </tr>
           )}
 
@@ -185,7 +204,9 @@ export default function UETable({
               {/* Section: UEs disponibles */}
               {uesPrincipales.length > 0 && (
                 <tr>
-                  <td colSpan="5" className="px-3 py-2 bg-white text-sm text-gray-800 font-semibold">UE disponibles</td>
+                  <td colSpan="5" className="px-3 py-2 bg-white text-sm text-gray-800 font-semibold border border-gray-300">
+                    UE disponibles
+                  </td>
                 </tr>
               )}
 

@@ -261,12 +261,12 @@ export default function NouvelEtudiantStep1() {
         {typeInscription?.typeEtudiant === 'ancien' ? 'Vos informations de connexion' : 'Création du compte'}
       </h2>
       
-      {/* Message ancien étudiant (si applicable). */}
+      {/* Message ancien étudiant  */}
       {typeInscription?.typeEtudiant === 'ancien' && ancienEtudiantData && (
         <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
           <h3 className="text-sm font-semibold text-green-800 mb-2">Profil trouvé !</h3>
           <p className="text-sm text-green-700">
-            Bonjour <strong>{ancienEtudiantData.etudiant.nom} {ancienEtudiantData.etudiant.prenom}</strong>,
+             <strong>{ancienEtudiantData.etudiant.nom} {ancienEtudiantData.etudiant.prenom}</strong>,
             vos informations de connexion ont été pré-remplies.
           </p>
         </div>
@@ -401,14 +401,14 @@ export default function NouvelEtudiantStep1() {
 
       {/* Boutons d'action. */}
       <div className="flex justify-between mt-6 gap-4">
-        <Link href="/etudiant/inscription/etape-0" className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center">
-          Retour
+        <Link href="/" className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center">
+          Annuler
         </Link>
         <button 
           type="submit" 
           disabled={chargement}
-          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50">
-          {chargement ? "Validation..." : "Continuer"}
+          className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50">
+          {chargement ? "Validation..." : "Continuer →"}
         </button>
       </div>
     </form>

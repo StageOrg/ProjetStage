@@ -4,7 +4,6 @@ import { authAPI } from "@/services/authService";
 import api from "@/services/api";
 import etudiantNotesService from "./etudiantNotesService";
 
-
 const etudiantStatsService = {
 
   /**
@@ -13,125 +12,123 @@ const etudiantStatsService = {
   getMyCompleteData: async () => {
     try {
       const response = await authAPI.apiInstance().get("/utilisateurs/etudiants/me/");
-
-      // Traiter les données pour s'assurer qu'elles sont complètes
-      const data = response.data;
-
-      const processedData = {
-        ...data,
-        first_name: data.first_name || '',
-        last_name: data.last_name || '',
-        email: data.email || '',
-        telephone: data.telephone || '',
-        sexe: data.sexe || '',
-        autre_prenom: data.autre_prenom || '',
-        num_carte: data.num_carte || '',
-        lieu_naiss: data.lieu_naiss || '',
-        parcours_info: data.parcours_info || 'Non spécifié',
-        filiere_info: data.filiere_info || 'Non spécifié',
-        annee_etude_info: data.annee_etude_info || 'Non spécifié',
-        photo: data.photo || null,
-        is_validated: data.is_validated || false,
-        date_naiss: data.date_naiss || null
-      };
-
-      return processedData;
+      return response.data;
     } catch (error) {
       console.error("Erreur récupération données étudiant:", error);
       throw error;
     }
   },
 
+  /**
+   * Calcule la moyenne d'une UE à partir des notes individuelles
+   */
+  calculateUEMoyenne: (ue) => {
+    // Si l'UE a déjà une moyenne calculée par le backend, l'utiliser
+    if (ue.moyenne !== null && ue.moyenne !== undefined) {
+      return ue.moyenne;
+    }
+
+    // Sinon, calculer à partir des notes individuelles
+    if (!ue.notes || !Array.isArray(ue.notes) || ue.notes.length === 0) {
+      return null;
+    }
+
+    let sommeNotesPonderees = 0;
+    let poidsTotal = 0;
+    let hasValidNotes = false;
+
+    ue.notes.forEach(evaluation => {
+      const note = evaluation.note;
+      const poids = evaluation.poids || 1;
+
+      if (note !== null && note !== undefined && !isNaN(note)) {
+        sommeNotesPonderees += note * poids;
+        poidsTotal += poids;
+        hasValidNotes = true;
+      }
+    });
+
+    if (poidsTotal > 0 && hasValidNotes) {
+      return Math.round((sommeNotesPonderees / poidsTotal) * 100) / 100;
+    }
+
+    return null;
+  },
 
   /**
-   * Calcule les statistiques complètes de l'étudiant
+   * Détermine le statut d'une UE basé sur la moyenne calculée
+   */
+  determineUEStatut: (moyenne, credits) => {
+    if (moyenne === null || moyenne === undefined) {
+      return { statut: "En cours", creditValide: 0 };
+    }
+    
+    if (moyenne >= 10) {
+      return { statut: "Validé", creditValide: credits };
+    } else {
+      return { statut: "Non validé", creditValide: 0 };
+    }
+  },
+
+  /**
+   * Calcule les statistiques complètes de l'étudiant - VERSION SIMPLIFIÉE ET FONCTIONNELLE
    */
   calculateMyStats: async () => {
     try {
+      console.log("🔄 Début calcul statistiques...");
+
+      // Récupérer les UEs avec notes
       const uesWithNotes = await etudiantNotesService.getMyUEsWithNotes();
+      console.log("📊 UEs reçues:", uesWithNotes);
+
+      // Si pas d'UEs, retourner des stats vides
+      if (!uesWithNotes || uesWithNotes.length === 0) {
+        console.warn("⚠️ Aucune UE trouvée");
+        return etudiantStatsService.getEmptyStats();
+      }
 
       let totalCredits = 0;
       let creditsObtenus = 0;
-      let weightedSum = 0; // Somme des (note × crédits)
       let uesValidees = 0;
       let uesNonValidees = 0;
       let uesEnCours = 0;
-      let totalMoyennes = 0;
-      let nombreUEsAvecMoyenne = 0;
+      let sommeMoyennesPonderees = 0;
+      let uesAvecMoyenne = 0;
 
-      // Statistiques par semestre
-      const statsBySemestre = {};
-
+      // Analyser chaque UE
       uesWithNotes.forEach((ue) => {
-        const semestre = ue.semestre || "Non spécifié";
+        const credits = ue.credits || 0;
+        const moyenne = ue.moyenne; // Utiliser directement la moyenne du backend
 
-        // Initialiser les stats par semestre si nécessaire
-        if (!statsBySemestre[semestre]) {
-          statsBySemestre[semestre] = {
-            totalCredits: 0,
-            creditsObtenus: 0,
-            uesValidees: 0,
-            uesNonValidees: 0,
-            uesEnCours: 0,
-            uesTotal: 0,
-            moyenneGenerale: 0,
-            totalMoyennes: 0,
-            nombreUEsAvecMoyenne: 0
-          };
-        }
+        totalCredits += credits;
 
-        // Statistiques globales
-        totalCredits += ue.credits;
-        statsBySemestre[semestre].totalCredits += ue.credits;
-        statsBySemestre[semestre].uesTotal += 1;
+        if (moyenne !== null && moyenne !== undefined) {
+          // UE avec moyenne
+          sommeMoyennesPonderees += moyenne * credits;
+          uesAvecMoyenne++;
 
-        // Traitement selon le statut de l'UE
-        if (ue.moyenne !== null && ue.moyenne !== undefined) {
-          // UE avec moyenne calculée
-          weightedSum += ue.moyenne * ue.credits;
-          totalMoyennes += ue.moyenne;
-          nombreUEsAvecMoyenne++;
-
-          statsBySemestre[semestre].totalMoyennes += ue.moyenne;
-          statsBySemestre[semestre].nombreUEsAvecMoyenne += 1;
-
-          if (ue.moyenne >= 10) {
+          if (moyenne >= 10) {
             uesValidees++;
-            creditsObtenus += ue.credits;
-            statsBySemestre[semestre].uesValidees += 1;
-            statsBySemestre[semestre].creditsObtenus += ue.credits;
+            creditsObtenus += credits;
           } else {
             uesNonValidees++;
-            statsBySemestre[semestre].uesNonValidees += 1;
           }
         } else {
-          // UE en cours (pas encore de notes)
+          // UE sans moyenne
           uesEnCours++;
-          statsBySemestre[semestre].uesEnCours += 1;
         }
       });
 
-      // Calcul des moyennes par semestre
-      Object.keys(statsBySemestre).forEach(semestre => {
-        const stats = statsBySemestre[semestre];
-        if (stats.nombreUEsAvecMoyenne > 0) {
-          stats.moyenneGenerale = Math.round((stats.totalMoyennes / stats.nombreUEsAvecMoyenne) * 100) / 100;
-        }
-        stats.progressionPourcentage = stats.totalCredits > 0 
-          ? Math.round((stats.creditsObtenus / stats.totalCredits) * 100) 
-          : 0;
-      });
-
-      // Calcul des statistiques globales
+      // Calculs finaux
       const moyenneGenerale = totalCredits > 0 
-        ? Math.round((weightedSum / totalCredits) * 100) / 100 
+        ? Math.round((sommeMoyennesPonderees / totalCredits) * 100) / 100 
         : 0;
 
       const progressionPourcentage = totalCredits > 0 
         ? Math.round((creditsObtenus / totalCredits) * 100) 
         : 0;
 
-      return {
+      const result = {
         global: {
           uesValidees,
           uesNonValidees,
@@ -141,122 +138,97 @@ const etudiantStatsService = {
           moyenneGenerale,
           progressionPourcentage,
           nombreUEsInscrites: uesWithNotes.length,
-          nombreUEsAvecNotes: nombreUEsAvecMoyenne,
-          rang: null,
-        },
-        parSemestre: statsBySemestre
-      };
-
-    } catch (error) {
-      console.error("Erreur calcul statistiques:", error);
-      // Retourner des statistiques par défaut en cas d'erreur
-      return {
-        global: {
-          uesValidees: 0,
-          uesNonValidees: 0,
-          uesEnCours: 0,
-          creditsObtenus: 0,
-          totalCredits: 0,
-          moyenneGenerale: 0,
-          progressionPourcentage: 0,
-          nombreUEsInscrites: 0,
-          nombreUEsAvecNotes: 0,
-          rang: null,
-        },
-        parSemestre: {}
-      };
-    }
-  },
-
-
-  /**
-   * Récupère les résultats calculés (via ResultatUE)
-   */
-  getMyResults: async () => {
-    try {
-      const etudiantData = await etudiantStatsService.getMyCompleteData();
-      const etudiantId = etudiantData.id;
-      const resultsResponse = await api.get(`/page_professeur/resultats/par-etudiant/${etudiantId}/`);
-      return resultsResponse.data;
-    } catch (error) {
-      console.error("Erreur récupération résultats:", error);
-      throw error;
-    }
-  },
-
-
-  /**
-   * Calcule la progression par semestre
-   */
-  getProgressionBySemestre: async () => {
-    try {
-      const stats = await etudiantStatsService.calculateMyStats();
-      const progression = [];
-      Object.keys(stats.parSemestre).forEach(semestre => {
-        const semestreStats = stats.parSemestre[semestre];
-        progression.push({
-          semestre,
-          creditsObtenus: semestreStats.creditsObtenus,
-          totalCredits: semestreStats.totalCredits,
-          progression: semestreStats.progressionPourcentage,
-          uesValidees: semestreStats.uesValidees,
-          uesTotal: semestreStats.uesTotal,
-          moyenne: semestreStats.moyenneGenerale
-        });
-      });
-      return progression;
-    } catch (error) {
-      console.error("Erreur calcul progression par semestre:", error);
-      return [];
-    }
-  },
-
-
-  /**
-   * Génère un rapport de performance
-   */
-  generatePerformanceReport: async () => {
-    try {
-      const stats = await etudiantStatsService.calculateMyStats();
-      const progression = await etudiantStatsService.getProgressionBySemestre();
-      const uesWithNotes = await etudiantNotesService.getMyUEsWithNotes();
-
-      // Calculer les UEs en difficulté (moyenne < 8)
-      const uesEnDifficulte = uesWithNotes.filter(ue =>  
-        ue.moyenne !== null && ue.moyenne < 8
-      ).length;
-
-      // Calculer les UEs excellentes (moyenne >= 14)
-      const uesExcellent = uesWithNotes.filter(ue =>  
-        ue.moyenne !== null && ue.moyenne >= 14
-      ).length;
-
-      return {
-        resume: {
-          moyenneGenerale: stats.global.moyenneGenerale,
-          progressionGlobale: stats.global.progressionPourcentage,
-          creditsObtenus: stats.global.creditsObtenus,
-          totalCredits: stats.global.totalCredits,
-          uesValidees: stats.global.uesValidees,
-          uesTotal: stats.global.nombreUEsInscrites
-        },
-        performance: {
-          uesEnDifficulte,
-          uesExcellent,
-          tauxReussite: stats.global.nombreUEsInscrites > 0 
-            ? Math.round((stats.global.uesValidees / stats.global.nombreUEsInscrites) * 100) 
+          nombreUEsAvecNotes: uesAvecMoyenne,
+          tauxReussite: uesWithNotes.length > 0 
+            ? Math.round((uesValidees / uesWithNotes.length) * 100) 
             : 0
         },
-        progressionParSemestre: progression,
-        dernierSemestre: progression.length > 0 ? progression[progression.length - 1] : null
+        uesDetails: uesWithNotes,
+        lastUpdated: new Date().toISOString()
       };
 
+      console.log("✅ Statistiques calculées:", result);
+      return result;
+
     } catch (error) {
-      console.error("Erreur génération rapport performance:", error);
-      return null;
+      console.error("❌ Erreur calcul statistiques:", error);
+      return etudiantStatsService.getEmptyStats();
     }
   },
 
+  /**
+   * Analyse détaillée des performances - VERSION COMPLÈTE
+   */
+  analyzePerformance: (uesWithNotes) => {
+    const analysis = {
+      uesEnDifficulte: 0,      // moyenne < 8
+      uesSatisfaisantes: 0,    // 8 <= moyenne < 12
+      uesBonnes: 0,            // 12 <= moyenne < 14
+      uesExcellent: 0,         // moyenne >= 14
+      meilleureUE: null,
+      pireUE: null,
+      distributionNotes: {
+        '0-4': 0, '5-8': 0, '9-12': 0, '13-16': 0, '17-20': 0
+      }
+    };
+
+    uesWithNotes.forEach(ue => {
+      const moyenne = ue.moyenne; // Utiliser directement la moyenne du backend
+      
+      if (moyenne !== null && moyenne !== undefined) {
+        // Distribution des notes
+        if (moyenne >= 0 && moyenne < 5) analysis.distributionNotes['0-4']++;
+        else if (moyenne >= 5 && moyenne < 9) analysis.distributionNotes['5-8']++;
+        else if (moyenne >= 9 && moyenne < 13) analysis.distributionNotes['9-12']++;
+        else if (moyenne >= 13 && moyenne < 17) analysis.distributionNotes['13-16']++;
+        else if (moyenne >= 17) analysis.distributionNotes['17-20']++;
+
+        // Catégorisation performance
+        if (moyenne < 8) analysis.uesEnDifficulte++;
+        else if (moyenne < 12) analysis.uesSatisfaisantes++;
+        else if (moyenne < 14) analysis.uesBonnes++;
+        else analysis.uesExcellent++;
+
+        // Meilleure et pire UE
+        if (!analysis.meilleureUE || moyenne > analysis.meilleureUE.moyenne) {
+          analysis.meilleureUE = { 
+            ue: ue.libelle || ue.code, 
+            moyenne: moyenne,
+            credits: ue.credits || 0
+          };
+        }
+        if (!analysis.pireUE || moyenne < analysis.pireUE.moyenne) {
+          analysis.pireUE = { 
+            ue: ue.libelle || ue.code, 
+            moyenne: moyenne,
+            credits: ue.credits || 0
+          };
+        }
+      }
+    });
+
+    return analysis;
+  },
+
+  /**
+   * Retourne des statistiques vides (fallback)
+   */
+  getEmptyStats: () => ({
+    global: {
+      uesValidees: 0,
+      uesNonValidees: 0,
+      uesEnCours: 0,
+      creditsObtenus: 0,
+      totalCredits: 0,
+      moyenneGenerale: 0,
+      progressionPourcentage: 0,
+      nombreUEsInscrites: 0,
+      nombreUEsAvecNotes: 0,
+      tauxReussite: 0
+    },
+    uesDetails: [],
+    lastUpdated: new Date().toISOString()
+  }),
 
   /**
    * Récupère un résumé rapide des performances
@@ -264,13 +236,15 @@ const etudiantStatsService = {
   getQuickSummary: async () => {
     try {
       const stats = await etudiantStatsService.calculateMyStats();
-      const uesCount = stats.global.nombreUEsInscrites;
+      
       return {
-        uesInscrites: uesCount,
+        uesInscrites: stats.global.nombreUEsInscrites,
         uesValidees: stats.global.uesValidees,
         moyenneGenerale: stats.global.moyenneGenerale,
         creditsObtenus: stats.global.creditsObtenus,
-        progression: stats.global.progressionPourcentage
+        progression: stats.global.progressionPourcentage,
+        tauxReussite: stats.global.tauxReussite,
+        dernierCalcul: stats.lastUpdated
       };
     } catch (error) {
       console.error("Erreur récupération résumé:", error);
@@ -279,7 +253,44 @@ const etudiantStatsService = {
         uesValidees: 0,
         moyenneGenerale: 0,
         creditsObtenus: 0,
-        progression: 0
+        progression: 0,
+        tauxReussite: 0,
+        dernierCalcul: new Date().toISOString()
+      };
+    }
+  },
+
+  /**
+   * TEST DIRECT - Méthode pour vérifier que ça fonctionne
+   */
+  testService: async () => {
+    try {
+      console.log("🧪 TEST DU SERVICE");
+      
+      // 1. Vérifier les données étudiant
+      const studentData = await etudiantStatsService.getMyCompleteData();
+      console.log("✅ Données étudiant:", studentData);
+
+      // 2. Calculer les stats
+      const stats = await etudiantStatsService.calculateMyStats();
+      console.log("✅ Statistiques:", stats);
+
+      // 3. Résumé rapide
+      const summary = await etudiantStatsService.getQuickSummary();
+      console.log("✅ Résumé:", summary);
+
+      return {
+        success: true,
+        studentData,
+        stats,
+        summary
+      };
+
+    } catch (error) {
+      console.error("❌ Test échoué:", error);
+      return {
+        success: false,
+        error: error.message
       };
     }
   }

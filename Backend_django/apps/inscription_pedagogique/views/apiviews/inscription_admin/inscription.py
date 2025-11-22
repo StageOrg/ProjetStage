@@ -196,13 +196,12 @@ class InscriptionEtudiantView(APIView):
         Identifiant : {user.username}
         Mot de passe temporaire : {mot_de_passe_temp}
 
-        Connectez-vous ici : {lien_connexion}
 
         À votre première connexion, vous devrez changer votre mot de passe.
         Lien direct : {lien_premiere}
 
         Cordialement,
-        L'équipe des inscriptions
+        Responsable dinscription 
         """
 
         send_mail(
