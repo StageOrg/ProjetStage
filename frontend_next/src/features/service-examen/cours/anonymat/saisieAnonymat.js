@@ -1,8 +1,12 @@
 import AnonymatService from "@/services/anonymatService";
 import { useState } from "react";
+import {useRef} from "react";
 
 export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluation,
  annee_id, periodeActive}) {
+
+ // Tableau de références pour chaque champ
+  const inputRefs = useRef([]);
 
   const handleChangeNumeroAnonyme = async (index, value) => {
     try {
@@ -11,13 +15,14 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
       updated[index].num_anonymat = value; 
       setEtudiants(updated);
 
-      if (etu.num_anonyme_id) {
-        await AnonymatService.updateAnonymat(etu.num_anonyme_id, {
-          etudiant: etu.id,
-          ue: ueId,
-          numero: value,
-          annee_academique: annee_id
-        });
+      if (etu.num_anonymat_id) {
+        console.log("Mise à jour anonymat existant pour étudiant ID :", etu.id, "avec numéro :", value, "anonymat ID :", etu.num_anonymat_id);
+        await AnonymatService.updateAnonymat(etu.num_anonymat_id,
+          etu.id,
+          ueId,
+          value,
+          annee_id
+        );
       } else {
         const newAnonymat = await AnonymatService.createAnonymat(
           etu.id,
@@ -25,7 +30,7 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
           value,
           annee_id
         );
-        updated[index].num_anonyme_id = newAnonymat.id;
+        updated[index].num_anonymat_id = newAnonymat.id;
         setEtudiants([...updated]);
       }
     } catch (err) {
@@ -53,7 +58,7 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
           <tr>
             <th className="border px-2 py-1">Nom</th>
             <th className="border px-2 py-1">Prénom</th>
-            <th className="border px-2 py-1">Numéro Anonyme</th>
+            <th className="border px-2 py-1">Numéro Anonymat</th>
           </tr>
         </thead>
         <tbody>
@@ -68,10 +73,31 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
                 <td className="border px-2 py-1">{etu.prenom}</td>
                 <td className="border px-2 py-1 text-center">
                 <input
+                  ref={(el) => (inputRefs.current[index] = el)}
                   disabled={noteSaisie}
                   type="text"
                   value={etu.num_anonymat}
-                  onChange={(e) => handleChangeNumeroAnonyme(index, e.target.value)}
+                    onChange={(e) => {
+                      const updated = [...etudiants];
+                      updated[index].num_anonymat = e.target.value;
+                      setEtudiants(updated);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const value = etudiants[index].num_anonymat;
+
+                        if (value.trim() === "") {
+                          alert("Le numéro d'anonymat ne peut pas être vide.");
+                          return;
+                        }
+
+                        handleChangeNumeroAnonyme(index, value);
+                        // 👇 Aller au champ suivant automatiquement
+                        if (inputRefs.current[index + 1]) {
+                          inputRefs.current[index + 1].focus();
+                        }
+                      }
+                    }}
                   className="w-24 text-center border rounded"
                 />
               </td>

@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import UEService from "@/services/ueService";
 import { Save, AlertCircle, Edit2, Link as LinkIcon } from "lucide-react";
+import UELibelle from "@/features/util/UELibelle";
+import { useRouter } from "next/navigation";
 
 export default function InfosUe({ ueId }) {
   const [formData, setFormData] = useState({
@@ -13,6 +15,7 @@ export default function InfosUe({ ueId }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState(false);
+  const router = useRouter();
 
   // Charger les infos actuelles de l’UE
   useEffect(() => {
@@ -65,9 +68,18 @@ export default function InfosUe({ ueId }) {
     formData.description || formData.lien_support || formData.lien_tds || formData.lien_evaluations;
 
   return (
+    <div>
+    <div className="p-6 bg-white rounded-lg shadow-md mb-10">
+       <button
+          onClick={() => router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`)}
+          className="ml-4 text-lg font-bold text-blue-800"
+        >
+          Evaluations de l'UE <UELibelle ueId={ueId} />
+        </button> 
+    </div>
     <div className="p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-lg font-bold text-blue-800 mb-4">
-        Informations supplémentaires de l'UE
+        Informations supplémentaires de l'UE <UELibelle ueId={ueId} />
       </h2>
 
       {message && (
@@ -213,5 +225,6 @@ export default function InfosUe({ ueId }) {
         </div>
       )}
     </div>
+  </div>
   );
 }

@@ -5,9 +5,9 @@ import { FaUser, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaUsers, 
 
 const links = [
   { href: "/gestion-notes/dashboard/tableau-de-bord", label: "Tableau de bord", icon: <FaChartBar /> },
-  { href: "/secretariat/dashboard/ue-exam", label: "Saisie Anononymat", icon: <FaClipboardList /> },
+  { href: "/secretariat/dashboard/ue-exam", label: "Saisie Anonymat", icon: <FaClipboardList /> },
   { href: "/secretariat/dashboard/notes", label: "Notes", icon: <FaClipboardList /> },
-  { href: "/gestion-notes/dashboard/listes-d-emmargement", label: "Listes d'emmargement", icon: <FaUsers /> },
+  { href: "/gestion-notes/dashboard/listes-d-emmargement", label: "Listes d'emargement", icon: <FaUsers /> },
 ];
 
 export default function MenuLateralSecretaire() {

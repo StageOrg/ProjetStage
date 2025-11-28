@@ -132,9 +132,6 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
         <h1 className="text-2xl font-bold text-blue-900">
           Cours enseignés
         </h1>
-        <div className="text-sm font-medium text-gray-600">
-          2023-2024 | Semestre 1
-        </div>
       </div>
 
       {/* Filtre */}

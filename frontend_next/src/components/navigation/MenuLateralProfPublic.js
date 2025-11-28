@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaBook, FaFileAlt, FaProjectDiagram, FaUsers, FaClipboardList } from "react-icons/fa";
+import { FaBook, FaFileAlt, FaProjectDiagram, FaUsers,FaUser, FaClipboardList } from "react-icons/fa";
 
 export default function MenuLateralProfPublic({ profId }) {
   const pathname = usePathname();
 
   // Générer les liens dynamiques avec l'ID du prof
   const links = [
+    { href: `/nos-profs/${profId}/profil`, label: "Profil   ", icon: <FaUser /> },
     { href: `/nos-profs/${profId}/unites-d-enseignement`, label: "Cours", icon: <FaBook /> },
     { href: `/nos-profs/${profId}/articles`, label: "Articles", icon: <FaFileAlt /> },
     { href: `/nos-profs/${profId}/projets`, label: "Projets", icon: <FaProjectDiagram /> },
@@ -29,7 +30,7 @@ export default function MenuLateralProfPublic({ profId }) {
               href={link.href}
               className={
                 (pathname === link.href
-                  ? "bg-black-100 text-black-900 font-bold shadow-md "
+                  ? "bg-blue-100 text-black-900 font-bold shadow-md "
                   : "text-black-700 hover:bg-black-50 hover:text-black-900 ") +
                 " px-4 py-2 transition flex items-center gap-3 mt-3 mb-3"
               }

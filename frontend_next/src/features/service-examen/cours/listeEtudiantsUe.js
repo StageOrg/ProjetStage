@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import EtudiantService from "@/services/etudiantService";
 import EvaluationNormale from "./evaluationNormale";
 import EvaluationExamen from "./anonymat/evaluationExamen";
+import UELibelle from "@/features/util/UELibelle";
 
 function ListeEtudiantsUE({ ueId }) {
   const [etudiants, setEtudiants] = useState([]);
@@ -62,7 +63,7 @@ function ListeEtudiantsUE({ ueId }) {
 
   return (
     <div className="bg-transparent px-8 py-10 w-full h-full animate-fade-in">
-      <h2 className="font-bold text-2xl mb-4">Étudiants inscrits</h2>
+      <h2 className="font-bold text-2xl mb-4">Étudiants inscrits à l'ue <UELibelle ueId={ueId} /></h2>
 
       {/* Sélecteur d'évaluation */}
       <div className="mb-4 flex items-center gap-3">

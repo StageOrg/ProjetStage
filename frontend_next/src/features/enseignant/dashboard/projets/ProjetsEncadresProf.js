@@ -290,11 +290,12 @@ export default function ProjetsEncadresProf() {
                       <div>Au: {new Date(p.date_fin).toLocaleDateString('fr-FR')}</div>
                     </div>
                   </td>
-                  <td className="px-3 py-2 max-w-xs">
-                    <div className="truncate" title={p.resume}>
+                 <td className="px-3 py-2 max-w-sm">
+                    <p className="line-clamp-3 text-gray-700 leading-relaxed" title={p.resume}>
                       {p.resume}
-                    </div>
+                    </p>
                   </td>
+
                   <td className="px-3 py-2">
                     {p.lien ? (
                       <a 

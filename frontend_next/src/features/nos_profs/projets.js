@@ -47,7 +47,7 @@ export default function ProjetsPublic({ profId }) {
 
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row justify-flex items-center mb-6 gap-4">
       <h2 className="flex items-center gap-3 text-2xl font-bold text-blue-900 mb-6">
         <FaFileAlt className="text-blue-700" /> Projets Publics
       </h2>

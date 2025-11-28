@@ -43,3 +43,5 @@ htmlcov/
 *.pem
 *.crt
 *.key
+# Fichiers media (upload utilisateurs)
+Backend_django/media/

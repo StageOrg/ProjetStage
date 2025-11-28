@@ -15,7 +15,7 @@ const AnonymatService = {
 
   // Mettre à jour un anonymat
   updateAnonymat: async (id, etudiant, ue, numero, annee_academique) => {
-    const response = await api.put(`notes/anonymats/${id}/`, { etudiant, ue, numero, annee_academique });
+    const response = await api.patch(`notes/anonymats/${id}/`, { etudiant, ue, numero, annee_academique });
     return response.data;
   },
 

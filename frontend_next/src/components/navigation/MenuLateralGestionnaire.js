@@ -18,7 +18,7 @@ export default function MenuLateralGestionnaire() {
       <div className="flex-1 flex flex-col overflow-y-auto py-10 px-6">
         <div className="mb-8 flex items-center gap-2 justify-center">
           <span className="font-extrabold text-blue-800 text-2xl tracking-tight drop-shadow">EPL</span>
-          <span className="bg-teal-100 text-blue-700 font-bold px-2 py-1 rounded-lg text-xs shadow">Admin</span>
+          <span className="bg-teal-100 text-blue-700 font-bold px-2 py-1 rounded-lg text-xs shadow">Gestionnaire</span>
         </div>
         <nav className="flex flex-col gap-2 text-lg font-semibold">
           {links.map(link => (

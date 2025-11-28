@@ -59,7 +59,7 @@ export default function SaisieNotesSousAnonymat({
       <table className="w-full border-collapse border">
         <thead className="bg-gray-100">
           <tr>
-            <th className="border px-2 py-1 text-center">N° Anonyme</th>
+            <th className="border px-2 py-1 text-center">N° Anonymat</th>
             <th className="border px-2 py-1 text-center">Note</th>
             <th className="border px-2 py-1 text-center">Moyenne</th>
           </tr>
@@ -120,7 +120,7 @@ export default function SaisieNotesSousAnonymat({
                     </span>
                   )}
                   {!etu.num_anonymat && (
-                    <div className="text-xs text-red-600 mt-1">Numéro anonyme manquant</div>
+                    <div className="text-xs text-red-600 mt-1">Numéro anonymat manquant</div>
                   )}
                 </td>
                 <td className="border px-2 py-1 text-center font-semibold">

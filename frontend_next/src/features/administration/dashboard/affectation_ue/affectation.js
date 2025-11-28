@@ -88,12 +88,11 @@ const handleValidate = async ( ) => {
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-bold mb-6">Affectation des UEs aux professeurs</h2>
 
       <div className="grid grid-cols-2 gap-6">
         {/* Colonne gauche : Liste des professeurs */}
         <div>
-          <h3 className="font-semibold mb-2">Liste des professeurs</h3>
+          <h3 className="font-semibold mb-5">Liste des professeurs</h3>
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-200">
@@ -131,7 +130,7 @@ const handleValidate = async ( ) => {
           {selectedProf ? (
             <div>
               <h3 className="text-lg font-semibold mb-4">
-                UEs de {selectedProf.titre} {selectedProf.utilisateur.last_name} {selectedProf.utilisateur.first_name}
+                UEs affectées à {selectedProf.utilisateur.last_name} {selectedProf.utilisateur.first_name}
               </h3>
 
               <button

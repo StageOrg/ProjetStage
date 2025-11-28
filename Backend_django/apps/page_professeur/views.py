@@ -141,7 +141,7 @@ class UEViewSet(viewsets.ModelViewSet):
             #  Récupération du numéro d’anonymat
             anonymat_obj = Anonymat.objects.filter(etudiant=etu, ue=ue, annee_academique_id=annee_id).first()
             numero_anonymat = anonymat_obj.numero if anonymat_obj else None
-
+            num_anonymat_id = anonymat_obj.id if anonymat_obj else None
             #  Récupération des notes
             notes_dict = {}
             for ev in evaluations:
@@ -154,6 +154,7 @@ class UEViewSet(viewsets.ModelViewSet):
                 "prenom": etu.utilisateur.first_name,
                 "num_carte": etu.num_carte,
                 "num_anonymat": numero_anonymat,
+                "num_anonymat_id": num_anonymat_id,
                 "sexe": etu.utilisateur.sexe,
                 "notes": notes_dict,
             })

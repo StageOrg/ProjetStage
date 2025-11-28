@@ -5,7 +5,7 @@ import { FaUser, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaUsers, 
 
 const links = [
   { href: "/enseignant/dashboard/donnees-personnelles", label: "Données personnelles", icon: <FaUser /> },
-  { href: "/enseignant/dashboard/cours/mes-ues", label: "Mes cours", icon: <FaChalkboardTeacher /> },
+  { href: "/enseignant/dashboard/cours/mes-ues", label: "Mes UEs", icon: <FaChalkboardTeacher /> },
   { href: "/enseignant/dashboard/projets", label: "Projets encadrés", icon: <FaProjectDiagram /> },
   { href: "/enseignant/dashboard/articles", label: "Articles publiés", icon: <FaFileAlt /> },
   { href: "/enseignant/dashboard/encadrements", label: "Encadrements", icon: <FaUsers /> },
@@ -21,7 +21,7 @@ export default function MenuLateralProfesseur() {
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
           <span className="bg-blue-100 text-black font-bold px-2 py-1  text-xs shadow">Enseignant</span>
         </div>
-        <nav className="flex flex-col gap-2 text-lg font-semibold">
+        <nav className="flex flex-col gap-7 text-lg font-semibold">
           {links.map(link => (
             <Link
               key={link.href}
@@ -38,12 +38,7 @@ export default function MenuLateralProfesseur() {
             </Link>
           ))}
         </nav>
-        <div className="mt-12 pt-8">
-          <button className="w-full flex items-center justify-center gap-2 bg-blue-900  hover:from-blue-600  text-white font-bold py-2 rounded-xl shadow-lg transition-all">
-            <FaSignOutAlt /> Se déconnecter
-          </button>
-        </div>
-        <div className="text-xs text-gray-400 mt-8 text-center select-none">&copy; EPL {new Date().getFullYear()}</div>
+        <div className="text-xs text-gray-400 mt-8 select-none">&copy; EPL {new Date().getFullYear()}</div>
       </div>
     </aside>
   );

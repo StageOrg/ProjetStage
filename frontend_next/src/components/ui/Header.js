@@ -94,22 +94,22 @@ export default function Header() {
   const personnelMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
-    { label: "Nos programmes", href: "/programmes" },
-    { label: "Contactez-nous", href: "/contact" },
     { label: "Personnel", href: personnelHref },
     { label: "Service examen", href: "/service-examen/notes/mes-ues" },
+    { label: "Nos programmes", href: "/programmes" },
+    { label: "Contactez-nous", href: "/contact" },
   ];
 
   const PersonnelSaisieMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
+    { label: "Personnel", href: personnelHref },
     { label: "Nos programmes", href: "/programmes" },
     { label: "Contactez-nous", href: "/contact" },
-    { label: "Personnel", href: personnelHref },
   ];
-  // Sélectionner menu selon rôle : si c'est professeur, afficher menu personnel, sinon PersonnelSaisieMenu; mais si c'est visiteur, afficher baseMenu
+  // Sélectionner menu selon rôle : si c'est" professeur, afficher menu personnel, sinon PersonnelSaisieMenu; mais si c'est visiteur, afficher baseMenu
   const menuItems = (() => {
-    if (role === "visiteur" || !role) return baseMenu;
+    if (role === "visiteur"|| role ==="etudiant" || !role) return baseMenu;
     if (role === "professeur") return personnelMenu;
     return PersonnelSaisieMenu;
   })();
@@ -158,9 +158,9 @@ export default function Header() {
           <img src="/images/logo-epl.png" className="h-10 w-auto" alt="EPL Logo" />
         </Link>
 
-        {/* Menu principal */}
-        <nav className="hidden sm:flex gap-6 font-semibold relative items-center">
-          {menuItems.map((item) => {
+        {/* Menu principal */ }
+          <nav className="hidden sm:flex gap-4 sm:gap-6 font-semibold relative items-center">
+            {menuItems.map((item) => {
             const hasChildren = !!item.children;
             let isActive = pathname === item.href;
 

@@ -130,6 +130,7 @@ class ProfesseurViewSet(viewsets.ModelViewSet):
 
     pagination_class = None
     #permission_classes = [IsAdminOrReadOnly]
+    
    
     def get_queryset(self):
         user = self.request.user
@@ -137,14 +138,56 @@ class ProfesseurViewSet(viewsets.ModelViewSet):
             return Professeur.objects.filter(utilisateur=user)
         return super().get_queryset()
     
+    # Endpoint pour modifier les information du professeur connecté
+
     @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        instance = request.user.professeur
-        serializer = self.get_serializer(instance, data=request.data if request.method == 'PUT' else None, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        elif request.method == 'PUT':
-            return Response(serializer.errors, status=400)
+        user = request.user
+
+        # Vérifier si un professeur existe
+        try:
+            prof = user.professeur
+        except Professeur.DoesNotExist:
+            return Response({"detail": "Aucun profil professeur trouvé pour cet utilisateur."}, status=404)
+
+        if request.method == 'PUT':
+            serializer = self.get_serializer(prof, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=400)
+        else:
+            serializer = self.get_serializer(prof)
+
+        return Response(serializer.data)
+
+    
+    # Recuperer un professeur par l'id de l'utilisateur associé
+    @action(detail=False, methods=["get"], url_path="by-user/(?P<user_id>[^/.]+)")
+    def get_by_user(self, request, user_id=None):
+        try:
+            professeur = Professeur.objects.get(utilisateur__id=user_id)
+        except Professeur.DoesNotExist:
+            return Response(
+                {"detail": "Aucun professeur associé à cet utilisateur."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.serializer_class(professeur)
+        return Response(serializer.data)
+    
+    #Recuperer un professeur par son id
+    @action(detail=False, methods=['get'], url_path='by-id/(?P<prof_id>[^/.]+)')
+    def get_by_id(self, request, prof_id=None):
+        try:
+            professeur = Professeur.objects.get(id=prof_id)
+        except Professeur.DoesNotExist:
+            return Response(
+                {"detail": "Aucun professeur trouvé avec cet ID."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.serializer_class(professeur)
         return Response(serializer.data)
     
     @action(detail=True, methods=['get'], url_path='ues-prof')
