@@ -14,12 +14,11 @@ const etudiantDashboardService = {
     }
   },
 
-  // Nouvelle méthode pour mettre à jour les données de l'étudiant
+  // Mise à jour des données (CORRIGÉ : pas de .trim() sur FormData.get())
   updateMyData: async (dataToSend) => {
     try {
       console.log('Données envoyées pour mise à jour:', dataToSend);
       
-      // Toujours créer un nouveau FormData
       const formData = new FormData();
       
       // Ajouter les champs texte requis
@@ -36,8 +35,8 @@ const etudiantDashboardService = {
       const optionalFields = ['telephone', 'autre_prenom', 'num_carte'];
       for (const field of optionalFields) {
         const value = dataToSend instanceof FormData ? dataToSend.get(field) : dataToSend[field];
-        if (value !== undefined && value !== null) {
-          formData.append(field, value);
+        if (value !== undefined && value !== null && value !== '') {
+          formData.append(field, value); // PAS DE .trim() ICI
         }
       }
 
@@ -46,7 +45,6 @@ const etudiantDashboardService = {
       if (photo instanceof File) {
         formData.append('photo', photo);
       } else if (photo && typeof photo === 'string' && !photo.startsWith('/media')) {
-        // Si c'est une nouvelle photo (pas une URL existante)
         formData.append('photo', photo);
       }
       
@@ -70,11 +68,9 @@ const etudiantDashboardService = {
   // Récupérer les UEs avec les notes de l'étudiant
   getMyUEsWithNotes: async () => {
     try {
-      // 1. Récupérer les données de l'étudiant
       const etudiantData = await authAPI.apiInstance().get("/utilisateurs/etudiants/me/");
       const etudiantId = etudiantData.data.id;
 
-      // 2. Récupérer ses inscriptions
       const inscriptionsResponse = await api.get("/inscription/inscription/", {
         params: { etudiant: etudiantId },
       });
@@ -84,22 +80,18 @@ const etudiantDashboardService = {
         return [];
       }
 
-      // 3. Pour chaque UE inscrite, récupérer les détails et notes
       const uesWithNotes = [];
-      const inscription = inscriptions[0]; // Prendre l'inscription active
+      const inscription = inscriptions[0];
 
       if (inscription.ues && inscription.ues.length > 0) {
         for (const ueId of inscription.ues) {
           try {
-            // Récupérer les détails de l'UE
             const ueResponse = await api.get(`/notes/ues/${ueId}/`);
             const ue = ueResponse.data;
 
-            // Récupérer les notes de cette UE
             const notesResponse = await api.get(`/notes/ues/${ueId}/notes/`);
             const notesData = notesResponse.data;
 
-            // Trouver les notes de cet étudiant
             const etudiantNotes = notesData.etudiants?.find((e) => e.id === etudiantId);
             const notesParEvaluation = [];
             let moyenneUE = null;
@@ -145,7 +137,6 @@ const etudiantDashboardService = {
             });
           } catch (error) {
             console.error(`Erreur récupération UE ${ueId}:`, error);
-            // Ajouter l'UE même sans notes
             try {
               const ueResponse = await api.get(`/notes/ues/${ueId}/`);
               const ue = ueResponse.data;
@@ -206,7 +197,7 @@ const etudiantDashboardService = {
         progressionPourcentage: Math.round(progressionPourcentage),
         nombreUEsInscrites: uesWithNotes.length,
         nombreUEsAvecNotes: uesWithNotes.filter((ue) => ue.moyenne !== null).length,
-        rang: null, // À implémenter plus tard
+        rang: null,
       };
     } catch (error) {
       console.error("Erreur calcul statistiques:", error);

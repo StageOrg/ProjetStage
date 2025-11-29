@@ -109,7 +109,7 @@ export default function NouvelEtudiantStep4() {
       
       const uesData = Array.isArray(response) ? response : response.results || response;
       
-      // 👇 MODIFICATION: Enrichir les UE avec les détails des composantes
+      //  MODIFICATION: Enrichir les UE avec les détails des composantes
       const uesEnrichies = uesData.map(ue => {
         if (ue.composite && ue.ues_composantes && ue.ues_composantes.length > 0) {
           // Si c'est juste un tableau d'IDs, récupérer les détails
@@ -404,10 +404,10 @@ export default function NouvelEtudiantStep4() {
 
         <div className="flex justify-between mt-8 gap-4">
           <Link
-            href="/etudiant/inscription/etape-3"
-            className="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg transition-all text-center text-sm"
+            href="/"
+            className="bg-red-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg transition-all text-center text-sm"
           >
-            Retour
+            Annuler
           </Link>
           <button
             type="submit"

@@ -15,4 +15,5 @@ class UtilisateurManager(BaseUserManager):
     def create_superuser(self, username, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('doit_changer_mdp', False)
         return self.create_user(username, email, password, **extra_fields)

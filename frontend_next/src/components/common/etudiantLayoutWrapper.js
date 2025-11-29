@@ -12,7 +12,7 @@ export default function EtudiantLayoutWrapper({ children }) {
   return (
     <>
       {showHeader && <Header />}
-      <div className={showHeader ? "pt-20" : ""}>{children}</div>
+      <div className={showHeader ? "pt-2" : ""}>{children}</div>
         
     </>
     

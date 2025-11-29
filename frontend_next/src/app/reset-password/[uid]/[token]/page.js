@@ -1,5 +1,3 @@
-// app/reset-password/[uid]/[token]/page.js
-
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -9,10 +7,15 @@ import { authAPI } from '@/services/authService';
 export default function ResetPassword() {
   const router = useRouter();
   const params = useParams();
-  const { uid, token } = params;
+  
+  // CORRECTION : Extraction robuste des paramètres
+  const uid = Array.isArray(params?.uid) ? params.uid[0] : params?.uid;
+  const token = Array.isArray(params?.token) ? params.token[0] : params?.token;
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [validToken, setValidToken] = useState(false);
@@ -23,6 +26,13 @@ export default function ResetPassword() {
   useEffect(() => {
     const verifierToken = async () => {
       try {
+      // Vérification que uid et token existent
+        if (!uid || !token) {
+          setError("Lien de réinitialisation invalide");
+          setValidToken(false);
+          return;
+        }
+        
         await authAPI.verifierTokenReset(uid, token);
         setValidToken(true);
       } catch (err) {
@@ -35,6 +45,9 @@ export default function ResetPassword() {
 
     if (uid && token) {
       verifierToken();
+    } else {
+      setVerifying(false);
+      setError("Lien de réinitialisation invalide");
     }
   }, [uid, token]);
 
@@ -42,7 +55,6 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
 
-    // Validation locale
     if (password.length < 8) {
       setError("Le mot de passe doit contenir au moins 8 caractères");
       return;
@@ -53,16 +65,19 @@ export default function ResetPassword() {
       return;
     }
 
+    //  Vérification supplémentaire avant envoi
+    if (!uid || !token) {
+      setError("Lien de réinitialisation invalide");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      //  Les paramètres uid et token sont maintenant correctement extraits
       await authAPI.resetPassword(uid, token, password, confirmPassword);
       setSuccess(true);
-      
-      // Rediriger vers la page de connexion après 3 secondes
-      setTimeout(() => {
-        router.push("/connexion");
-      }, 3000);
+      setTimeout(() => router.push("/login"), 3000);
     } catch (err) {
       setError(err.message || "Erreur lors de la réinitialisation");
     } finally {
@@ -70,7 +85,6 @@ export default function ResetPassword() {
     }
   };
 
-  // Affichage pendant la vérification
   if (verifying) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
@@ -82,7 +96,6 @@ export default function ResetPassword() {
     );
   }
 
-  // Lien invalide ou expiré
   if (!validToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-4">
@@ -105,7 +118,6 @@ export default function ResetPassword() {
     );
   }
 
-  // Succès
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-4">
@@ -127,7 +139,6 @@ export default function ResetPassword() {
     );
   }
 
-  // Formulaire de réinitialisation
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-4">
       <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl px-8 py-10 w-full max-w-md">
@@ -145,36 +156,70 @@ export default function ResetPassword() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          {/* Champ mot de passe avec icône */}
+          <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Nouveau mot de passe
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
               placeholder="Minimum 8 caractères"
               required
               minLength={8}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-.768 2.392-2.505 4.428-4.773 5.657A9.956 9.956 0 0112 19c-4.478 0-8.268-2.943-9.542-7z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 012.509-4.158M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.967 9.967 0 01-3.053 4.307M15 12a3 3 0 00-3-3m0 0a3 3 0 013 3m-3-3l-6.223-6.223" />
+                </svg>
+              )}
+            </button>
           </div>
 
-          <div>
+          {/* Confirmation mot de passe avec icône */}
+          <div className="relative">
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
               Confirmer le mot de passe
             </label>
             <input
-              type="password"
+              type={showConfirm ? "text" : "password"}
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
               placeholder="Retapez le mot de passe"
               required
               minLength={8}
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+            >
+              {showConfirm ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-.768 2.392-2.505 4.428-4.773 5.657A9.956 9.956 0 0112 19c-4.478 0-8.268-2.943-9.542-7z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 012.509-4.158M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.967 9.967 0 01-3.053 4.307M15 12a3 3 0 00-3-3m0 0a3 3 0 013 3m-3-3l-6.223-6.223" />
+                </svg>
+              )}
+            </button>
           </div>
 
           <button

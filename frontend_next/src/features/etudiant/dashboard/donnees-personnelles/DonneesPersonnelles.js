@@ -1,13 +1,15 @@
-// frontend_next/src/features/etudiant/dashboard/donnees-personnelles/DonneesPersonnelles.js
 "use client";
 import React, { useState, useEffect } from "react";
-import { 
-  FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, 
-  FaVenusMars, FaGraduationCap, FaBook, 
+import {
+  FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt,
+  FaVenusMars, FaGraduationCap, FaBook,
   FaCalendarAlt, FaSpinner, FaEdit, FaSave, FaTimes,
   FaIdCard, FaCamera, FaCheckCircle, FaTimesCircle
 } from "react-icons/fa";
 import etudiantDashboardService from "@/services/etudiants/etudiantDashboardService";
+
+// FONCTION DE SÉCURITÉ : trim() sans erreur
+const safeTrim = (value) => (value ?? '').toString().trim();
 
 export default function DonneesPersonnelles() {
   const [studentData, setStudentData] = useState(null);
@@ -17,7 +19,7 @@ export default function DonneesPersonnelles() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [newPhotoFile, setNewPhotoFile] = useState(null); // NOUVEAU: Stocker le fichier séparément
+  const [newPhotoFile, setNewPhotoFile] = useState(null);
 
   const isEmpty = (value) => {
     return value === null || value === undefined || value === '' || (typeof value === 'string' && value.trim() === '');
@@ -41,18 +43,17 @@ export default function DonneesPersonnelles() {
         autre_prenom: response.autre_prenom || '',
         num_carte: response.num_carte || ''
       });
-      
-      // CORRECTION: Initialiser la photo correctement
+
+      // Gestion photo
       if (response.photo) {
-        // Si l'URL est relative, ajouter le domaine de base
-        const photoUrl = response.photo.startsWith('http') 
-          ? response.photo 
+        const photoUrl = response.photo.startsWith('http')
+          ? response.photo
           : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${response.photo}`;
         setPhotoPreview(photoUrl);
       } else {
         setPhotoPreview(null);
       }
-      setNewPhotoFile(null); // Réinitialiser le nouveau fichier
+      setNewPhotoFile(null);
     } catch (err) {
       console.error('Erreur récupération données:', err);
       setError("Erreur lors du chargement de vos données personnelles");
@@ -67,24 +68,24 @@ export default function DonneesPersonnelles() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'num_carte') {
       const numeriqueValue = value.replace(/\D/g, '');
       const truncatedValue = numeriqueValue.slice(0, 6);
-      
+
       if (value && value !== truncatedValue) {
         setError("Le numéro de carte doit contenir exactement 6 chiffres");
       } else {
         setError(null);
       }
-      
+
       setFormData(prev => ({
         ...prev,
         [name]: truncatedValue
       }));
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -95,21 +96,18 @@ export default function DonneesPersonnelles() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Vérifier le type et la taille
     if (!file.type.startsWith('image/')) {
       setError('Veuillez sélectionner une image valide');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) { // 5MB max
+    if (file.size > 5 * 1024 * 1024) {
       setError('L\'image ne doit pas dépasser 5MB');
       return;
     }
 
-    // CORRECTION: Stocker le fichier séparément
     setNewPhotoFile(file);
     setError(null);
 
-    // Créer l'aperçu
     const reader = new FileReader();
     reader.onload = (e) => {
       setPhotoPreview(e.target.result);
@@ -121,57 +119,49 @@ export default function DonneesPersonnelles() {
     try {
       setSaving(true);
       setError(null);
-      
-      // VALIDATION: Vérifier les champs requis
+
+      // Validation champs requis
       const champsRequis = ['email', 'first_name', 'last_name', 'telephone'];
-      const champsVides = champsRequis.filter(champ => !formData[champ]?.trim());
-      
+      const champsVides = champsRequis.filter(champ => !safeTrim(formData[champ]));
       if (champsVides.length > 0) {
         setError("Veuillez remplir tous les champs obligatoires (nom, prénom, email, téléphone)");
         setSaving(false);
         return;
       }
-      
+
       const dataToSend = new FormData();
-      
-      // Ajouter les champs texte obligatoires (ne peuvent pas être vides)
-      const champsObligatoires = ['email', 'first_name', 'last_name', 'telephone'];
-      champsObligatoires.forEach(key => {
-        const value = formData[key]?.trim();
-        if (value) {
-          dataToSend.append(key, value);
-        } else {
-          // Si vide, garder la valeur originale
-          dataToSend.append(key, studentData[key] || '');
-        }
+
+      // Champs obligatoires
+      champsRequis.forEach(key => {
+        const value = safeTrim(formData[key]);
+        dataToSend.append(key, value || studentData[key] || '');
       });
-      
-      // Ajouter les champs optionnels (peuvent être vides)
+
+      // Champs optionnels
       const champsOptionnels = ['autre_prenom', 'num_carte'];
       champsOptionnels.forEach(key => {
-        const value = formData[key]?.trim();
+        const value = safeTrim(formData[key]);
         if (value) {
           dataToSend.append(key, value);
         }
-        // Si vide, on ne l'ajoute pas (sera vidé côté serveur)
+        // Si vide → pas d'append → serveur le vide
       });
-      
-      // CORRECTION: Gérer la photo uniquement si un nouveau fichier a été sélectionné
+
+      // Photo
       if (newPhotoFile) {
         dataToSend.append('photo', newPhotoFile);
-        console.log('Nouvelle photo ajoutée au FormData');
+        console.log('Nouvelle photo ajoutée');
       }
-      
-      // Log pour déboguer
+
       console.log('Données envoyées:', {
         ...Object.fromEntries(dataToSend),
         hasPhoto: !!newPhotoFile
       });
-      
+
       const updatedData = await etudiantDashboardService.updateMyData(dataToSend);
-      console.log('Données mises à jour reçues:', updatedData);
-      
-      // CORRECTION: Mettre à jour correctement les données et la photo
+      console.log('Données mises à jour:', updatedData);
+
+      // Mise à jour état
       setStudentData(updatedData);
       setFormData({
         email: updatedData.email || '',
@@ -181,25 +171,20 @@ export default function DonneesPersonnelles() {
         autre_prenom: updatedData.autre_prenom || '',
         num_carte: updatedData.num_carte || ''
       });
-      
-      // Mettre à jour l'aperçu de la photo avec l'URL retournée par le serveur
+
       if (updatedData.photo) {
-        const photoUrl = updatedData.photo.startsWith('http') 
-          ? updatedData.photo 
+        const photoUrl = updatedData.photo.startsWith('http')
+          ? updatedData.photo
           : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${updatedData.photo}`;
         setPhotoPreview(photoUrl);
       }
-      
-      setNewPhotoFile(null); // Réinitialiser le nouveau fichier
+
+      setNewPhotoFile(null);
       setIsEditing(false);
-      
       alert('Informations mises à jour avec succès !');
-      
+
     } catch (err) {
       console.error('Erreur mise à jour:', err);
-      if (err.response?.data) {
-        console.error('Détails erreur:', err.response.data);
-      }
       setError("Erreur lors de la mise à jour de vos informations");
     } finally {
       setSaving(false);
@@ -215,17 +200,16 @@ export default function DonneesPersonnelles() {
       autre_prenom: studentData.autre_prenom || '',
       num_carte: studentData.num_carte || ''
     });
-    
-    // CORRECTION: Restaurer la photo originale
+
     if (studentData.photo) {
-      const photoUrl = studentData.photo.startsWith('http') 
-        ? studentData.photo 
+      const photoUrl = studentData.photo.startsWith('http')
+        ? studentData.photo
         : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${studentData.photo}`;
       setPhotoPreview(photoUrl);
     } else {
       setPhotoPreview(null);
     }
-    
+
     setNewPhotoFile(null);
     setIsEditing(false);
     setError(null);
@@ -244,16 +228,15 @@ export default function DonneesPersonnelles() {
 
   return (
     <div className="bg-transparent backdrop-blur-2xl shadow-1xl px-10 py-12 w-full animate-fade-in">
-      
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h2 className="flex items-center gap-3 text-3xl font-extrabold text-blue-900 drop-shadow">
-          <FaUser className="text-blue-700 text-3xl" /> 
+          <FaUser className="text-blue-700 text-3xl" />
           Mes données personnelles
         </h2>
-        
+
         {!isEditing ? (
-          <button 
+          <button
             onClick={() => setIsEditing(true)}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
@@ -261,7 +244,7 @@ export default function DonneesPersonnelles() {
           </button>
         ) : (
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
@@ -277,7 +260,7 @@ export default function DonneesPersonnelles() {
                 </>
               )}
             </button>
-            <button 
+            <button
               onClick={cancelEdit}
               disabled={saving}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
@@ -288,26 +271,25 @@ export default function DonneesPersonnelles() {
         )}
       </div>
 
-      {/* Message d'erreur */}
+      {/* Erreur */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-2">
           <FaTimesCircle />
           {error}
         </div>
       )}
-      
+
       <div className="flex flex-col lg:flex-row gap-10 items-start">
-        
-        {/* Photo de profil */}
+        {/* Photo */}
         <div className="flex flex-col items-center">
           <div className="relative w-40 h-40 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 overflow-hidden border-4 border-white shadow-2xl group">
             {photoPreview ? (
-              <img 
-                src={photoPreview} 
-                alt="Photo de profil" 
+              <img
+                src={photoPreview}
+                alt="Photo de profil"
                 className="w-full h-full object-cover transition-transform group-hover:scale-110"
                 onError={(e) => {
-                  console.error('Erreur chargement image:', photoPreview);
+                  console.error('Erreur image:', photoPreview);
                   e.target.style.display = 'none';
                 }}
               />
@@ -316,8 +298,7 @@ export default function DonneesPersonnelles() {
                 <FaUser className="text-blue-400 text-6xl" />
               </div>
             )}
-            
-            {/* Overlay pour modification photo */}
+
             {isEditing && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <label htmlFor="photo-upload" className="cursor-pointer text-white">
@@ -333,36 +314,30 @@ export default function DonneesPersonnelles() {
               </div>
             )}
           </div>
-          
+
           <div className="mt-4 text-center">
             <div className="flex items-center justify-center gap-2 text-sm">
               {studentData?.is_validated ? (
-                <>
-                  <span className="text-green-600 font-medium">photo de profil</span>
-                </>
+                <span className="text-green-600 font-medium">photo de profil</span>
               ) : (
-                <>
-                  <span className="text-orange-600 font-medium">Photo de profil</span>
-                </>
+                <span className="text-orange-600 font-medium">Photo de profil</span>
               )}
             </div>
             {isEditing && newPhotoFile && (
               <p className="text-xs text-green-600 mt-2">
-                ✓ Nouvelle photo sélectionnée
+                New photo selected
               </p>
             )}
           </div>
         </div>
-                
-                {/* Informations personnelles */}
+
+        {/* Informations */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* Champs modifiables */}
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-gray-800 border-b-2 border-blue-200 pb-2">
-              Informations personnelles 
+              Informations personnelles
             </h3>
-            
+
             {/* Nom */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -384,7 +359,7 @@ export default function DonneesPersonnelles() {
                 </div>
               )}
             </div>
-            
+
             {/* Prénom */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -428,7 +403,7 @@ export default function DonneesPersonnelles() {
                 </div>
               )}
             </div>
-            
+
             {/* Email */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -450,7 +425,7 @@ export default function DonneesPersonnelles() {
                 </div>
               )}
             </div>
-            
+
             {/* Téléphone */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -484,13 +459,13 @@ export default function DonneesPersonnelles() {
               </div>
             </div>
           </div>
-          
-          {/* Informations en lecture seule */}
+
+          {/* Informations scolaires */}
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-gray-800 border-b-2 border-gray-200 pb-2">
               Informations scolaires
             </h3>
-            
+
             {/* Numéro de carte */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -527,12 +502,12 @@ export default function DonneesPersonnelles() {
                 Date de naissance
               </label>
               <div className="px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-800">
-                {studentData?.date_naiss 
+                {studentData?.date_naiss
                   ? new Date(studentData.date_naiss).toLocaleDateString('fr-FR', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    }) 
+                    })
                   : "Non spécifiée"}
               </div>
             </div>
@@ -558,7 +533,7 @@ export default function DonneesPersonnelles() {
                 {displayValue(studentData?.parcours_info)}
               </div>
             </div>
-            
+
             {/* Filière */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -569,7 +544,7 @@ export default function DonneesPersonnelles() {
                 {displayValue(studentData?.filiere_info)}
               </div>
             </div>
-            
+
             {/* Année d'étude */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">

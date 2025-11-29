@@ -105,7 +105,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* En-tête */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
@@ -139,10 +139,8 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               name="num_carte"
               value={formData.num_carte}
               onChange={handleChange}
-              disabled
               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-black"
             />
-            <p className="text-xs text-gray-500 mt-1">Ce champ ne peut pas être modifié</p>
           </div>
           {/* Nom et Prénom */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

@@ -488,14 +488,14 @@ export default function NouvelEtudiantStep2() {
       </div>
 
       <div className="flex justify-between mt-6 gap-4">
-        <Link href="/etudiant/inscription/etape-1" className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center">
-          Retour
+        <Link href="/" className="bg-red-600 hover:bg-gray-700 text-white font-bold py-2 px-8 rounded-lg shadow transition-all text-center">
+          Annuler
         </Link>
         <button 
           type="submit" 
           disabled={chargement}
-          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50">
-          {chargement ? "Sauvegarde..." : "Suivant"}
+          className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50">
+          {chargement ? "Sauvegarde..." : "Continuer →"}
         </button>
       </div>
     </form>

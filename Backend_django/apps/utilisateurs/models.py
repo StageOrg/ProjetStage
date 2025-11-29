@@ -23,8 +23,10 @@ class Utilisateur(AbstractUser):
     role = models.CharField(max_length=30, choices=ROLES) 
     email = models.EmailField(unique=True)
     telephone = models.CharField(max_length=20, blank=True, null=True)
+    doit_changer_mdp = models.BooleanField(default=False)
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['role','email']
+    
 
     # Lien vers le manager
     objects = UtilisateurManager()
@@ -109,3 +111,4 @@ class Connexion(models.Model):
     statut = models.CharField(max_length=50)
     navigateur = models.CharField(max_length=200)
     resultat = models.TextField(blank=True)
+    

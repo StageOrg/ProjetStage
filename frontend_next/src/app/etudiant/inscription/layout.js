@@ -10,7 +10,7 @@ function Stepper({ currentStep }) {
     <div className="flex items-center justify-center gap-6 mb-10">
       {[1, 2, 3, 4].map((etape) => (
         <div key={etape} className="flex flex-col items-center">
-          <div className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${
+          <div className={`w-7 h-7 flex items-center justify-center rounded-full border-2 ${
             etape === currentStep 
               ? 'border-blue-700 bg-blue-100 text-blue-700' 
               : etape < currentStep
@@ -32,14 +32,11 @@ function Stepper({ currentStep }) {
 
 function LoadingVerification() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-blue-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">
-          Vérification en cours...
-        </h3>
-        <p className="text-gray-600 text-sm">
-          Nous vérifions l'état des inscriptions
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-300 border-t-blue-600 mx-auto mb-4"></div>
+        <p className="text-sm text-gray-600 font-medium">
+          Vérification des inscriptions en cours...
         </p>
       </div>
     </div>

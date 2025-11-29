@@ -317,8 +317,6 @@ class GestionnaireViewSet(viewsets.ModelViewSet):
         elif request.method == 'PUT':
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
-    
-    
 
 #----- CHEF DEPARTEMENT -----
 class ChefDepartementViewSet(viewsets.ModelViewSet):

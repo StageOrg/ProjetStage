@@ -1,0 +1,4 @@
+first_name,last_name,email,telephone,date_naiss,lieu_naiss,num_carte,autre_prenom,sexe
+Joyce,Koffi,joyce062002@gmail.com,0102030405,2002-06-20,Abidjan,123456,Marie,F
+Test,App,testapp1111111111@gmail.com,0607080910,2000-01-01,Paris,789012,jeanne,M
+Hypo,Student,hypo34763@gmail.com,0506070809,2003-03-15,Dakar,345678,abla,M

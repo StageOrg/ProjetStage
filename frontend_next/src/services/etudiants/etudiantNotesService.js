@@ -1,3 +1,4 @@
+// frontend_next/src/services/etudiants/etudiantNotesService.js
 import { authAPI } from "@/services/authService";
 import api from "@/services/api";
 
