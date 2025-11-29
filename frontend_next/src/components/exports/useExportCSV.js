@@ -1,44 +1,43 @@
-// src/components/exports/useExportCSV.js (Même structure)
+// src/components/exports/useExportCSV.js
 import { useCallback } from 'react';
 
-/**
- * Hook pour exporter en CSV
- */
 export const useExportCSV = () => {
-  const exportToCSV = useCallback((data, filename = 'export', headers = null) => {
-    try {
-      let csvContent = '';
-      if (Array.isArray(data) && data.length > 0) {
-        // Entêtes : custom ou auto
-        const entetes = headers || Object.keys(data[0]);
-        csvContent += entetes.join(',') + '\n';
-        // Données : mappe avec les entêtes
-        data.forEach(row => {
-          const values = entetes.map(h => {
-            const val = row[h];
-            // Échapper les guillemets et virgules
-            return typeof val === 'string' && (val.includes(',') || val.includes('\n'))
-              ? `"${val.replace(/"/g, '""')}"`
-              : val;
-          });
-          csvContent += values.join(',') + '\n';
-        });
-      } else {
-        csvContent = String(data);
-      }
+  const exportToCSV = useCallback((data = [], filename = 'export', filters = {}) => {
+    let content = '';
 
-      // Créer un blob
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `${filename}.csv`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-      return { success: true };
-    } catch (error) {
-      console.error('Erreur export CSV:', error);
-      return { success: false, error: error.message };
+    // Fonction locale bien déclarée
+    const addLine = (label, value) => {
+      if (value) content += `${label} : ${value}\n`;
+    };
+
+    addLine('Filière', filters.filiere_nom);
+    addLine('Parcours', filters.parcours_nom);
+    addLine('Année académique', filters.annee_academique_libelle);
+    addLine('Année d\'étude', filters.annee_etude_libelle);
+    addLine('Département', filters.departement_nom);
+    if (content) content += '\n';
+
+    // Tableau de données
+    if (data.length > 0) {
+      const headers = Object.keys(data[0]);
+      content += headers.join(',') + '\n';
+
+      data.forEach(row => {
+        const line = headers.map(key => {
+          const val = String(row[key] ?? '');
+          return /[,"\n]/.test(val) ? `"${val.replace(/"/g, '""')}"` : val;
+        });
+        content += line.join(',') + '\n';
+      });
     }
+
+    const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }, []);
 
   return { exportToCSV };

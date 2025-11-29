@@ -20,7 +20,7 @@ class FiltrerEtudiantsAPIView(APIView):
         filiere = request.query_params.get('filiere')
         parcours = request.query_params.get('parcours')
         annee_etude = request.query_params.get('annee_etude')
-        annee_scolaire = request.query_params.get('annee_scolaire')
+        anneeAcademique = request.query_params.get('anneeAcademique')
         search = request.query_params.get('search')
         
         # Filtrer par département via les inscriptions
@@ -48,9 +48,9 @@ class FiltrerEtudiantsAPIView(APIView):
             ).distinct()
 
         # Filtrer par année scolaire/académique via les inscriptions
-        if annee_scolaire and annee_scolaire.lower() not in ['tout', '']:
+        if anneeAcademique and anneeAcademique.lower() not in ['tout', '']:
             queryset = queryset.filter(
-                inscriptions__anneeAcademique__id=annee_scolaire
+                inscriptions__anneeAcademique__id=anneeAcademique
             ).distinct()
         
         # Recherche 

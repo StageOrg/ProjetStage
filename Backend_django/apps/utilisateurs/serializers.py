@@ -102,16 +102,33 @@ class EtudiantSerializer(serializers.ModelSerializer):
         ]
         
     def get_parcours_info(self, obj):
-        inscription = obj.inscriptions.first()
-        return inscription.parcours.libelle if inscription and inscription.parcours else None
-        
+        inscription = obj.inscriptions.order_by('-anneeAcademique__libelle', '-date').first()
+        if inscription and inscription.parcours:
+            return {
+                'id': inscription.parcours.id,
+                'libelle': inscription.parcours.libelle,
+                'abbreviation': inscription.parcours.abbreviation,   # ← AJOUTÉ
+            }
+        return None
+
     def get_filiere_info(self, obj):
-        inscription = obj.inscriptions.first()
-        return inscription.filiere.nom if inscription and inscription.filiere else None
-        
+        inscription = obj.inscriptions.order_by('-anneeAcademique__libelle', '-date').first()
+        if inscription and inscription.filiere:
+            return {
+                'id': inscription.filiere.id,
+                'nom': inscription.filiere.nom,
+                'abbreviation': inscription.filiere.abbreviation,   # ← AJOUTÉ
+            }
+        return None
+
     def get_annee_etude_info(self, obj):
-        inscription = obj.inscriptions.first()
-        return inscription.annee_etude.libelle if inscription and inscription.annee_etude else None
+        inscription = obj.inscriptions.order_by('-anneeAcademique__libelle', '-date').first()
+        if inscription and inscription.annee_etude:
+            return {
+                'id': inscription.annee_etude.id,
+                'libelle': inscription.annee_etude.libelle,
+            }
+        return None
 
     def validate_num_carte(self, value):
         """

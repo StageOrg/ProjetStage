@@ -11,11 +11,12 @@ export default function ClientLayoutWrapper({ children }) {
   );
  // const showHeader = true;
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       {showHeader && <Header />}
-      <div className={showHeader ? "pt-20" : ""}>{children}</div>
-    </>
+      <main className="flex-1 overflow-hidden">
+        {children}
+      </main>
+    </div>
   );
-} 
-
+}
 

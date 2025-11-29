@@ -68,7 +68,7 @@ export default function MenuLateralRespInscription() {
         <div className="mt-auto pt-6">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2.5 rounded-xl shadow-lg transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-800 to-blue-900 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2.5 rounded-xl shadow-lg transition-all duration-200"
           >
             <FaSignOutAlt className="w-4 h-4" />
             Déconnexion
