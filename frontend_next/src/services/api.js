@@ -10,7 +10,7 @@ const api = axios.create({
 });
 
 // CACHE GLOBAL (10 minutes)
-const cache = new Map();
+/* const cache = new Map();
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 api.interceptors.request.use((config) => {
@@ -58,6 +58,6 @@ api.invalidateCache = (urlPart = '') => {
     }
     console.log(`Cache invalidé pour "${urlPart}" → ${count} entrées supprimées`);
   }
-};
+}; */
 
 export default api;

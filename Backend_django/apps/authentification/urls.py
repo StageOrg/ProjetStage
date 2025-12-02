@@ -1,8 +1,5 @@
 
 from django.urls import path
-<<<<<<< HEAD
-from .views import RegisterView, LoginView, SetPasswordView, StudentRegisterView, check_email, check_username, demande_reset_password, reset_password, verifier_token_reset
-=======
 from .views import RegisterView, LoginView, StudentRegisterView, check_email, check_username, demande_reset_password, reset_password, verifier_token_reset
 from django.urls import path
 from .apiView import (
@@ -10,7 +7,7 @@ from .apiView import (
     SetPasswordAPIView,
     importUsersFromExcelView
 )
->>>>>>> aa0c001 (Création des comptes utilisateurs par le responsable et notifications)
+from .views import RegisterView, LoginView, SetPasswordView, StudentRegisterView, check_email, check_username, demande_reset_password, reset_password, verifier_token_reset
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -21,11 +18,8 @@ urlpatterns = [
     path('password-reset/demande/', demande_reset_password, name='demande_reset_password'),
     path('password-reset/verifier/', verifier_token_reset, name='verifier_token_reset'),
     path('password-reset/confirmer/', reset_password, name='reset_password'),
-<<<<<<< HEAD
-    path('api/set-password/', SetPasswordView.as_view()),
-=======
     path("partial-register/", PartialRegisterAPIView.as_view()),
     path("set-password/", SetPasswordAPIView.as_view()),
     path("import-excel/", importUsersFromExcelView),
->>>>>>> aa0c001 (Création des comptes utilisateurs par le responsable et notifications)
+    path('api/set-password/', SetPasswordView.as_view()),
 ]
