@@ -1,5 +1,9 @@
 
 from rest_framework import serializers
+from apps.authentification.services.register_service import RegisterService
+from apps.utilisateurs.models import Utilisateur
+from .utils import generate_username
+
 from apps.utilisateurs.models import Etudiant, Utilisateur
 from apps.utilisateurs.serializers import (
     EtudiantSerializer,
@@ -24,6 +28,7 @@ ROLE_SERIALIZER_MAP = {
     'chef_dpt': ChefDepartementSerializer,
 }
 
+# Serializer principal pour l'enregistrement
 class RegisterSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=list(ROLE_SERIALIZER_MAP.keys()))
     data = serializers.DictField()
@@ -46,7 +51,42 @@ class RegisterSerializer(serializers.Serializer):
         nested_data = validated_data['validated_data']
         # On délègue la création à la logique du serializer spécifique
         return serializer_class().create(nested_data)
-    
+ 
+ 
+ 
+ 
+# Serializer pour l'enregistrement partiel
+
+class PartialRegisterSerializer(serializers.Serializer):
+    nom = serializers.CharField()
+    prenom = serializers.CharField()
+    email = serializers.EmailField()
+    telephone = serializers.CharField()
+    sexe = serializers.ChoiceField(choices=['M', 'F'])
+    role = serializers.ChoiceField(choices=Utilisateur.ROLES)
+
+    def create(self, validated_data):
+        prenom = validated_data['prenom']
+        nom = validated_data['nom']
+
+        username = generate_username(prenom, nom)
+
+        user = Utilisateur.objects.create(
+            username=username,
+            first_name=prenom,
+            last_name=nom,
+            email=validated_data['email'],
+            telephone=validated_data['telephone'],
+            sexe=validated_data['sexe'],
+            role=validated_data['role'],
+            is_active=True
+        )
+
+        return user
+   
+
+
+# Serializer pour l'enregistrement d'un étudiant avec création utilisateur intégrée
 class StudentRegisterSerializer(serializers.ModelSerializer):
     # Champs utilisateur
     username = serializers.CharField()

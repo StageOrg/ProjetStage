@@ -29,7 +29,7 @@ class Utilisateur(AbstractUser):
     
 
     # Lien vers le manager
-    objects = UtilisateurManager()
+    #objects = UtilisateurManager()
     
     def __str__(self):
         return f"{self.username} ({self.role})"

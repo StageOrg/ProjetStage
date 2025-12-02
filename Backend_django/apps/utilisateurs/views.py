@@ -43,6 +43,7 @@ class UtilisateurViewSet(viewsets.ModelViewSet):
         elif request.method == 'PUT':
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
+    
 
 # ----- ETUDIANT -----
 # apps/utilisateurs/views.py - Section EtudiantViewSet corrigée
@@ -123,6 +124,19 @@ class EtudiantViewSet(viewsets.ModelViewSet):
             print(f"Traceback complet: {traceback.format_exc()}")  # Debug détaillé
             return Response({"error": f"Erreur serveur: {str(e)}"}, status=500)
         
+        
+    # Recuperer les ues auxquelles l'etudiant connecté est inscrit
+    @action(detail=False, methods=['get'])
+    def mes_ues(self, request):
+        etudiant = request.user.etudiant 
+        inscriptions = etudiant.inscriptions.all()
+        ues = []
+        for inscription in inscriptions:
+            ues.extend(inscription.ues.all())
+        serializer = UESerializer(ues, many=True)
+        return Response(serializer.data)
+    
+    
 # ----- PROFESSEUR -----
 class ProfesseurViewSet(viewsets.ModelViewSet):
     queryset = Professeur.objects.all().order_by('utilisateur__last_name')
@@ -190,6 +204,7 @@ class ProfesseurViewSet(viewsets.ModelViewSet):
         serializer = self.serializer_class(professeur)
         return Response(serializer.data)
     
+    #UEs du professeur connecté
     @action(detail=True, methods=['get'], url_path='ues-prof')
     def mes_ues_id(self, request, pk=None):
         professeur = self.get_object()

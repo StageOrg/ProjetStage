@@ -6,7 +6,7 @@ const UEService = {
   if (!ueId) {
     throw new Error("ueId est null ou undefined !");
   }
-    const response = await api.get(`/notes/ues/${ueId}/etudiantsInscrits/`);
+    const response = await api.get(`/notes/ues/etudiantsInscrits/`);
     console.log("Données reçues du backend:", response.data);
     return response.data  ;
   },
@@ -24,6 +24,12 @@ const UEService = {
   //Recuperation des ues associées à des evaluations anonymés et pour lesquelles aucune note n'a été saisie
   getUEByEvaluationSansNote: async () => {
     const response = await api.get(`/notes/ues/ues-anonymes-sans-notes/`);
+    return response.data;
+  },
+  
+  //controle des notes saisies pour une UE donnée
+  controleNotesSaisies: async (UeId) => {
+    const response = await api.get(`/notes/ues/${UeId}/controle-notes/`);
     return response.data;
   },
 

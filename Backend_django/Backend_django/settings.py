@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'apps.page_professeur',
     'apps.utilisateurs',
     'apps.authentification',
+    'apps.notifications',
     
      # Packages tiers
     'rest_framework',
@@ -101,7 +102,7 @@ DATABASES = {
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='5432'),
         'OPTIONS': {
-        'sslmode': 'require',
+        'sslmode': 'disable', 
     }
     }
 }

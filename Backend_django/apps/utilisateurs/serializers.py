@@ -254,7 +254,7 @@ class RespInscriptionSerializer(BaseProfilSerializer):
         fields = '__all__'
 
 
-# -------- RESPONSABLE SAISIE NOTE --------
+# -------- RESPONSABLE SAISIENOTE --------
 class ResponsableSaisieNoteSerializer(BaseProfilSerializer):
     role = serializers.CharField(default='resp_notes', read_only=True)
 
