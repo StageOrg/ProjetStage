@@ -17,6 +17,9 @@ from apps.utilisateurs.serializers import EtudiantSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Max
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 class UEViewSet(viewsets.ModelViewSet):
     queryset = UE.objects.all().order_by('code')
@@ -480,16 +483,6 @@ class PeriodeSaisieViewSet(viewsets.ModelViewSet):
             return PeriodeSaisie.objects.all()
         return PeriodeSaisie.objects.none()
 
-    """   def perform_create(self, serializer):
-        user = self.request.user
-        if hasattr(user, 'resp_notes'):
-            serializer.save(responsable=user.resp_notes)
-        elif user.is_superuser:
-            responsable = self.request.data.get('responsable')
-            serializer.save(responsable_id=responsable)
-        else:
-            raise PermissionError("Tu n'as pas le droit de créer une période.") """
-
     
     def perform_create(self, serializer):
         user = self.request.user
@@ -517,6 +510,13 @@ class PeriodeSaisieViewSet(viewsets.ModelViewSet):
             users=[prof.utilisateur for prof in professeurs],
             message=message
         )
+        send_mail(
+        subject="Création de votre compte",
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    )
 
 class AffectationUeViewSet(viewsets.ModelViewSet):
     queryset = AffectationUe.objects.all()

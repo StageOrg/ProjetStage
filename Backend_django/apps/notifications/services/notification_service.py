@@ -1,15 +1,25 @@
 from ..models import Notification
-
+from django.core.mail import send_mail
+from django.conf import settings
 
 class NotificationService:
 
     # ✅ Envoyer une notification à 1 utilisateur
     @staticmethod
     def send_to_user(user, message):
-        return Notification.objects.create(
+        return (Notification.objects.create(
             user=user,
             message=message
-        )
+        ),
+        send_mail(
+        subject="Création de votre compte",
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    ))
+    
+
 
     # ✅ Envoyer une notification à plusieurs utilisateurs
     @staticmethod
@@ -19,6 +29,13 @@ class NotificationService:
             for user in users
         ]
         Notification.objects.bulk_create(notifications)
+        send_mail(
+        subject="Création de votre compte",
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email for user in users],
+        fail_silently=False,
+        )
 
     # ✅ Marquer une notification comme lue
     @staticmethod
@@ -35,3 +52,5 @@ class NotificationService:
     @staticmethod
     def unread_count(user):
         return Notification.objects.filter(user=user, is_read=False).count()
+
+    

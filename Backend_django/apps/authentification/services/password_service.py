@@ -23,3 +23,5 @@ Cliquez sur ce lien pour définir votre mot de passe :
         recipient_list=[user.email],
         fail_silently=False,
     )
+
+
