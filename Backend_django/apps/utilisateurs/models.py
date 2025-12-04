@@ -81,7 +81,7 @@ class Etudiant(models.Model):
 
 class Professeur(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="professeur")
-    titre = models.CharField(max_length=50)
+    titre = models.CharField(max_length=50, blank=True)
     bio = models.TextField(blank=True)
     photo = models.ImageField(upload_to='photos_profils/', null=True,blank=True)
     ues = models.ManyToManyField('page_professeur.UE', through='page_professeur.AffectationUe', blank=True)

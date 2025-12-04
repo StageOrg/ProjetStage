@@ -20,7 +20,7 @@ export default function MenuLateralRespNote() {
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
           <span className="bg-blue-100 text-black font-bold px-2 py-1  text-xs shadow">Gestion Notes</span>
         </div>
-        <nav className="flex flex-col gap-4 text-lg font-semibold">
+        <nav className="flex flex-col gap-3 text-lg font-semibold">
           {links.map(link => (
             <Link
               key={link.href}

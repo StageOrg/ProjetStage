@@ -12,7 +12,7 @@ class NotificationService:
             message=message
         ),
         send_mail(
-        subject="Création de votre compte",
+        subject="Saisie de notes",
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
@@ -30,7 +30,7 @@ class NotificationService:
         ]
         Notification.objects.bulk_create(notifications)
         send_mail(
-        subject="Création de votre compte",
+        subject="Période de saisie de notes",
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email for user in users],

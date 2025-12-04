@@ -3,7 +3,6 @@ from rest_framework import serializers
 from apps.authentification.services.register_service import RegisterService
 from apps.utilisateurs.models import Utilisateur
 from .utils import generate_username
-
 from apps.utilisateurs.models import Etudiant, Utilisateur
 from apps.utilisateurs.serializers import (
     EtudiantSerializer,
@@ -14,6 +13,15 @@ from apps.utilisateurs.serializers import (
     AdministrateurSerializer,
     GestionnaireSerializer,
     ChefDepartementSerializer
+)
+from apps.utilisateurs.models import (
+    Professeur,
+    Secretaire,
+    RespInscription,
+    ResponsableSaisieNote,
+    Administrateur,
+    Gestionnaire,
+    ChefDepartement
 )
 from django.contrib.auth.password_validation import validate_password
 # Association rôle → serializer correspondant
@@ -56,7 +64,6 @@ class RegisterSerializer(serializers.Serializer):
  
  
 # Serializer pour l'enregistrement partiel
-
 class PartialRegisterSerializer(serializers.Serializer):
     nom = serializers.CharField()
     prenom = serializers.CharField()
@@ -68,9 +75,11 @@ class PartialRegisterSerializer(serializers.Serializer):
     def create(self, validated_data):
         prenom = validated_data['prenom']
         nom = validated_data['nom']
+        role = validated_data['role']
 
         username = generate_username(prenom, nom)
 
+        # ✅ 1. Création de l'utilisateur
         user = Utilisateur.objects.create(
             username=username,
             first_name=prenom,
@@ -78,12 +87,31 @@ class PartialRegisterSerializer(serializers.Serializer):
             email=validated_data['email'],
             telephone=validated_data['telephone'],
             sexe=validated_data['sexe'],
-            role=validated_data['role'],
+            role=role,
             is_active=True
         )
 
+        # ✅ 2. Création AUTOMATIQUE du profil lié selon le rôle
+       
+        if role == 'professeur':
+            Professeur.objects.create(utilisateur=user)
+
+        elif role == 'secretaire':
+            Secretaire.objects.create(utilisateur=user)
+
+        elif role == 'responsable_inscription':
+            RespInscription.objects.create(utilisateur=user)
+
+        elif role == 'responsable_notes':
+            ResponsableSaisieNote.objects.create(utilisateur=user)
+
+        elif role == 'admin':
+            Administrateur.objects.create(utilisateur=user)
+
         return user
-   
+
+
+
 
 
 # Serializer pour l'enregistrement d'un étudiant avec création utilisateur intégrée
