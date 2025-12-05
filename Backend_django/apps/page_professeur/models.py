@@ -141,3 +141,4 @@ class ResultatUE(models.Model):
     
     class Meta:
         unique_together = ('etudiant', 'ue', 'inscription')  
+        

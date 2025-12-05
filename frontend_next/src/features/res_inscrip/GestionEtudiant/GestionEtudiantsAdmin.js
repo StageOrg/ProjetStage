@@ -10,7 +10,7 @@ import etudiantService from "@/services/etudiants/GestionEtudiantAdminService";
 import EditStudentModal from "@/features/res_inscrip/modificationEtudiant/EditStudent";
 import ExportButton from "@/components/ui/ExportButton";
 import { useExportPDF } from "@/components/exports/useExportPDF";
-import api from "@/services/api";
+import api from "@/services/api"; 
 
 export default function GestionEtudiantsAdmin() {
   const router = useRouter();
@@ -22,7 +22,6 @@ export default function GestionEtudiantsAdmin() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -39,20 +38,20 @@ export default function GestionEtudiantsAdmin() {
   const [filieresDuParcours, setFilieresDuParcours] = useState([]);
   const [anneesDuParcours, setAnneesDuParcours] = useState([]);
 
-  // Chargement initial des données de référence
+  // Chargement initial
   useEffect(() => {
     etudiantService.getParcoursAvecRelations().then(setParcoursData);
     etudiantService.getAnneesAcademiques().then(setAnneesAcademiques);
   }, []);
 
-  // Mise à jour des listes déroulantes quand le parcours change
+  // Mise à jour filières/années quand parcours change
   useEffect(() => {
     const parcours = parcoursData.find(p => p.id.toString() === filters.parcours);
     setFilieresDuParcours(parcours?.filieres || []);
     setAnneesDuParcours(parcours?.annees_etude || []);
   }, [filters.parcours, parcoursData]);
 
-  // Recherche avec debounce
+  // Recherche debounce
   const debouncedSearch = useCallback(
     debounce((value) => {
       setFilters(prev => ({ ...prev, search: value }));
@@ -87,25 +86,76 @@ export default function GestionEtudiantsAdmin() {
     chargerEtudiants();
   }, [filters, currentPage]);
 
-  // Rafraîchir après modification/suppression
+  // RAFRAÎCHIR : vide le cache + recharge tout
   const rafraichir = () => {
-    api.invalidateCache("etudiants");
+    api.invalidateCache();
     chargerEtudiants();
   };
 
-  // Suppression sécurisée
+  // FIX: Suppression avec traçabilité
   const supprimerEtudiant = async (id) => {
     if (!confirm("Supprimer cet étudiant ?")) return;
+    
     try {
+      // 1. Récupérer les infos complètes de l'étudiant AVANT suppression
+      const etudiant = etudiants.find(e => e.id === id);
+      
+      if (!etudiant) {
+        alert("Étudiant introuvable");
+        return;
+      }
+
+      // 2. Récupérer les inscriptions pour avoir l'année académique
+      let anneeAcademique = '';
+      let numeroInscription = etudiant.num_carte || '';
+      
+      try {
+        const inscriptionsRes = await api.get(`/etudiants/${id}/inscriptions/`);
+        const inscriptions = inscriptionsRes.data.inscriptions || [];
+        
+        if (inscriptions.length > 0) {
+          // Prendre la dernière inscription
+          const derniereInscription = inscriptions[inscriptions.length - 1];
+          anneeAcademique = derniereInscription.annee_academique || '';
+          numeroInscription = derniereInscription.numero || numeroInscription;
+        }
+      } catch (err) {
+        console.warn("Impossible de récupérer les inscriptions:", err);
+      }
+
+      // 3. Préparer les données pour l'historique
+      const dataHistorique = {
+        nom: etudiant.last_name || 'Inconnu',
+        prenom: etudiant.first_name || '',
+        username: etudiant.username || '',
+        email: etudiant.email || '',
+        numero_inscription: numeroInscription,
+        annee_academique: anneeAcademique,
+        telephone: etudiant.telephone || '',
+        date_naiss: etudiant.date_naiss || '',
+        lieu_naiss: etudiant.lieu_naiss || '',
+      };
+
+      // 4. Enregistrer dans l'historique AVANT la suppression
+      await api.post('/inscription/enregistrer-suppression/', {
+        etudiant_supprime: dataHistorique
+      });
+
+      // 5. Supprimer l'étudiant
       await etudiantService.deleteEtudiant(id);
+      
+      // 6. Rafraîchir la liste
       rafraichir();
+      
+      alert("Étudiant supprimé avec succès");
+      
     } catch (err) {
-      alert("Erreur lors de la suppression");
-      console.error(err);
+      console.error("Erreur lors de la suppression:", err);
+      alert("Erreur lors de la suppression: " + (err.response?.data?.error || err.message));
     }
   };
 
-  // Mise à jour après édition
+  // Sauvegarde après édition
   const sauvegarderEtudiant = async (id, data) => {
     try {
       await etudiantService.updateEtudiant(id, data);
@@ -113,72 +163,68 @@ export default function GestionEtudiantsAdmin() {
       rafraichir();
     } catch (err) {
       alert("Erreur lors de la sauvegarde");
-      console.error(err);
     }
   };
 
-  // Helpers d'affichage
+  // Helpers affichage
   const getPrenoms = (e) => {
     const prenom = e.first_name?.trim() || "";
     const autres = e.autre_prenom?.trim() || "";
     return [prenom, autres].filter(Boolean).join(" ") || "-";
   };
 
-  // Fonction pour afficher "ABBR_PARCOURS-ABBR_FILIERE"
   const getFiliereParcoursAbbrev = (e) => {
     const parcoursAbbr = e.parcours_info?.abbreviation?.trim();
     const filiereAbbr = e.filiere_info?.abbreviation?.trim();
-    
-    if (parcoursAbbr && filiereAbbr) {
-      return `${parcoursAbbr}-${filiereAbbr}`.toUpperCase();
-    }
-    
-    // Fallback si les abréviations ne sont pas disponibles
+    if (parcoursAbbr && filiereAbbr) return `${parcoursAbbr}-${filiereAbbr}`.toUpperCase();
     if (e.parcours_info?.libelle && e.filiere_info?.nom) {
       return `${e.parcours_info.libelle}-${e.filiere_info.nom}`;
     }
-    
     return "-";
   };
 
   const getNom = (e) => e.last_name || "Inconnu";
   const getEmail = (e) => e.email || "-";
   const getTelephone = (e) => e.telephone || "-";
-
+  
   // Export Excel
-  const prepareExportData = () =>
-    etudiants.map(e => ({
-      "Num Carte": e.num_carte || "",
-      Nom: getNom(e),
-      Prénoms: getPrenoms(e),
-      Email: getEmail(e),
-      Téléphone: getTelephone(e),
-      "Date Naissance": e.date_naiss || "",
-      "Lieu Naissance": e.lieu_naiss || "",
-      "Filière-Parcours": getFiliereParcoursAbbrev(e),
-    }));
+  const prepareExportData = () => etudiants.map(e => ({
+    "Num Carte": e.num_carte || "",
+    Nom: getNom(e),
+    Prénoms: getPrenoms(e),
+    Email: getEmail(e),
+    Téléphone: getTelephone(e),
+    "Date Naissance": e.date_naiss || "",
+    "Lieu Naissance": e.lieu_naiss || "",
+    "Filière-Parcours": getFiliereParcoursAbbrev(e),
+  }));
 
   const exportHeaders = ["Num Carte", "Nom", "Prénoms", "Email", "Téléphone", "Date Naissance", "Lieu Naissance", "Filière-Parcours"];
 
   // Export PDF
-  const preparePDFData = () =>
-    etudiants.map((e, i) => ({
-      "N°": i + 1 + (currentPage - 1) * itemsPerPage,
-      "Num Carte": e.num_carte || "-",
-      Nom: getNom(e),
-      Prénoms: getPrenoms(e),
-      Email: getEmail(e),
-      Téléphone: getTelephone(e),
-      "Filière-Parcours": getFiliereParcoursAbbrev(e),
-    }));
+  const preparePDFData = () => etudiants.map((e, i) => ({
+    "N°": i + 1 + (currentPage - 1) * itemsPerPage,
+    "Num Carte": e.num_carte || "-",
+    Nom: getNom(e),
+    Prénoms: getPrenoms(e),
+    Email: getEmail(e),
+    Téléphone: getTelephone(e),
+    "Filière-Parcours": getFiliereParcoursAbbrev(e),
+  }));
 
   const handleExportPDF = () => {
     if (!etudiants.length) return alert("Aucun étudiant");
+    
+    const anneeAcademiqueLibelle = filters.annee_academique 
+      ? anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique
+      : null;
+    
     exportToPDF(preparePDFData(), `liste_classe_${new Date().toISOString().split("T")[0]}`, {
       titre: "LISTE DE CLASSE",
       orientation: "l",
       signatureColumn: true,
       signatureWidth: 50,
+      anneeAcademique: anneeAcademiqueLibelle, 
     });
   };
 
@@ -188,18 +234,27 @@ export default function GestionEtudiantsAdmin() {
 
   return (
     <div className="p-6 bg-gray-50">
-      {/* Titre + Année académique */}
+      {/* Titre + Boutons */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Gestion des Étudiants</h2>
-        <div className="flex items-center gap-3">
-          <span className="font-medium text-gray-700">Année académique :</span>
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={rafraichir}
+            disabled={loading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition"
+          >
+            <FaSync className={loading ? "animate-spin" : ""} />
+            Rafraîchir
+          </button>
+
           <select
             value={filters.annee_academique}
             onChange={e => {
               setFilters(prev => ({ ...prev, annee_academique: e.target.value }));
               setCurrentPage(1);
             }}
-            className="border border-gray-300 px-4 py-2 rounded-lg bg-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="border border-gray-300 px-4 py-2 rounded-lg bg-white font-medium focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Toutes les années</option>
             {anneesAcademiques.map(annee => (
@@ -276,6 +331,7 @@ export default function GestionEtudiantsAdmin() {
             >
               <FaFileExport /> Exporter
             </ExportButton>
+
             <button
               onClick={handleExportPDF}
               disabled={etudiants.length === 0}
@@ -326,10 +382,8 @@ export default function GestionEtudiantsAdmin() {
                         <td className="p-3">{getPrenoms(e)}</td>
                         <td className="p-3 text-sm">{getEmail(e)}</td>
                         <td className="p-3">{getTelephone(e)}</td>
-                        <td className="p-3">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
-                            {getFiliereParcoursAbbrev(e)}
-                          </span>
+                        <td className="p-3 font-medium text-gray-800">
+                          {getFiliereParcoursAbbrev(e)}
                         </td>
                         <td className="p-3">
                           <div className="flex gap-3">
@@ -339,18 +393,21 @@ export default function GestionEtudiantsAdmin() {
                                 setModalOpen(true);
                               }}
                               className="text-blue-600 hover:text-blue-800"
+                              title="Modifier"
                             >
                               <FaEdit size={18} />
                             </button>
                             <button
                               onClick={() => supprimerEtudiant(e.id)}
                               className="text-red-600 hover:text-red-800"
+                              title="Supprimer"
                             >
                               <FaTrash size={18} />
                             </button>
                             <button
                               onClick={() => router.push(`/resp_inscription/etudiants/${e.id}/inscriptions`)}
                               className="flex items-center gap-1 text-green-600 hover:text-green-800"
+                              title="Voir détails"
                             >
                               <FaAddressCard size={18} />
                               <span className="text-xs">Détails</span>
@@ -414,7 +471,6 @@ export default function GestionEtudiantsAdmin() {
         )}
       </div>
 
-      {/* Modal d'édition */}
       <EditStudentModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

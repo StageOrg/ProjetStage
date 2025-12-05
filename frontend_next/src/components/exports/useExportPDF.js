@@ -8,7 +8,6 @@ export const useExportPDF = () => {
   const exportToPDF = useCallback((data = [], filename = 'export', options = {}) => {
     try {
       console.log('Génération PDF...');
-
       const {
         titre = 'LISTE DES ÉTUDIANTS',
         orientation = 'l',
@@ -16,26 +15,37 @@ export const useExportPDF = () => {
         excludeColumns = [],
         logoPath = '/images/logo-epl.png',
         logoWidth = 50,
-        signatureColumn = false,  // ← NOUVEAU : Active colonne signature
-        signatureWidth = 40,      // ← Largeur colonne signature (mm)
+        signatureColumn = false,
+        signatureWidth = 40,
+        anneeAcademique = null,
       } = options;
 
       const doc = new jsPDF(orientation, 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-
       let y = 15;
 
-      // ========== LOGO ==========
+      // ========== LOGO + ANNÉE ACADÉMIQUE ==========
+      const logoHeight = 20; // Hauteur approximative du logo
+      
       try {
-        doc.addImage(logoPath, 'PNG', 14, y, logoWidth, 0);
-        y += 30;
+        doc.addImage(logoPath, 'PNG', 14, y, logoWidth, logoHeight);
       } catch (e) {
         console.log('Logo non trouvé, on continue...');
-        y += 15;
       }
 
+      // ✅ Année académique alignée avec le logo (à droite)
+      if (anneeAcademique && anneeAcademique !== "Toutes les années académiques") {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(41, 87, 128); // Couleur bleue institutionnelle
+        doc.text(`Année académique : ${anneeAcademique}`, pageWidth - 14, y + 10, { align: 'right' });
+      }
+
+      y += logoHeight + 10; // Espace après le logo
+
       // ========== TITRE ==========
+      doc.setTextColor(0, 0, 0); // Reset couleur
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.text(titre, pageWidth / 2, y, { align: 'center' });
@@ -46,17 +56,15 @@ export const useExportPDF = () => {
 
       // ========== EN-TÊTE INFO (si headerInfo fourni) ==========
       const hasHeaderInfo = Object.keys(headerInfo).length > 0;
-
       if (hasHeaderInfo) {
         doc.setDrawColor(41, 87, 128);
         doc.setLineWidth(0.3);
         const headerBoxHeight = 30;
         doc.rect(14, y, pageWidth - 28, headerBoxHeight);
-
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         let headerY = y + 8;
-
+        
         // Colonne Gauche
         if (headerInfo.filiere_nom) {
           doc.text('Filière :', 20, headerY);
@@ -77,7 +85,7 @@ export const useExportPDF = () => {
           doc.setFont('helvetica', 'normal');
           doc.text(headerInfo.departement, 50, headerY);
         }
-
+        
         // Colonne Droite
         headerY = y + 8;
         const rightColX = pageWidth / 2 + 10;
@@ -94,7 +102,6 @@ export const useExportPDF = () => {
           doc.setFont('helvetica', 'normal');
           doc.text(headerInfo.annee_academique_libelle, rightColX + 40, headerY);
         }
-
         y += headerBoxHeight + 10;
       }
 
@@ -102,31 +109,22 @@ export const useExportPDF = () => {
       if (data.length > 0) {
         const allHeaders = Object.keys(data[0]);
         let headers = allHeaders.filter(h => !excludeColumns.includes(h));
-
-        // Ajouter colonne Signature si demandé
         if (signatureColumn) {
           headers.push('Signature');
         }
-
         const body = data.map(row => {
           const rowData = headers
             .filter(h => h !== 'Signature')
             .map(h => row[h] || '');
-          
-          // Ajouter cellule vide pour signature
           if (signatureColumn) {
             rowData.push('');
           }
-          
           return rowData;
         });
-
-        // Configuration colonnes avec largeur signature
         const columnStyles = {};
         if (signatureColumn) {
           columnStyles[headers.length - 1] = { cellWidth: signatureWidth };
         }
-
         doc.autoTable({
           head: [headers],
           body: body,
@@ -153,7 +151,6 @@ export const useExportPDF = () => {
             const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
             const totalPages = doc.internal.getNumberOfPages();
             const date = new Date().toLocaleDateString('fr-FR');
-
             doc.setFontSize(8);
             doc.setTextColor(100);
             doc.text(`Créé le ${date}`, 14, pageHeight - 10);
@@ -168,7 +165,6 @@ export const useExportPDF = () => {
       doc.save(`${filename}.pdf`);
       console.log('PDF téléchargé:', `${filename}.pdf`);
       return { success: true };
-
     } catch (err) {
       console.error('Erreur génération PDF:', err);
       return { success: false, error: err.message };

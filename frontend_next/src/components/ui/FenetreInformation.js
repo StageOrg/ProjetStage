@@ -19,39 +19,49 @@ export default function FenetreInformation({ visible, onClose }) {
       
       try {
         const response = await api.get('/inscription/periode-inscription/');
-        const activePeriode = response.data.find(p => p.active) || null;
-        setPeriode(activePeriode);
-
-        if (!activePeriode) {
-          setMessage("Aucune période d'inscription n'est configurée");
+        const periodes = response.data;
+        const periodeActive = periodes.find(p => p.active) || periodes[0] || null;
+        setPeriode(periodeActive);
+        
+        if (!periodeActive) {
+          // Aucune période configurée → PAS de message
+          setMessage("");
           setShouldShow(false);
         } else {
           const now = new Date();
-          const debut = new Date(activePeriode.date_debut);
-          const fin = new Date(activePeriode.date_fin);
-
-          if (!activePeriode.active) {
-            setMessage("Les inscriptions sont actuellement fermées");
+          const debut = new Date(periodeActive.date_debut);
+          const fin = new Date(periodeActive.date_fin);
+          
+          // Normaliser les dates (enlever les heures)
+          now.setHours(0, 0, 0, 0);
+          debut.setHours(0, 0, 0, 0);
+          fin.setHours(0, 0, 0, 0);
+          
+          if (!periodeActive.active) {
+            // Désactivé manuellement → PAS de message
+            setMessage("");
             setShouldShow(false);
           } else if (now < debut) {
+            // Programmé (futur) → Message affiché
             setMessage(`Les inscriptions commenceront le ${debut.toLocaleDateString('fr-FR')}`);
-            setShouldShow(false);
+            setShouldShow(true);
           } else if (now > fin) {
+            // Expiré (passé) → Message affiché
             setMessage(`La période d'inscription s'est terminée le ${fin.toLocaleDateString('fr-FR')}`);
-            setShouldShow(true); // Afficher quand c'est terminé
+            setShouldShow(true);
           } else {
-            setMessage(`Les inscriptions sont ouvertes du ${debut.toLocaleDateString('fr-FR')} au ${fin.toLocaleDateString('fr-FR')}`);
-            setShouldShow(true); // Afficher quand c'est en cours
+            // Ouvert (actif + dans la période) → Message affiché
+            setMessage(`Les inscriptions sont ouvertes jusqu'au ${fin.toLocaleDateString('fr-FR')}`);
+            setShouldShow(true);
           }
         }
       } catch (error) {
         console.error("Erreur récupération période :", error);
-        setMessage("Erreur lors de la récupération des informations d'inscription");
+        setMessage("");
         setShouldShow(false);
       }
       setLoading(false);
     };
-
     fetchPeriodeActive();
   }, [visible]);
 

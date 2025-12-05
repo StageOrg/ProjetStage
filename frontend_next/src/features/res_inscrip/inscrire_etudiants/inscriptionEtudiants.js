@@ -164,7 +164,7 @@ export default function InscriptionEtudiantsAdmin() {
         a.click();
         alert('Import terminé ! Fichier CSV téléchargé.');
       } else {
-        alert(`Import terminé : ${response.data.reussis} réussis, ${response.data.echoues} échoués.`);
+        alert(`Import terminé `);
       }
 
       setImportFilters({ parcours: '', filiere: '', annee_etude: '' });
@@ -447,6 +447,18 @@ export default function InscriptionEtudiantsAdmin() {
                   <p>• Le parcours, la filière et l'année seront automatiquement appliqués à tous les étudiants importés</p>
                 </div>
               </div>
+              {/*  TÉLÉCHARGEMENT DU MODÈLE  */}
+                <div className="mt-6 pt-4 border-t border-gray-300 text-center">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Télécharger le modèle</p>
+                  <div className="flex justify-center gap-6">
+                    <a href="/templates/import_etudiants_modele.xlsx" download className="text-blue-600 hover:text-blue-800 font-medium underline">
+                      Modèle Excel (.xlsx)
+                    </a>
+                    <a href="/templates/modele_import_etudiants.csv" download className="text-blue-600 hover:text-blue-800 font-medium underline">
+                      Modèle CSV
+                    </a>
+                  </div>
+                </div>
             </div>
           )}
         </div>

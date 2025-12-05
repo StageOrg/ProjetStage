@@ -71,20 +71,41 @@ class PeriodeInscription(models.Model):
     responsable = models.ForeignKey(RespInscription, on_delete=models.SET_NULL, null=True, related_name = 'periodes_inscription')
 
 class ImportEtudiant(models.Model):
+    OPERATION_CHOICES = [
+        ('manuel', 'Création manuelle'),
+        ('import', 'Import fichier'),        # ← CSV/XLSX/PDF → tout en un
+        ('suppression', 'Suppression étudiant'),
+    ]
+
     admin = models.ForeignKey(
-    RespInscription,
-    related_name='imports_etudiants',
-    verbose_name="Responsable inscription",
-    on_delete=models.SET_NULL,   
-    null=True,                   
-    blank=True
+        'utilisateurs.RespInscription',
+        related_name='operations_etudiants',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
-    fichier = models.FileField(upload_to='imports_etudiants/')
-    type_fichier = models.CharField(max_length=10)  # csv, xlsx, pdf
+    fichier = models.FileField(upload_to='imports_etudiants/', null=True, blank=True)
+    
+    methode = models.CharField(max_length=20, choices=OPERATION_CHOICES, default='manuel')
+
     reussis = models.PositiveIntegerField(default=0)
     echoues = models.PositiveIntegerField(default=0)
-    date_import = models.DateTimeField(auto_now_add=True)
-    details = models.JSONField(null=True, blank=True)
+    date_import = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    details = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-date_import']
+        verbose_name = "Historique des opérations étudiants"
+        verbose_name_plural = "Historique des opérations étudiants"
 
     def __str__(self):
-        return f"Import {self.id} par {self.admin.utilisateur} - {self.date_import:%d/%m/%Y %H:%M}"
+        if self.methode == 'suppression':
+            info = self.details.get('etudiant_supprime', {})
+            nom = info.get('nom', 'Inconnu')
+            prenom = info.get('prenom', '')
+            return f"Suppression – {nom} {prenom} – {self.date_import:%d/%m/%Y %H:%M}"
+        elif self.methode == 'import':
+            return f"Import fichier – {self.reussis} étudiant(s) – {self.date_import:%d/%m/%Y %H:%M}"
+        else:
+            return f"Création manuelle – {self.date_import:%d/%m/%Y %H:%M}"
