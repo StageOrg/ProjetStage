@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL: 'https://epl-projet-api.onrender.com/api',
+
   timeout: 0, // ← TIMEOUT INFINI (plus jamais de timeout)
   headers: {
     'Content-Type': 'application/json',
