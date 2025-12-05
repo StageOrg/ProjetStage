@@ -1,5 +1,5 @@
 "use client";
-
+import EtudiantHome from "@/features/etudiant/home/etudiantHome";
 import React from "react";
 
 export default function PageEtudiantHome() {
