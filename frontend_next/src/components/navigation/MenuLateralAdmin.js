@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { FaTachometerAlt, FaUserGraduate, FaChalkboardTeacher, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaChartBar, FaSignOutAlt } from "react-icons/fa";
 
 const links = [
-  { href: "/administration/dashboard/tableau-de-bord", label: "Tableau de bord", icon: <FaTachometerAlt /> },
+  { href: "/administration/dashboard/journal-d-action", label: "Tableau de bord", icon: <FaTachometerAlt /> },
   { href: "/administration/dashboard/gestion-utilisateurs", label: "Gestion des utilisateurs", icon: <FaUserGraduate /> },
   { href: "/administration/dashboard/etudiants", label: "Gestion étudiants", icon: <FaUserGraduate /> },
   { href: "/administration/dashboard/enseignants", label: "Enseignants", icon: <FaChalkboardTeacher /> },
