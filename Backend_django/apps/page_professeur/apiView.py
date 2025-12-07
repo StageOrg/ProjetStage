@@ -3,6 +3,8 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
+
+from ..utilisateurs.services.journal import enregistrer_action
 from .models import UE
 from ..inscription_pedagogique.models import Parcours, Filiere, AnneeEtude, Semestre
 
@@ -118,6 +120,14 @@ def import_ues(request):
     # === Résumé final ===
     nb_creees = len(ues_creees)
     nb_erreurs = len(erreurs)
+    enregistrer_action(
+            utilisateur=request.user,
+            action="Importation d'UEs",
+            objet="UEs avec examen anonyme",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Création d'ues par importation de fichier Excel"
+        )
+    
 
     resultat = {
         "status": "succès partiel" if erreurs else "succès complet",

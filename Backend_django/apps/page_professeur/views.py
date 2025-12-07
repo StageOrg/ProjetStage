@@ -4,6 +4,7 @@ from django.shortcuts import render
 # Create your views here.
 
 from rest_framework import viewsets, status
+from apps.utilisateurs.services.journal import enregistrer_action
 from apps.notifications.services.notification_service import NotificationService
 from apps.page_professeur.services import calculer_validation_ue, obtenir_resultats_etudiant, obtenir_ues_validees, calculer_tous_resultats_ue
 from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie, Anonymat, ResultatUE
@@ -19,6 +20,11 @@ from rest_framework.response import Response
 from django.db.models import Max
 from django.core.mail import send_mail
 from django.conf import settings
+from urllib import request
+from rest_framework import viewsets
+from .models import Note
+from .serializers import NoteSerializer
+from ..utilisateurs.services.journal import enregistrer_action
 
 
 class UEViewSet(viewsets.ModelViewSet):
@@ -223,7 +229,6 @@ class UEViewSet(viewsets.ModelViewSet):
         """
         # 🔍 Filtrer les UEs dont au moins une évaluation est de type 'Examen'
         ues = UE.objects.filter(evaluations__type="Examen", evaluations__anonyme=True).distinct()
-
         serializer = self.get_serializer(ues, many=True)
         return Response(serializer.data)
     pagination_class = None
@@ -248,6 +253,13 @@ class UEViewSet(viewsets.ModelViewSet):
                 ues_sans_notes.append(ue)
 
         serializer = self.get_serializer(ues_sans_notes, many=True)
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Liste des UEs avec examen anonyme sans notes",
+            objet="UEs avec examen anonyme sans notes",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des UEs avec examen anonyme sans notes consultée"
+        )
         return Response(serializer.data)
     pagination_class = None
     
@@ -310,6 +322,13 @@ class UEViewSet(viewsets.ModelViewSet):
                     "etat": "manquant"
                 })
                 etat_ue["etat_global"] = "incomplet"
+        enregistrer_action(
+            utilisateur=request.user,
+            action="State d'une UE pour contrôle des notes",
+            objet=f"UE  {ue.code}{ue.libelle}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des UEs avec examen anonyme consultée"
+        )
 
         return Response(etat_ue, status=status.HTTP_200_OK)
 
@@ -342,6 +361,54 @@ class EvaluationViewSet(viewsets.ModelViewSet):
     serializer_class = EvaluationSerializer
     pagination_class = None
 
+     # ✅ CREATE
+    def perform_create(self, serializer):
+        evaluation  = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Création d'une évaluation",
+            objet=f"Évaluation ID {evaluation.type} pour UE ID {evaluation.ue}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une évaluation a été créée avec succès"
+        )
+
+    # ✅ UPDATE (PUT & PATCH)
+    def perform_update(self, serializer):
+        evaluation = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Modification d'une évaluation",
+            objet=f"Évaluation ID {evaluation.id} pour UE ID {evaluation.ue.id}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une évaluation a été modifiée"
+        )
+
+    # ✅ DELETE
+    def perform_destroy(self, instance):
+        evaluation_id = instance.id
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Suppression d'une évaluation",
+            objet=f"Évaluation ID {evaluation_id} pour UE ID {instance.ue.id}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une évaluation a été supprimée"
+        )
+
+        instance.delete()
+    # ✅ RETRIEVE (GET ONE)
+    def retrieve(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation d'une évaluation",
+            objet=f"Note ID {kwargs.get('pk')}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Détail d'une note consultée"
+        )
+
+        return super().retrieve(request, *args, **kwargs)
     
     @action (detail=False, methods=['get'], url_path='by-ue/(?P<ue_id>[^/.]+)')
     def by_ue(self, request, ue_id=None):
@@ -349,6 +416,13 @@ class EvaluationViewSet(viewsets.ModelViewSet):
             return Response({"error": "ue est requis"}, status=400)
         evaluations = Evaluation.objects.filter(ue__id=ue_id)
         serializer = self.get_serializer(evaluations, many=True)
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Liste des évaluations par UE",
+            objet=f"UE {ue_id}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des évaluations consultée"
+        )
         return Response(serializer.data)
     pagination_class = None
 
@@ -367,6 +441,68 @@ class AnonymatViewSet(viewsets.ModelViewSet):
                 return [IsProfOrSecretaire()]
             return [IsProfesseur()]
         return [permissions.IsAuthenticated()]
+     # ✅ CREATE
+    def perform_create(self, serializer):
+        anonymat = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Création d'une anonymat",
+            objet=f"Anonymat ID {anonymat.id} pour Étudiant ID {anonymat.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une anonymat a été créée avec succès"
+        )
+
+    # ✅ UPDATE (PUT & PATCH)
+    def perform_update(self, serializer):
+        anonymat = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Modification d'une anonymat",
+            objet=f"Anonymat ID {anonymat.id} pour Étudiant ID {anonymat.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une anonymat a été modifiée"
+        )
+
+    # ✅ DELETE
+    def perform_destroy(self, instance):
+        anonymat_id = instance.id
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Suppression d'une anonymat",
+            objet=f"Anonymat ID {anonymat_id} pour Étudiant ID {instance.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une anonymat a été supprimée"
+        )
+
+        instance.delete()
+
+    # ✅ LIST (GET ALL)
+    def list(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation des anonymats",
+            objet="Liste des anonymats",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des anonymats consultée"
+        )
+
+        return super().list(request, *args, **kwargs)
+
+    # ✅ RETRIEVE (GET ONE)
+    def retrieve(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation d'une anonymat",
+            objet=f"Anonymat ID {kwargs.get('pk')}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Détail d'une anonymat consultée"
+        )
+
+        return super().retrieve(request, *args, **kwargs)
+    # Liste des anonymats par UE
     @action(detail=False, methods=['get'])
     def by_ue(self, request):
         ue_id = request.query_params.get("ue")
@@ -374,6 +510,15 @@ class AnonymatViewSet(viewsets.ModelViewSet):
             return Response({"error": "ue est requis"}, status=400)
         anonymats = Anonymat.objects.filter(ue__id=ue_id)   
         serializer = self.get_serializer(anonymats, many=True)
+        
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Liste des anonymats par UE",
+            objet=f"UE {ue_id}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des anonymats consultée"
+        )
+
         return Response(serializer.data)
     pagination_class = None
 
@@ -383,6 +528,67 @@ class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
     pagination_class = None
 
+    # ✅ CREATE
+    def perform_create(self, serializer):
+        note = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Création d'une note",
+            objet=f"Note ID {note.id} pour Étudiant ID {note.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une note a été créée avec succès"
+        )
+
+    # ✅ UPDATE (PUT & PATCH)
+    def perform_update(self, serializer):
+        note = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Modification d'une note",
+            objet=f"Note ID {note.id} pour Étudiant ID {note.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une note a été modifiée"
+        )
+
+    # ✅ DELETE
+    def perform_destroy(self, instance):
+        note_id = instance.id
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Suppression d'une note",
+            objet=f"Note ID {note_id} pour Étudiant ID {instance.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une note a été supprimée"
+        )
+
+        instance.delete()
+
+    # ✅ LIST (GET ALL)
+    def list(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation des notes",
+            objet="Liste des notes",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des notes consultée"
+        )
+
+        return super().list(request, *args, **kwargs)
+
+    # ✅ RETRIEVE (GET ONE)
+    def retrieve(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation d'une note",
+            objet=f"Note ID {kwargs.get('pk')}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Détail d'une note consultée"
+        )
+
+        return super().retrieve(request, *args, **kwargs)
 
 class ProjetViewSet(viewsets.ModelViewSet):
     queryset = Projet.objects.all()

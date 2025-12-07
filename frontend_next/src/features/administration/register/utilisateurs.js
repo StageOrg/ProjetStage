@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import UtilisateurService from "@/services/utilisateurService";
 import ImportUsersExcel from "./importUsersExcel";
 import  RegisterForm from "./AjoutUtilisateur";
-
+import { useRouter } from "next/navigation";
 
 export default function ListeUtilisateurs() {
   const [utilisateurs, setUtilisateurs] = useState([]);
@@ -10,6 +10,7 @@ export default function ListeUtilisateurs() {
   const [selectedRole, setSelectedRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const Router = useRouter();
 
   // ✅ Chargement des utilisateurs
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function ListeUtilisateurs() {
     <div className="p-6 bg-white shadow rounded-lg">
         <div className="mb-6  gap-2 h-30 flex justify-horizontal ">
             <button
-            onClick={() => RegisterForm()}
+            onClick={() => Router.push('/administration/dashboard/nouvel-utilisateur')}
             className="bg-blue-600 text-white h-10 px-5 py-1 ml-0 mt-8  rounded-md hover:bg-blue-800 transition"
            >
             + Ajouter un utilisateur

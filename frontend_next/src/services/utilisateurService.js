@@ -10,7 +10,8 @@ const UtilisateurService = {
       console.error("Erreur lors de la récupération des utilisateurs:", error);
       throw error;
     }
-  }
+  },
+
 };
 
 export default UtilisateurService;

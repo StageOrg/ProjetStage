@@ -2,7 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.password_validation  import validate_password
 from django.core.validators import MaxValueValidator
-from ..utilisateurs.managers import UtilisateurManager
 
 class Utilisateur(AbstractUser):
     ROLES = [
@@ -32,7 +31,7 @@ class Utilisateur(AbstractUser):
     #objects = UtilisateurManager()
     
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.first_name} {self.last_name} ({self.role})"
 
     @property
     def is_etudiant(self):
@@ -104,11 +103,34 @@ class Gestionnaire(models.Model):
 class ChefDepartement(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="chef_dpt")
 
-class Connexion(models.Model):
-    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='connexions')
-    date_connexion = models.DateTimeField(auto_now_add=True)
-    ip = models.GenericIPAddressField()
-    statut = models.CharField(max_length=50)
-    navigateur = models.CharField(max_length=200)
-    resultat = models.TextField(blank=True)
+class JournalAction(models.Model):
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="actions"
+    )
+
+    action = models.CharField(max_length=255)
+    objet = models.CharField(max_length=255, blank=True, null=True)
+
+    date_action = models.DateTimeField(auto_now_add=True)
+
+    ip = models.GenericIPAddressField(null=True, blank=True)
+
+    statut = models.CharField(
+        max_length=20,
+        choices=[
+            ('SUCCES', 'Succès'),
+            ('ECHEC', 'Échec')
+        ],
+        default='SUCCES'
+    )
+
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.utilisateur} - {self.action} - {self.date_action}"
+
     

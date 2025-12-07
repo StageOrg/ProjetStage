@@ -17,7 +17,7 @@ router.register(r'responsables-inscription', views.RespInscriptionViewSet)
 router.register(r'responsables-notes', views.ResponsableSaisieNoteViewSet)
 router.register(r'administrateurs', views.AdministrateurViewSet)
 router.register(r'gestionnaires', views.GestionnaireViewSet)
-router.register(r'connexions', views.ConnexionViewSet)
+router.register(r'journal', views.JournalActionViewSet)
 router.register(r'chefs-departement', views.ChefDepartementViewSet)
 
 urlpatterns = [

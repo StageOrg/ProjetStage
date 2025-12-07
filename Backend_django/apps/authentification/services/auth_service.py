@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
+
 # Récupération du modèle utilisateur personnalisé
 User = get_user_model()
 
@@ -19,6 +20,7 @@ class AuthService:
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
+
             return None  
 
         # Vérifie le mot de passe
@@ -46,24 +48,3 @@ class AuthService:
             "message": f"Bienvenue {user.first_name} !"
         }
         
-        
-
-""" class AuthService:
-
-    @staticmethod
-    def login(username, password):
-        user = authenticate(username=username, password=password)
-        if not user:
-            return None  # Mauvais identifiants
-
-        refresh = RefreshToken.for_user(user)
-        return {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.role
-            }
-        } """

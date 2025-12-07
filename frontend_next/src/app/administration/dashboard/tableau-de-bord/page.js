@@ -1,5 +1,5 @@
-import TableauDeBordAdmin from "@/features/administration/dashboard/tableau-de-bord/TableauDeBordAdmin";
+import JournalAction from "@/features/administration/dashboard/tableau-de-bord/journal.jsx";
 
 export default function PageDashboardAdmin() {
-  return <TableauDeBordAdmin />;
+  return <JournalAction />;
 }

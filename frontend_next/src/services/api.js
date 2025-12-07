@@ -13,26 +13,38 @@ const api = axios.create({
 const cache = new Map();
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
+// Liste des routes à mettre en cache
+const CACHE_ROUTES = [
+  'api/inscriptions/',   // exemple : seule l'API inscriptions sera mise en cache
+];
+
 api.interceptors.request.use((config) => {
+  // Ne mettre en cache que les GET
   if (config.method !== 'get') return config;
+
+  // Vérifier si la route doit être mise en cache
+  const shouldCache = CACHE_ROUTES.some((route) => config.url.includes(route));
+  if (!shouldCache) return config;
 
   const key = `${config.url}${JSON.stringify(config.params || {})}`;
   const cached = cache.get(key);
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    config.adapter = () => Promise.resolve({
-      data: cached.data,
-      status: 200,
-      statusText: 'OK (cached)',
-      headers: config.headers,
-      config,
-      request: {},
-    });
+    config.adapter = () =>
+      Promise.resolve({
+        data: cached.data,
+        status: 200,
+        statusText: 'OK (cached)',
+        headers: config.headers,
+        config,
+        request: {},
+      });
     console.log('Cache HIT →', key);
-    return config;
   }
+
   return config;
 });
+
 
 api.interceptors.response.use((response) => {
   if (response.config.method === 'get') {

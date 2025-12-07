@@ -1,4 +1,7 @@
+from urllib import request
 import pandas as pd
+
+from ...utilisateurs.services.journal import enregistrer_action
 from .user_creation_service import UserCreationService
 
 
@@ -55,6 +58,15 @@ class ExcelUserImportService:
                     "email": data.get("email"),
                     "erreur": str(e)
                 })
+                
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Importation d'utilisateurs",
+            objet="Importation Excel",
+            ip=request.META.get('REMOTE_ADDR'),
+            description=f"Importation de {success_count} utilisateurs réussie, {ignored_count} ignorés"
+        )
+
 
         return {
             "success": True,

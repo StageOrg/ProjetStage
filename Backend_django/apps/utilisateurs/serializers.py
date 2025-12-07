@@ -5,7 +5,7 @@ from apps.page_professeur.models import Projet, Recherche, Article, Encadrement,
 from apps.page_professeur.serializers import AffectationUeSerializer, NoteSerializer
 from .models import (
     Utilisateur, Etudiant, Professeur, Administrateur,
-    RespInscription, ResponsableSaisieNote, Secretaire, Connexion, Gestionnaire, ChefDepartement
+    RespInscription, ResponsableSaisieNote, Secretaire, JournalAction, Gestionnaire, ChefDepartement
 )
 
 # -------- UTILS --------
@@ -293,8 +293,10 @@ class ChefDepartementSerializer(BaseProfilSerializer):
         fields = '__all__'
 
 
-# -------- CONNEXION --------
-class ConnexionSerializer(serializers.ModelSerializer):
+# -------- Journal  --------
+class JournalActionSerializer(serializers.ModelSerializer):
+    utilisateur = serializers.StringRelatedField()
+
     class Meta:
-        model = Connexion
-        fields = ['id', 'date_connexion', 'ip', 'statut', 'navigateur', 'resultat']
+        model = JournalAction
+        fields = "__all__"
