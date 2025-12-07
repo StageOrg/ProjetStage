@@ -148,7 +148,7 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full bg-white/80 backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
+    <header className="w-full bg-white backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <Link

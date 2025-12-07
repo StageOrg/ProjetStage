@@ -3,18 +3,20 @@
 import React, { useState } from "react";
 import authAPI from "@/services/authService";
 import { Radio } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 
 export default function RegisterForm() {
   const [role, setRole] = useState("");
+  const router = useRouter();
   const [formData, setFormData] = useState({
     utilisateur: {
-      username: "",
       email: "",
       last_name: "",
       first_name: "",
-      password: "",
       role: "",
+      sexe: "",
+      telephone: "",
     },
     num_carte: "",
     autre_prenom: "",
@@ -55,16 +57,19 @@ export default function RegisterForm() {
       role: role,
       data: formData
     };
-    const res = await authAPI.register(payload);
+    console.log("Payload envoyé au backend :", payload);
+    const res = await authAPI.partialRegister(payload);
 
     alert("Compte créé avec succès !");
     console.log("Réponse backend :", res);
+    router.push('/administration/dashboard/utilisateurs');
 
   } catch (error) {
     console.error("Erreur à l'inscription :", error.response?.data || error.message);
     alert("Erreur lors de l'inscription.");
 
   }
+
 };
 
 
@@ -102,16 +107,7 @@ export default function RegisterForm() {
 
       {/* Champs communs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input
-          type="text"
-          name="utilisateur.username"
-          placeholder="Nom d'utilisateur"
-          value={formData.utilisateur.username}
-          onChange={handleChange}
-          className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
-          required
-        />
-        <input
+         <input
           type="email"
           name="utilisateur.email"
           placeholder="Email"
@@ -138,21 +134,35 @@ export default function RegisterForm() {
           className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
           required
         />
-        <input
-          type="texte"
-          name="utilisateur.sexe"
-          placeholder="sexe"
-          value={formData.utilisateur.sexe}
-          onChange={handleChange}
-          className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
-          required
-        />
-         
-        <input
-          type="password"
-          name="utilisateur.password"
-          placeholder="Mot de passe"
-          value={formData.utilisateur.password}
+      <label className="block text-gray-700 font-medium mb-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">Sexe
+          <input
+            id="sexe-m"
+            type="radio"
+            name="utilisateur.sexe"
+            value="M"
+            checked={formData.utilisateur.sexe === "M"}
+            onChange={handleChange}
+            className="form-radio ml-2 h-4 w-4 text-blue-600"
+            required
+          />
+          <span>M</span>
+
+          <input
+            id="sexe-f"
+            type="radio"
+            name="utilisateur.sexe"
+            value="F"
+            checked={formData.utilisateur.sexe === "F"}
+            onChange={handleChange}
+            className="form-radio ml-2 h-4 w-4 text-blue-600"
+          />
+          <span>F</span>
+        </label>
+         <input
+          type="text"
+          name="utilisateur.telephone"
+          placeholder="Téléphone"
+          value={formData.utilisateur.telephone}
           onChange={handleChange}
           className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
           required
@@ -221,7 +231,7 @@ export default function RegisterForm() {
           type="submit"
           className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md transition"
         >
-          S'inscrire
+          Valider
         </button>
       </div>
     </form>

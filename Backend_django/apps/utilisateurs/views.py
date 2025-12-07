@@ -6,20 +6,19 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from ..utilisateurs.models import (
-    Professeur, Etudiant,
+    JournalAction, Professeur, Etudiant,
     RespInscription, ResponsableSaisieNote, Secretaire, Gestionnaire, ChefDepartement
 )
 from apps.utilisateurs.serializers import (
-    ProfesseurSerializer, EtudiantSerializer,
+    JournalActionSerializer, ProfesseurSerializer, EtudiantSerializer,
     RespInscriptionSerializer, ResponsableSaisieNoteSerializer, SecretaireSerializer, GestionnaireSerializer, ChefDepartementSerializer
 )
 from apps.authentification.permissions import IsIntranet, IsSelfOrAdmin, IsAdminOrReadOnly
 from rest_framework.permissions import AllowAny
-from apps.utilisateurs.models import Utilisateur, Administrateur, Connexion
+from apps.utilisateurs.models import Utilisateur, Administrateur
 from apps.utilisateurs.serializers import (
     UtilisateurSerializer,
-    AdministrateurSerializer,
-    ConnexionSerializer
+    AdministrateurSerializer
 )
 from apps.page_professeur.serializers import UESerializer
 from rest_framework.decorators import api_view, permission_classes
@@ -355,17 +354,12 @@ class ChefDepartementViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
     
-# ----- CONNEXION -----
-class ConnexionViewSet(viewsets.ModelViewSet):
-    queryset = Connexion.objects.all().order_by('-date_connexion')
-    serializer_class = ConnexionSerializer
-    permission_classes = [IsIntranet, IsAdminUser]
-    
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_staff:
-            return Connexion.objects.all()
-        return Connexion.objects.filter(utilisateur=user)
+# ----- Journal d'Actions -----
+class JournalActionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = JournalAction.objects.all().order_by('-date_action')
+    serializer_class = JournalActionSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
 
         
 @api_view(['POST'])

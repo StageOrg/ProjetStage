@@ -103,10 +103,40 @@ export const authAPI = {
     return { access, refresh, user };
   },
 
-  register: async (userPayload) => {
-    const res = await api.post("auth/register/", userPayload);
-    return res.data;
-  },
+  partialRegister: async (payload) => {
+  try {
+    const { role, data } = payload;
+
+    const formattedData = {
+      role: role,
+
+      // ✅ Données utilisateur
+      email: data.utilisateur.email,
+      prenom: data.utilisateur.first_name,
+      nom: data.utilisateur.last_name,
+      sexe: data.utilisateur.sexe,
+      telephone: data.utilisateur.telephone,
+
+      // ✅ Données spécifiques
+      num_carte: data.num_carte,
+      autre_prenom: data.autre_prenom,
+      date_naiss: data.date_naiss,
+      lieu_naiss: data.lieu_naiss,
+      titre: data.titre,
+    };
+
+    const response = await api.post(
+      "/auth/partial-register/",
+      formattedData
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Erreur lors de la création de l'utilisateur partiel:", error);
+    throw error;
+  }
+},
+
 
   refresh: async () => {
     const refresh = TokenStorage.getRefresh();
