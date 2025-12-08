@@ -1,6 +1,9 @@
 from ..models import Notification
 from django.core.mail import send_mail
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class NotificationService:
 
@@ -11,12 +14,18 @@ class NotificationService:
             user=user,
             message=message
         ),
-        send_mail(
-        subject="Saisie de notes",
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=False,
+        try:
+            send_mail(
+                subject="Saisie de notes",
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[receiver.email],
+                fail_silently=True,  # ← Ne pas crasher si ça échoue
+            )
+            logger.info(f"Email envoyé à {receiver.email}")
+        except Exception as e:
+            # Logger mais ne pas lever l'exception
+            logger.error(f"Impossible d'envoyer l'email à {receiver.email}: {str(e)}
     ))
     
 
