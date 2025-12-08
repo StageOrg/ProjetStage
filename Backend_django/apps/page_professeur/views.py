@@ -716,14 +716,7 @@ class PeriodeSaisieViewSet(viewsets.ModelViewSet):
             users=[prof.utilisateur for prof in professeurs],
             message=message
         )
-    """   send_mail(
-        subject="Période de saisie de notes",
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=False,
-    ) """
-
+ 
 class AffectationUeViewSet(viewsets.ModelViewSet):
     queryset = AffectationUe.objects.all()
     serializer_class = AffectationUeSerializer

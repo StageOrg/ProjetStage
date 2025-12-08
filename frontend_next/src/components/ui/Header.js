@@ -15,9 +15,13 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
-  const [role, setRole] = useState("visiteur");
   const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-0");
-
+  const [role, setRole] = useState(() => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem("user_role") || "visiteur";
+  }
+  return "visiteur";
+});
 
   // Charger rôle depuis localStorage
   useEffect(() => {

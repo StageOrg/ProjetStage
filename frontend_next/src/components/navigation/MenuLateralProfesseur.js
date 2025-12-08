@@ -32,7 +32,7 @@ export default function MenuLateralProfesseur() {
               className={
                 (pathname === link.href
                   ? "bg-black-100 text-black-900 font-bold shadow-md "
-                  : "text-black-700 hover:bg-black-50 hover:text-black-900 ") +
+                  : "text-black-700 hover:bg-blue-100 hover:text-black-900 ") +
                 " px-4 py-2 transition flex items-center gap-3"
               }
             >

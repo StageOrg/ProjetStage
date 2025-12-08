@@ -45,13 +45,21 @@ class NotificationService:
             for user in users
         ]
         Notification.objects.bulk_create(notifications)
-        send_mail(
-        subject="Période de saisie de notes",
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email for user in users],
-        fail_silently=False,
-        )
+        try:
+            send_mail(
+            subject="Période de saisie de notes",
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email for user in users],
+            fail_silently=False,
+            )
+            logger.info(f"Email envoyé à {[user.email for user in users]}")
+
+        except Exception as e:
+                logger.error(
+                    f"Impossible d'envoyer l'email à {[user.email for user in users]}: {str(e)}"
+                )
+
 
     # ✅ Marquer une notification comme lue
     @staticmethod

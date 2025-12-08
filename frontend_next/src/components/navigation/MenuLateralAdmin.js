@@ -20,7 +20,7 @@ export default function MenuLateralAdmin() {
           <span className="font-extrabold text-blue-800 text-2xl tracking-tight drop-shadow">EPL</span>
           <span className="bg-teal-100 text-blue-700 font-bold px-2 py-1 rounded-lg text-xs shadow">Admin</span>
         </div>
-        <nav className="flex flex-col gap-4 text-lg font-semibold">
+        <nav className="flex flex-col gap-5 text-lg font-semibold">
           {links.map(link => (
             <Link
               key={link.href}
