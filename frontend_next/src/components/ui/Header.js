@@ -53,13 +53,13 @@ export default function Header() {
       case "admin":
         return "/admin/dashboard";
       case "professeur":
-        return "/prof/dashboard";
+        return "/prof/dashboard/donnees-personnelles";
       case "secretaire":
         return "/secretariat/dashboard/ue-exam";
       case "responsable inscriptions":
         return "/resp-inscriptions/dashboard";
       case "resp_notes":
-        return "/resp-notes/dashboard";
+        return "/gestion-notes/dashboard";
       case "gestionnaire":
         return "/gestion/dashboard";
       default:
