@@ -23,7 +23,7 @@ export default function MenuLateralProfPublic({ profId }) {
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
           <span className="bg-blue-100 text-black font-bold px-2 py-1 text-xs shadow">Enseignant</span>
         </div>
-        <nav className="flex flex-col gap-2 text-lg font-semibold mt-10">
+        <nav className="flex flex-col gap-4 text-lg font-semibold mt-10">
           {links.map(link => (
             <Link
               key={link.href}
