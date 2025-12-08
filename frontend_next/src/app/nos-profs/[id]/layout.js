@@ -4,8 +4,10 @@ import Header from "../../../components/ui/Header";
 
 
 export default async function DashboardProfLayout({ children, params }) {
-  const { id } = params;
+   const resolvedParams = await params;
+  const { id } = resolvedParams;
   const profId = id; // Récupérer l'ID du professeur depuis les paramètres de l'URL
+  console.log("Layout du professeur avec ID:", profId);
   return (
     <>
     {/* Header en haut */}
