@@ -4,8 +4,9 @@ import React from "react";
 import EvaluationUE from "@/features/service-examen/cours/evaluationUE";
 
 
-export default function EvaluationUEPage({ params }) {
-  const { "id-ue": idUe} = React.use(params);
+export default async function EvaluationUEPage({ params }) {
+   const resolvedParams = await params;
+  const { idUe } = resolvedParams;
   console.log("EvaluationUEPage id:", idUe);
   return (
     <main className=" w-full ">

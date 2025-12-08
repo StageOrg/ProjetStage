@@ -22,7 +22,7 @@ export default function ProfilProfesseur({ profId }) {
     const fetchProf = async () => {
       setIsLoading(true);
       try {
-      
+      console.log("Fetching data for profId:", profId);
         const prof = await ProfesseurService.getProfesseurById(profId)
         
         console.log("Professeur récupéré:", prof);
