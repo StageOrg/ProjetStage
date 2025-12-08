@@ -97,7 +97,7 @@ function ListeEtudiantsUE({ ueId }) {
      {selectedEvaluation ? (
       selectedEvaluation.type === "Examen" && selectedEvaluation.anonyme === null ? (
         <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded">
-      ⚠️ Le responsable de saisie des notes doit d’abord décider si cette évaluation est anonyme ou non.
+      ⚠️ L'état d'anonymat de cette évaluation n'est pas encore défini.
         </div>
   ) : selectedEvaluation.type === "Examen" && selectedEvaluation.anonyme === true ? (
     <EvaluationExamen

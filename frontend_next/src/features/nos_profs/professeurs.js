@@ -69,9 +69,10 @@ const filtered = professeurs?.filter((prof) => {
           {filtered?.map((prof) => (
             <Link
               key={prof.id}
-              href={`/nos-profs/${prof.id}`} 
+              href={`/nos-profs/${prof.id}/profil`} 
               className="bg-white shadow-md rounded-lg p-4 flex items-center gap-10 hover:bg-blue-100 transition w-[900px]"
             >
+              {console.log("Rendu du professeur:", prof.id)}
               <Image
                 src={prof.photo || '/default-avatar.png'}
                 alt={`${prof.utilisateur.first_name} ${prof.utilisateur.last_name}`}

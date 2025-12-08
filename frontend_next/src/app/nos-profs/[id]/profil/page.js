@@ -1,9 +1,10 @@
-"use client";
 import React from "react";
 import InfosPersonnellesProf from "@/features/nos_profs/infosPersonnelles";
 
 
-export default function PageDonneesPersonnellesProf({params}) {
-    const { id } = React.use(params);
+export default async function PageDonneesPersonnellesProf({params}) {
+  console.log("Params reçus dans la page profil:", params);
+    const { id } = params;
+    console.log("ID du professeur depuis la page profil22:", id);
   return <InfosPersonnellesProf profId={id} />;
 }
