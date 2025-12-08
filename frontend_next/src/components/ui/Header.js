@@ -51,17 +51,17 @@ export default function Header() {
   const getPersonnelHref = (role) => {
     switch (role) {
       case "admin":
-        return "/admin/dashboard";
+        return "/administration/dashboard/journal-d-action";
       case "professeur":
-        return "/prof/dashboard/donnees-personnelles";
+        return "/enseignant/dashboard/donnees-personnelles";
       case "secretaire":
         return "/secretariat/dashboard/ue-exam";
       case "responsable inscriptions":
         return "/resp-inscriptions/dashboard";
       case "resp_notes":
-        return "/gestion-notes/dashboard";
+        return "/gestion-notes/dashboard/tableau-de-bord";
       case "gestionnaire":
-        return "/gestion/dashboard";
+        return "/gestion/dashboard/mon-etablissement";
       default:
         return "/";
     }
