@@ -10,23 +10,30 @@ class NotificationService:
     # ✅ Envoyer une notification à 1 utilisateur
     @staticmethod
     def send_to_user(user, message):
-        return (Notification.objects.create(
+        # 1️⃣ Création de la notification en base
+        notification = Notification.objects.create(
             user=user,
             message=message
-        ),
-        try:
-            send_mail(
-                subject="Saisie de notes",
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[receiver.email],
-                fail_silently=True,  # ← Ne pas crasher si ça échoue
-            )
-            logger.info(f"Email envoyé à {receiver.email}")
-        except Exception as e:
-            # Logger mais ne pas lever l'exception
-            logger.error(f"Impossible d'envoyer l'email à {receiver.email}: {str(e)}
-    ))
+        )
+
+        # 2️⃣ Envoi de l'email si l'utilisateur a un email
+        if user.email:
+            try:
+                send_mail(
+                    subject="Saisie de notes",
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,  # Ne pas bloquer si ça échoue
+                )
+                logger.info(f"Email envoyé à {user.email}")
+
+            except Exception as e:
+                logger.error(
+                    f"Impossible d'envoyer l'email à {user.email}: {str(e)}"
+                )
+
+        return notification
     
 
 
