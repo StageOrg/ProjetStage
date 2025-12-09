@@ -5,6 +5,7 @@ import { FaTachometerAlt, FaUserGraduate, FaChalkboardTeacher, FaBook, FaClipboa
 
 const links = [
   { href: "/administration/dashboard/journal-d-action", label: "Tableau de bord", icon: <FaTachometerAlt /> },
+  { href: "/administration/dashboard/register-provisoire", label: "Nouvel utilisateur", icon: <FaUserGraduate /> },
   { href: "/administration/dashboard/gestion-utilisateurs", label: "Gestion des utilisateurs", icon: <FaUserGraduate /> },
   { href: "/administration/dashboard/etudiants", label: "Gestion étudiants", icon: <FaUserGraduate /> },
   { href: "/administration/dashboard/enseignants", label: "Enseignants", icon: <FaChalkboardTeacher /> },

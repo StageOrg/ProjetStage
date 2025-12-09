@@ -1,4 +1,4 @@
-import ArticlesPublic from "@/features/nos_profs/projets";
+import ArticlesPublic from "@/features/nos_profs/articles";
 import React from "react";
 
 export default async function PageArticlesPublic({ params }) {

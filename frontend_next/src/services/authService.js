@@ -102,6 +102,10 @@ export const authAPI = {
     TokenStorage.setTokens({ access, refresh });
     return { access, refresh, user };
   },
+  register: async (userPayload) => {
+    const res = await api.post("auth/register/", userPayload);
+    return res.data;
+  },
 
   partialRegister: async (payload) => {
   try {

@@ -14,6 +14,9 @@ import FiliereForm from "./formulaires/FiliereForm";
 import SemestreForm from "./formulaires/SemestreForm";
 import AnneeEtudeForm from "./formulaires/AnneeEtudeForm";
 import AnneeAcademiqueForm from "./formulaires/AnneeAcademiqueForm";
+import { useState } from "react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+
 
 
 export default function GestionEtablissement({ parcoursOptions, filiereOptions, departementOptions, anneeOptions, semestreOptions }) {
@@ -33,7 +36,6 @@ export default function GestionEtablissement({ parcoursOptions, filiereOptions, 
         setFilieres(await FiliereService.getFilieres());
         setAnnees(await AnneeEtudeService.getAnneesEtude());
         setSemestres(await SemestreService.getSemestres());
-        console.log("semestres loaded:", semestres);
         setAnneesAcademiques(await AnneeAcademiqueService.getAll());
       } catch (error) {
         console.error("Erreur lors du chargement:", error);
@@ -44,12 +46,12 @@ export default function GestionEtablissement({ parcoursOptions, filiereOptions, 
   }, []);
 
   const sections = [
-    { id: "departement", title: "Département", items: departements },
-    { id: "filiere", title: "Filière", items: filieres },
-    { id: "parcours", title: "Parcours", items: parcours },
-    { id: "semestre", title: "Semestre", items: semestres },
-    { id: "annee", title: "Année d'Étude", items: annees },
-    { id: "anneeAcademique", title: "Année Académique", items: anneesAcademiques },
+    { id: "departement", title: "Département", items: departements, nombre: departements.length },
+    { id: "filiere", title: "Filière", items: filieres, nombre: filieres.length },
+    { id: "parcours", title: "Parcours", items: parcours, nombre: parcours.length },
+    { id: "semestre", title: "Semestre", items: semestres, nombre: semestres.length },
+    { id: "annee", title: "Année d'Étude", items: annees, nombre: annees.length },
+    { id: "anneeAcademique", title: "Année Académique", items: anneesAcademiques, nombre: anneesAcademiques.length },
   ];
 
   const renderForm = () => {
@@ -104,8 +106,48 @@ export default function GestionEtablissement({ parcoursOptions, filiereOptions, 
   );
 }
 
-function AcademicCard({ section, onAdd }) {
+
+function AcademicCard({ section, onAdd, onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
+  const handleDelete = async (sectionId, ItemId) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette" + (Item?.libelle || Item?.nom || "") + " ?")) {
+      try {
+        switch (sectionId) {
+          case "departement":
+            await DepartementService.deleteDepartement(ItemId);
+            setDepartements(prev => prev.filter(c => c.id !== ItemId));
+            break;
+          case "filiere":
+            await FiliereService.deleteFiliere(ItemId);
+            setFilieres(prev => prev.filter(c => c.id !== ItemId));
+            break;
+          case "parcours":
+            await ParcoursService.deleteParcours(ItemId);
+            setParcours(prev => prev.filter(c => c.id !== ItemId));
+            break;
+          case "semestre":
+            await SemestreService.deleteSemestre(ItemId);
+            setSemestres(prev => prev.filter(c => c.id !== ItemId));
+            break;
+          case "annee":
+            await AnneeService.deleteAnnee(ItemId);
+            setAnnees(prev => prev.filter(c => c.id !== ItemId));
+            break;
+          case "anneeAcademique":
+            await AnneeAcademiqueService.deleteAnneeAcademique(ItemId);
+            setAnneesAcademiques(prev => prev.filter(c => c.id !== ItemId));
+            break;
+          default:
+            alert("Type inconnu pour la suppression");
+            return;
+        }
+        alert("Suppression réussie !");
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+        alert("Erreur lors de la suppression de l'élément.");
+      }
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-8 relative">
@@ -116,9 +158,10 @@ function AcademicCard({ section, onAdd }) {
         >
           {section.title}
         </h2>
+
         {open && (
           <button
-            className="flex items-center gap-0.5 border border-blue-600 text-blue-600 px-2 py-1 rounded-md hover:bg-blue-600 hover:text-white transition"
+            className="flex items-center gap-1 border border-blue-600 text-blue-600 px-2 py-1 rounded-md hover:bg-blue-600 hover:text-white transition"
             onClick={onAdd}
           >
             <Plus size={18} /> Ajouter
@@ -130,8 +173,33 @@ function AcademicCard({ section, onAdd }) {
         <div className="space-y-2">
           {section.items?.length > 0 ? (
             section.items.map((item, index) => (
-              <div key={index} className="p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
-                {item?.libelle || item?.nom}
+              <div
+                key={index}
+                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition"
+              >
+                {/* Texte */}
+                <span className="font-medium text-gray-700">
+                  {item?.libelle || item?.nom}
+                </span>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3">
+                 {/*  <button
+                    onClick={() => onEdit(section.id, item.id)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Modifier"
+                  >
+                    <Pencil size={18} />
+                  </button> */}
+
+                  <button
+                    onClick={() => onDelete(section.id, item.id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Supprimer"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             ))
           ) : (
@@ -139,8 +207,11 @@ function AcademicCard({ section, onAdd }) {
           )}
         </div>
       ) : (
-        <p className="text-gray-500 text-sm">Cliquez pour voir les éléments</p>
+        <p className="text-gray-500 text-sm">
+          {section.nombre} {section.title}(s) - Cliquez pour visualiser
+        </p>
       )}
     </div>
   );
 }
+
