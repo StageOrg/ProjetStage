@@ -14,8 +14,7 @@ import FiliereForm from "./formulaires/FiliereForm";
 import SemestreForm from "./formulaires/SemestreForm";
 import AnneeEtudeForm from "./formulaires/AnneeEtudeForm";
 import AnneeAcademiqueForm from "./formulaires/AnneeAcademiqueForm";
-import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 
 

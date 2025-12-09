@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import ArticleService from "@/services/articleService"
 import ProfInfos from "@/features/util/profInfos";
@@ -44,7 +45,7 @@ export default function ArticlesPublic(profId) {
               <th className="px-3 py-2">Titre</th>
               <th className="px-3 py-2">Revue</th>
               <th className="px-3 py-2">Année</th>
-              <th className="px-3 py-2">Lien</th>
+              <th className="px-3 py-2">Lien</th>c
               <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
