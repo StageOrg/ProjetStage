@@ -6,10 +6,9 @@ import ParcoursService from "@/services/parcoursService";
 import AnneeEtudeService from "@/services/anneeEtudeService";
 import SemestreService from "@/services/semestreService";
 import { FaClipboardList, FaSort, FaSortUp, FaSortDown, FaCheckCircle } from "react-icons/fa";
-import UEService from "@/services/ueService";
-import ProfService from "@/services/profService";
 import ProfesseurService from "@/services/profService";
 import EtudiantService from "@/services/etudiantService";
+import ProfInfos from "@/features/util/profInfos";
 
 export default function UEs({profId}) {
 const [filieres, setFilieres] = useState([]);
@@ -158,7 +157,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
       {/* Titre avec année scolaire et bouton + */}
       <div className="flex justify-center items-center mb-2">
         <h1 className="text-2xl font-bold text-blue-900">
-          Cours enseignés
+          Unités d'Enseignement du <ProfInfos profId={profId} />
         </h1>
       </div>
 

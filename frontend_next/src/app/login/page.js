@@ -43,7 +43,7 @@ export default function Connexion() {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("user_role", data.user.role);
       
-      console.log("Connexion réussie", data.user);
+      console.log("Connexion réussie");
       
       // Redirection après connexion
       if (data.user.role === "professeur") {

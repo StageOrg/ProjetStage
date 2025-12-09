@@ -13,7 +13,6 @@ export default function MenuLateralProfPublic({ profId }) {
     { href: `/nos-profs/${profId}/articles`, label: "Articles", icon: <FaFileAlt /> },
     { href: `/nos-profs/${profId}/projets`, label: "Projets", icon: <FaProjectDiagram /> },
     { href: `/nos-profs/${profId}/encadrements`, label: "Encadrements", icon: <FaUsers /> },
-    { href: `/nos-profs/${profId}/recherches`, label: "Recherches", icon: <FaClipboardList /> },
   ];
 
   return (

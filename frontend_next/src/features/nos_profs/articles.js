@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import ArticleService from "@/services/articleService"
 import ProfInfos from "@/features/util/profInfos";
 
-export default function ArticlesPublic(profId) {
+export default function ArticlesPublic({profId}) {
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
 

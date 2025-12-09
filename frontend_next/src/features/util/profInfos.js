@@ -26,5 +26,5 @@ export default function ProfInfos({ profId }) {
 
   if (loading) return <span>Chargement...</span>;
 
-  return <span>{prof?.titre} {" "} {prof?.utilisateur.first_name} {" "} {prof?.utilisateur.last_name}</span>;
+  return <span>{prof?.titre} {" "} {prof?.utilisateur.first_name} {" "} {prof?.utilisateur.last_name.toUpperCase()}</span>;
 }
