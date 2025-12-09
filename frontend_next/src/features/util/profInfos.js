@@ -11,7 +11,7 @@ export default function ProfInfos({ profId }) {
 
     const fetchProf = async () => {
       try {
-        const data = await profService.getProfById(profId);
+        const data = await profService.getProfesseurById(profId);
         setProf(data);
       } catch (error) {
         console.error("Erreur récupération prof :", error);

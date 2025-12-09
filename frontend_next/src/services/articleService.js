@@ -60,7 +60,7 @@ const ArticleService = {
 
     getArticleByProfId: async (profId) => {
         try {
-            const response = await api.get(`/notes/articles/par-professeur/${profId}/`);
+            const response = await api.get(`/notes/articles/par_professeur/${profId}/`);
             return response.data;
         } catch (error) {
             console.error(`Erreur lors de la récupération des articles pour le professeur ${profId}:`, error);

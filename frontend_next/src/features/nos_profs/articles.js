@@ -24,7 +24,7 @@ export default function ArticlesPublic(profId) {
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in max-w-5xl mx-auto">
       <h2 className="flex items-center gap-3 text-2xl font-bold text-blue-900 mb-6">
-        <FaFileAlt className="text-blue-700" /> Articles publiés par <ProfInfos profId={profId} />
+         Articles publiés par <ProfInfos profId={profId} />
       </h2>
 
       {/* Barre recherche + bouton ajout */}
@@ -45,7 +45,7 @@ export default function ArticlesPublic(profId) {
               <th className="px-3 py-2">Titre</th>
               <th className="px-3 py-2">Revue</th>
               <th className="px-3 py-2">Année</th>
-              <th className="px-3 py-2">Lien</th>c
+              <th className="px-3 py-2">Lien</th>
               <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>

@@ -30,6 +30,7 @@ const [selectedSemestreObject, setSelectedSemestreObject] = useState(null);
 const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 const [selectedUeId, setSelectedUeId] = useState(null);
 const router = useRouter();
+const role = localStorage.getItem("user_role");
 
 //recuperer les filieres
 useEffect(() => {
@@ -71,6 +72,7 @@ useEffect(() => {
 
 // recuperer les ues de l'étudiant
 useEffect(() => {
+  if (role !== "etudiant") return;
     const fetchUes = async () => {
       try {
         const ues = await EtudiantService.getMesUes();

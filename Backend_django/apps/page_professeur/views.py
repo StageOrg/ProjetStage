@@ -649,6 +649,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
     pagination_class = None
+    
+    # Endpoint pour recuperer les articles publies par l'id du professeur
+    @action(detail=False, methods=['get'], url_path='publies-par-professeur/(?P<prof_id>[^/.]+)')
+    def par_professeur(self, request, prof_id=None):
+        articles = Article.objects.filter(professeur__id=prof_id, publie=True)
+        serializer = self.get_serializer(articles, many=True)
+        return Response(serializer.data)
 
 
 class EncadrementViewSet(viewsets.ModelViewSet):
