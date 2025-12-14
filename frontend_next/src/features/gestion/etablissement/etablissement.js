@@ -192,7 +192,7 @@ function AcademicCard({ section, onAdd, onEdit, onDelete }) {
                   </button> */}
 
                   <button
-                    onClick={() => onDelete(section.id, item.id)}
+                    onClick={() => handleDelete(section.id, item.id)}
                     className="text-red-600 hover:text-red-800"
                     title="Supprimer"
                   >
