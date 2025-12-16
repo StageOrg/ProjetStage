@@ -99,7 +99,7 @@ DATABASES = {
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'PORT': config('DB_PORT', default=5432, cast=int),
         'OPTIONS': {
         'sslmode': 'require',
     }
@@ -226,6 +226,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
-
+PASSWORD_RESET_TIMEOUT = 10 * 24 * 60 * 60
 # URL Frontend
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')

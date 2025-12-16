@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/services/api";
 
-export default function NouvelEtudiantStep3() {
+export default function EtapeSelectionParcours() {
   const [formulaire, setFormulaire] = useState({
     parcours_id: "",
     filiere_id: "",
@@ -13,19 +13,20 @@ export default function NouvelEtudiantStep3() {
     filiere_nom: "",
     annee_etude_libelle: "",
   });
+
   const [options, setOptions] = useState({
     parcours: [],
     filieres: [],
     annees: [],
   });
-  const [typeInscription, setTypeInscription] = useState(null);
+
   const [filtredFilieres, setFiltredFilieres] = useState([]);
   const [filtredAnnees, setFiltredAnnees] = useState([]);
   const [erreurs, setErreurs] = useState({});
   const [loading, setLoading] = useState(false);
+
   const router = useRouter();
 
-  // Charger les options depuis l'API
   useEffect(() => {
     const fetchOptions = async () => {
       setLoading(true);
@@ -35,7 +36,7 @@ export default function NouvelEtudiantStep3() {
           api.get("/inscription/filiere/"),
           api.get("/inscription/annee-etude/"),
         ]);
-        
+
         setOptions({
           parcours: parcoursRes.data,
           filieres: filieresRes.data,
@@ -48,58 +49,32 @@ export default function NouvelEtudiantStep3() {
         setLoading(false);
       }
     };
+
     fetchOptions();
 
-    // Charger les données sauvegardées
-    const savedData = localStorage.getItem("inscription_step3");
+    const savedData = localStorage.getItem("inscription_step2");
     if (savedData) {
       setFormulaire(JSON.parse(savedData));
     }
-    // Charger le type d'inscription (nouveau/ancien)
-    const typeData = localStorage.getItem('type_inscription');
-    if (typeData) {
-      try {
-        setTypeInscription(JSON.parse(typeData));
-      } catch (e) {
-        console.warn('Impossible de parser type_inscription:', e);
-      }
-    }
-  }, [router]);
+  }, []);
 
-  // Filtrer les filières et années quand le parcours change
   useEffect(() => {
     if (formulaire.parcours_id) {
+      // Filtrer les filières par parcours
       const filieresFiltrees = options.filieres.filter(
-        (filiere) => filiere.parcours && filiere.parcours.includes(parseInt(formulaire.parcours_id))
+        (filiere) =>
+          filiere.parcours &&
+          filiere.parcours.includes(parseInt(formulaire.parcours_id))
       );
       setFiltredFilieres(filieresFiltrees);
 
-      // Si l'étudiant est nouveau, on ne laisse que les années L1
+      // Filtrer les années par parcours → PLUS AUCUNE RESTRICTION L1
       const anneesParcours = options.annees.filter(
-        (annee) => annee.parcours && annee.parcours.includes(parseInt(formulaire.parcours_id))
+        (annee) =>
+          annee.parcours &&
+          annee.parcours.includes(parseInt(formulaire.parcours_id))
       );
-
-      let anneesFiltrees = anneesParcours;
-      if (typeInscription && typeInscription.typeEtudiant === 'nouveau') {
-        // Filtrer les années dont le libellé contient 'L1' (tolérance sur la casse)
-        const anneesL1 = anneesParcours.filter(a => {
-          const lib = (a.libelle || '').toString().toUpperCase();
-          return lib.includes('L1') || lib.startsWith('1') || lib.includes('LICENCE 1');
-        });
-        anneesFiltrees = anneesL1;
-
-        // Si aucune année L1 trouvée, fallback sur toutes les années du parcours
-        if (anneesFiltrees.length === 0) {
-          anneesFiltrees = anneesParcours;
-        } else {
-          // Préréglage: sélectionner automatiquement la première L1 si aucune sélection
-          if (!formulaire.annee_etude_id) {
-            setFormulaire(prev => ({ ...prev, annee_etude_id: String(anneesFiltrees[0].id), annee_etude_libelle: anneesFiltrees[0].libelle }));
-          }
-        }
-      }
-
-      setFiltredAnnees(anneesFiltrees);
+      setFiltredAnnees(anneesParcours);
     } else {
       setFiltredFilieres([]);
       setFiltredAnnees([]);
@@ -110,7 +85,6 @@ export default function NouvelEtudiantStep3() {
     const { name, value } = e.target;
     const nouvellesValeurs = { [name]: value };
 
-    // Mettre à jour les libellés correspondants
     if (name === "parcours_id") {
       nouvellesValeurs.filiere_id = "";
       nouvellesValeurs.annee_etude_id = "";
@@ -133,15 +107,10 @@ export default function NouvelEtudiantStep3() {
 
   const validerFormulaire = () => {
     const nouvellesErreurs = {};
-    if (!formulaire.parcours_id) {
-      nouvellesErreurs.parcours_id = "Veuillez sélectionner un parcours";
-    }
-    if (!formulaire.filiere_id) {
-      nouvellesErreurs.filiere_id = "Veuillez sélectionner une filière";
-    }
-    if (!formulaire.annee_etude_id) {
-      nouvellesErreurs.annee_etude_id = "Veuillez sélectionner une année";
-    }
+    if (!formulaire.parcours_id) nouvellesErreurs.parcours_id = "Veuillez sélectionner un parcours";
+    if (!formulaire.filiere_id) nouvellesErreurs.filiere_id = "Veuillez sélectionner une filière";
+    if (!formulaire.annee_etude_id) nouvellesErreurs.annee_etude_id = "Veuillez sélectionner une année";
+
     setErreurs(nouvellesErreurs);
     return Object.keys(nouvellesErreurs).length === 0;
   };
@@ -150,8 +119,8 @@ export default function NouvelEtudiantStep3() {
     e.preventDefault();
     if (!validerFormulaire()) return;
 
-    localStorage.setItem("inscription_step3", JSON.stringify(formulaire));
-    router.push("/etudiant/inscription/etape-4");
+    localStorage.setItem("inscription_step2", JSON.stringify(formulaire));
+    router.push("/etudiant/inscription/etape-3");
   };
 
   return (
@@ -169,9 +138,7 @@ export default function NouvelEtudiantStep3() {
 
       {/* Parcours */}
       <div>
-        <label className="block text-gray-700 font-semibold mb-2">
-          Parcours*
-        </label>
+        <label className="block text-gray-700 font-semibold mb-2">Parcours*</label>
         <select
           name="parcours_id"
           value={formulaire.parcours_id}
@@ -187,16 +154,12 @@ export default function NouvelEtudiantStep3() {
             </option>
           ))}
         </select>
-        {erreurs.parcours_id && (
-          <p className="text-red-500 text-sm mt-1">{erreurs.parcours_id}</p>
-        )}
+        {erreurs.parcours_id && <p className="text-red-500 text-sm mt-1">{erreurs.parcours_id}</p>}
       </div>
 
       {/* Filière */}
       <div>
-        <label className="block text-gray-700 font-semibold mb-2">
-          Filière*
-        </label>
+        <label className="block text-gray-700 font-semibold mb-2">Filière*</label>
         <select
           name="filiere_id"
           value={formulaire.filiere_id}
@@ -209,7 +172,9 @@ export default function NouvelEtudiantStep3() {
           }`}
         >
           <option value="">
-            {formulaire.parcours_id ? "Sélectionnez une filière" : "Veuillez d'abord sélectionner un parcours"}
+            {formulaire.parcours_id
+              ? "Sélectionnez une filière"
+              : "Veuillez d'abord sélectionner un parcours"}
           </option>
           {filtredFilieres.map((filiere) => (
             <option key={filiere.id} value={filiere.id}>
@@ -217,12 +182,10 @@ export default function NouvelEtudiantStep3() {
             </option>
           ))}
         </select>
-        {erreurs.filiere_id && (
-          <p className="text-red-500 text-sm mt-1">{erreurs.filiere_id}</p>
-        )}
+        {erreurs.filiere_id && <p className="text-red-500 text-sm mt-1">{erreurs.filiere_id}</p>}
       </div>
 
-      {/* Année */}
+      {/* Année d'étude */}
       <div>
         <label className="block text-gray-700 font-semibold mb-2">Année*</label>
         <select
@@ -237,7 +200,9 @@ export default function NouvelEtudiantStep3() {
           }`}
         >
           <option value="">
-            {formulaire.parcours_id ? "Sélectionnez une année" : "Veuillez d'abord sélectionner un parcours"}
+            {formulaire.parcours_id
+              ? "Sélectionnez une année"
+              : "Veuillez d'abord sélectionner un parcours"}
           </option>
           {filtredAnnees.map((annee) => (
             <option key={annee.id} value={annee.id}>
@@ -250,7 +215,6 @@ export default function NouvelEtudiantStep3() {
         )}
       </div>
 
-      {/* Boutons d'action */}
       <div className="flex justify-between mt-6 gap-4">
         <Link
           href="/"
@@ -258,6 +222,7 @@ export default function NouvelEtudiantStep3() {
         >
           Annuler
         </Link>
+
         <button
           type="submit"
           disabled={loading}

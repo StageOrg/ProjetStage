@@ -8,7 +8,7 @@ import { Clock, Lock, AlertCircle } from 'lucide-react';
 function Stepper({ currentStep }) {
   return (
     <div className="flex items-center justify-center gap-6 mb-10">
-      {[1, 2, 3, 4].map((etape) => (
+      {[1, 2, 3].map((etape) => (
         <div key={etape} className="flex flex-col items-center">
           <div className={`w-7 h-7 flex items-center justify-center rounded-full border-2 ${
             etape === currentStep 
@@ -19,7 +19,7 @@ function Stepper({ currentStep }) {
           } font-bold text-lg transition-all`}>
             {etape < currentStep ? '✓' : etape}
           </div>
-          {etape <= 4 && (
+          {etape <= 3 && (
             <div className={`w-12 h-1 mt-1 mb-1 rounded ${
               etape < currentStep ? 'bg-green-500' : 'bg-gray-300'
             }`} />
@@ -113,21 +113,19 @@ export default function InscriptionLayout({ children }) {
 
   // Détermine l'étape actuelle depuis l'URL
   const getCurrentStep = () => {
-    if (pathname.includes('etape-0')) return 0;
     if (pathname.includes('etape-1')) return 1;
     if (pathname.includes('etape-2')) return 2;
     if (pathname.includes('etape-3')) return 3;
-    if (pathname.includes('etape-4')) return 4;
     return 0;
   };
 
   const currentStep = getCurrentStep();
 
   const handleBack = () => {
-    if (currentStep === 0) {
+    if (currentStep === 1) {
       router.push('/');
-    } else if (currentStep === 1) {
-      router.push('/etudiant/inscription/etape-0');
+    } else if (currentStep === 2) {
+      router.push('/etudiant/inscription/etape-1');
     } else {
       router.push(`/etudiant/inscription/etape-${currentStep - 1}`);
     }
@@ -167,7 +165,7 @@ export default function InscriptionLayout({ children }) {
                 <Clock className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-green-800 font-semibold text-sm">
-                    ✅ Les inscriptions sont ouvertes
+                    Les inscriptions sont ouvertes
                   </p>
                   {statutInfo?.periode && (
                     <p className="text-green-700 text-xs mt-1">
@@ -182,12 +180,6 @@ export default function InscriptionLayout({ children }) {
           <div className="mb-2">
             {children}
           </div>
-          
-          {showStepper && (
-            <div className="mt-4 text-center text-sm text-gray-500">
-              Étape {currentStep} sur 4
-            </div>
-          )}
         </div>
       </div>
     </>

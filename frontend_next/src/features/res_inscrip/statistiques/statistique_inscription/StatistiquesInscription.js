@@ -13,7 +13,7 @@ import {
 } from "chart.js";
 import etudiantService from "@/services/etudiants/GestionEtudiantAdminService";
 import ExportButton from "@/components/ui/ExportButton";
-import api from "@/services/api"; // Import crucial pour invalidateCache
+import api from "@/services/api";
 import { FaSync } from "react-icons/fa";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
@@ -42,7 +42,7 @@ export default function StatistiquesAdmin() {
   const [error, setError] = useState("");
   const [displayMode, setDisplayMode] = useState("parcours");
 
-  // Chargement initial des listes déroulantes
+  // Chargement initial
   useEffect(() => {
     Promise.all([
       etudiantService.getParcoursAvecRelations(),
@@ -56,7 +56,7 @@ export default function StatistiquesAdmin() {
       .catch(() => setError("Erreur de chargement des données"));
   }, []);
 
-  // Mise à jour des filières & années d'étude quand le parcours change
+  // Mise à jour des filières & années d'étude
   useEffect(() => {
     if (!filters.parcours) {
       setFilieres([]);
@@ -68,7 +68,7 @@ export default function StatistiquesAdmin() {
     setAnneesEtude(p?.annees_etude || []);
   }, [filters.parcours, parcoursData]);
 
-  // Fonction de chargement des stats
+  // Chargement des stats
   const loadStats = async () => {
     setLoading(true);
     setError("");
@@ -89,22 +89,21 @@ export default function StatistiquesAdmin() {
     }
   };
 
-  // Rafraîchir manuellement (bouton)
+  // Rafraîchir
   const rafraichir = () => {
-    api.invalidateCache();   // Vide tout le cache
-    loadStats();             // Recharge depuis le serveur
+    api.invalidateCache();
+    loadStats();
   };
 
-  // Charger les stats à chaque changement de filtre (avec léger debounce)
+  // Auto-load au changement de filtres
   useEffect(() => {
     const timer = setTimeout(() => loadStats(), 300);
     return () => clearTimeout(timer);
   }, [filters]);
 
-  // Charger au premier rendu
+  // Premier chargement
   useEffect(() => {
     loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const mainData = displayMode === "parcours" ? stats.par_parcours : stats.par_filiere;
@@ -112,37 +111,93 @@ export default function StatistiquesAdmin() {
   const filles = stats.par_sexe.find((s) => s.sexe === "F")?.nombre_etudiants || 0;
   const total = stats.total_etudiants;
 
-  const prepareExport = () => {
+  // 🔥 Préparer les données d'export (format tableau simple)
+  const prepareExportData = () => {
     const rows = [];
-    const anneeLabel = filters.anneeAcademique || "Toutes les années";
-    const parcoursLabel = parcoursData.find((p) => p.id.toString() === filters.parcours)?.libelle || "Tous";
-    const filiereLabel = filieres.find((f) => f.id.toString() === filters.filiere)?.nom || "Toutes";
-    const anneeEtudeLabel = anneesEtude.find((a) => a.id.toString() === filters.annee_etude)?.libelle || "Toutes";
-
-    rows.push({ Rapport: "STATISTIQUES INSCRIPTIONS" });
+    
+    // Résumé général
     rows.push({
-      "Année Académique": anneeLabel,
-      Parcours: parcoursLabel,
-      Filière: filiereLabel,
-      "Année d'étude": anneeEtudeLabel,
-      Date: new Date().toLocaleDateString("fr-FR"),
+      'Type': 'TOTAL',
+      'Valeur': total,
+      'Pourcentage': '100%'
     });
-    rows.push({});
-    rows.push({ "Total étudiants": total });
-    rows.push({ Garçons: `${garcons} (${total > 0 ? ((garcons / total) * 100).toFixed(1) : 0}%)` });
-    rows.push({ Filles: `${filles} (${total > 0 ? ((filles / total) * 100).toFixed(1) : 0}%)` });
+    
+    rows.push({
+      'Type': 'Garçons',
+      'Valeur': garcons,
+      'Pourcentage': total > 0 ? `${((garcons / total) * 100).toFixed(1)}%` : '0%'
+    });
+    
+    rows.push({
+      'Type': 'Filles',
+      'Valeur': filles,
+      'Pourcentage': total > 0 ? `${((filles / total) * 100).toFixed(1)}%` : '0%'
+    });
+
+    // Ligne vide
     rows.push({});
 
+    // Par parcours
+    rows.push({ 'Type': '=== PAR PARCOURS ===' });
     stats.par_parcours.forEach((p) => {
       const pct = total > 0 ? ((p.nombre_etudiants / total) * 100).toFixed(1) : 0;
-      rows.push({ Parcours: p.libelle, Étudiants: p.nombre_etudiants, Pourcentage: `${pct}%` });
+      rows.push({
+        'Parcours': p.libelle,
+        'Étudiants': p.nombre_etudiants,
+        'Pourcentage': `${pct}%`
+      });
     });
+
+    // Ligne vide
+    rows.push({});
+
+    // Par filière
+    rows.push({ 'Type': '=== PAR FILIÈRE ===' });
     stats.par_filiere.forEach((f) => {
       const pct = total > 0 ? ((f.nombre_etudiants / total) * 100).toFixed(1) : 0;
-      rows.push({ Filière: f.nom, Étudiants: f.nombre_etudiants, Pourcentage: `${pct}%` });
+      rows.push({
+        'Filière': f.nom,
+        'Étudiants': f.nombre_etudiants,
+        'Pourcentage': `${pct}%`
+      });
+    });
+
+    // Ligne vide
+    rows.push({});
+
+    // Par année d'étude
+    rows.push({ 'Type': '=== PAR ANNÉE D\'ÉTUDE ===' });
+    stats.par_annee_etude.forEach((a) => {
+      const pct = total > 0 ? ((a.nombre_etudiants / total) * 100).toFixed(1) : 0;
+      rows.push({
+        'Année': a.libelle,
+        'Étudiants': a.nombre_etudiants,
+        'Pourcentage': `${pct}%`
+      });
     });
 
     return rows;
+  };
+
+  // 🔥 Options pour le PDF
+  const pdfOptions = {
+    titre: 'STATISTIQUES DES INSCRIPTIONS',
+    anneeAcademique: filters.anneeAcademique || null,
+    headerInfo: {
+      filiere_nom: filieres.find(f => f.id.toString() === filters.filiere)?.nom,
+      parcours_nom: parcoursData.find(p => p.id.toString() === filters.parcours)?.libelle,
+      annee_etude_libelle: anneesEtude.find(a => a.id.toString() === filters.annee_etude)?.libelle,
+      annee_academique_libelle: filters.anneeAcademique,
+    },
+    orientation: 'p', // Portrait pour les stats
+  };
+
+  // 🔥 Filtres pour CSV/Excel
+  const exportFilters = {
+    filiere_nom: filieres.find(f => f.id.toString() === filters.filiere)?.nom,
+    parcours_nom: parcoursData.find(p => p.id.toString() === filters.parcours)?.libelle,
+    annee_etude_libelle: anneesEtude.find(a => a.id.toString() === filters.annee_etude)?.libelle,
+    annee_academique_libelle: filters.anneeAcademique,
   };
 
   return (
@@ -163,9 +218,12 @@ export default function StatistiquesAdmin() {
               Rafraîchir
             </button>
 
+            {/* ✅ Export avec les bons paramètres */}
             <ExportButton
-              data={prepareExport()}
+              data={prepareExportData()}
               filename={`Stats_${new Date().toISOString().split("T")[0]}`}
+              options={pdfOptions}
+              filters={exportFilters}
               className="px-6 py-3 bg-teal-700 text-white rounded-lg hover:bg-teal-800"
               disabled={total === 0}
             />
@@ -247,7 +305,7 @@ export default function StatistiquesAdmin() {
           </button>
         </div>
 
-        {/* Contenu stats (inchangé) */}
+        {/* Stats & Graphiques (inchangé) */}
         {loading ? (
           <div className="text-center py-20 text-xl text-gray-600">Chargement...</div>
         ) : (

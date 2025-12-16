@@ -11,11 +11,11 @@ import EditStudentModal from "@/features/res_inscrip/modificationEtudiant/EditSt
 import ExportButton from "@/components/ui/ExportButton";
 import { useExportPDF } from "@/components/exports/useExportPDF";
 import api from "@/services/api"; 
+import toast from 'react-hot-toast';
 
 export default function GestionEtudiantsAdmin() {
   const router = useRouter();
   const { exportToPDF } = useExportPDF();
-
   const [etudiants, setEtudiants] = useState([]);
   const [parcoursData, setParcoursData] = useState([]);
   const [anneesAcademiques, setAnneesAcademiques] = useState([]);
@@ -26,15 +26,8 @@ export default function GestionEtudiantsAdmin() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 20;
-
-  const [filters, setFilters] = useState({
-    search: "",
-    annee_academique: "",
-    parcours: "",
-    filiere: "",
-    annee_etude: "",
+  const [filters, setFilters] = useState({search: "",annee_academique: "",parcours: "",filiere: "",annee_etude: "",
   });
-
   const [filieresDuParcours, setFilieresDuParcours] = useState([]);
   const [anneesDuParcours, setAnneesDuParcours] = useState([]);
 
@@ -88,7 +81,6 @@ export default function GestionEtudiantsAdmin() {
 
   // RAFRAÎCHIR : vide le cache + recharge tout
   const rafraichir = () => {
-    api.invalidateCache();
     chargerEtudiants();
   };
 
@@ -145,7 +137,7 @@ export default function GestionEtudiantsAdmin() {
       await etudiantService.deleteEtudiant(id);
       
       // 6. Rafraîchir la liste
-      rafraichir();
+      chargerEtudiants();
       
       alert("Étudiant supprimé avec succès");
       
@@ -159,6 +151,7 @@ export default function GestionEtudiantsAdmin() {
   const sauvegarderEtudiant = async (id, data) => {
     try {
       await etudiantService.updateEtudiant(id, data);
+      toast.success("Étudiant modifié avec succès");
       setModalOpen(false);
       rafraichir();
     } catch (err) {

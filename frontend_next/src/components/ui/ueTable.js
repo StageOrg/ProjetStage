@@ -16,16 +16,14 @@ function UERow({ ue, index, isSelected, wouldExceedLimit, onCheckboxChange, isCo
     }
   };
 
-  // 🔥 FONCTION POUR RÉCUPÉRER LE SEMESTRE (comme dans NouvelEtudiantStep4)
+  // Fonction pour récupérer le semestre
   const getSemestreLibelle = (ue) => {
     if (!ue.semestre) return "—";
     
-    // Si semestre est un objet avec libelle
     if (typeof ue.semestre === 'object' && ue.semestre.libelle) {
       return ue.semestre.libelle;
     }
     
-    // Si semestre est un nombre ou une string
     if (typeof ue.semestre === 'number' || typeof ue.semestre === 'string') {
       return `S${ue.semestre}`;
     }
@@ -38,7 +36,7 @@ function UERow({ ue, index, isSelected, wouldExceedLimit, onCheckboxChange, isCo
       {/* Ligne principale de l'UE */}
       <tr 
         className={`
-          ${index % 2 === 0 ? "bg-white" : "bg-gray-100"} 
+          ${index % 2 === 0 ? "bg-white" : "bg-gray-50"} 
           ${wouldExceedLimit ? "opacity-50" : ""} 
           ${isSelected ? "bg-blue-50" : ""}
           ${isComposante ? "bg-gray-50" : ""}
@@ -136,12 +134,11 @@ export default function UETable({
   
   // Filtrer pour n'afficher que les UE principales (pas les composantes isolées)
   const uesPrincipales = ues.filter(ue => {
-    // Vérifier si cette UE est une composante d'une autre UE
     const isComposante = ues.some(parentUe => 
       parentUe.composite && 
       parentUe.ues_composantes?.some(comp => comp.id === ue.id)
     );
-    return !isComposante; // On n'affiche que les UE principales
+    return !isComposante;
   });
 
   // Même logique pour les UEs d'ancien étudiant (non validées)
@@ -152,6 +149,26 @@ export default function UETable({
     );
     return !isComposante;
   });
+
+  // 🆕 Grouper les UE par niveau (pour nouveaux étudiants)
+  const uesGroupeesParNiveau = uesPrincipales.reduce((acc, ue) => {
+    const niveau = ue.annee_info?.libelle || "Année actuelle";
+    const niveauNum = ue.annee_info?.niveau || 999; // 999 pour tri en dernier
+    
+    if (!acc[niveau]) {
+      acc[niveau] = { ues: [], niveauNum };
+    }
+    acc[niveau].ues.push(ue);
+    return acc;
+  }, {});
+
+  // Trier les niveaux par ordre croissant
+  const niveauxTries = Object.keys(uesGroupeesParNiveau).sort((a, b) => {
+    return uesGroupeesParNiveau[a].niveauNum - uesGroupeesParNiveau[b].niveauNum;
+  });
+
+  // Vérifier si on a plusieurs niveaux
+  const aPlusiersNiveaux = niveauxTries.length > 1;
 
   return (
     <div className="overflow-x-auto mt-6">
@@ -169,21 +186,18 @@ export default function UETable({
         <tbody>
           {/* Section: UEs non validées (ancien étudiant) */}
           {ancienPrincipales.length > 0 && (
-            <tr>
-              <td colSpan="5" className="px-3 py-2 bg-yellow-50 text-sm text-yellow-800 font-semibold border border-gray-300">
-                UE non validées (à rattraper)
-              </td>
-            </tr>
-          )}
-
-          {ancienPrincipales.length === 0 && uesPrincipales.length === 0 ? (
-            <tr>
-              <td colSpan="5" className="text-center py-3 text-gray-500 border border-gray-300">
-                {loading ? "Chargement des UE..." : "Aucune UE disponible"}
-              </td>
-            </tr>
-          ) : (
             <>
+              <tr>
+                <td colSpan="5" className="px-3 py-3 bg-yellow-100 border border-gray-300">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1 flex-1 bg-yellow-400"></div>
+                    <span className="text-sm text-yellow-800 font-bold uppercase tracking-wide">
+                      ⚠️ UE non validées (à rattraper)
+                    </span>
+                    <div className="h-1 flex-1 bg-yellow-400"></div>
+                  </div>
+                </td>
+              </tr>
               {ancienPrincipales.map((ue, index) => {
                 const wouldExceedLimit =
                   !selectedUEs[ue.id] &&
@@ -200,36 +214,91 @@ export default function UETable({
                   />
                 );
               })}
+            </>
+          )}
 
-              {/* Section: UEs disponibles */}
-              {uesPrincipales.length > 0 && (
-                <tr>
-                  <td colSpan="5" className="px-3 py-2 bg-white text-sm text-gray-800 font-semibold border border-gray-300">
-                    UE disponibles
-                  </td>
-                </tr>
-              )}
-
-              {uesPrincipales.map((ue, index) => {
-                const wouldExceedLimit =
-                  !selectedUEs[ue.id] &&
-                  totalCreditsSelectionnes + ue.nbre_credit > LIMITE_CREDITS_MAX;
-
+          {/* Section: UEs disponibles (groupées par niveau pour nouveaux étudiants) */}
+          {uesPrincipales.length === 0 && ancienPrincipales.length === 0 ? (
+            <tr>
+              <td colSpan="5" className="text-center py-6 text-gray-500 border border-gray-300">
+                {loading ? "Chargement des UE..." : "Aucune UE disponible"}
+              </td>
+            </tr>
+          ) : (
+            <>
+              {niveauxTries.map((niveau, niveauIndex) => {
+                const { ues: uesDuNiveau } = uesGroupeesParNiveau[niveau];
+                
                 return (
-                  <UERow
-                    key={ue.id}
-                    ue={ue}
-                    index={index}
-                    isSelected={selectedUEs[ue.id]}
-                    wouldExceedLimit={wouldExceedLimit}
-                    onCheckboxChange={onCheckboxChange}
-                  />
+                  <React.Fragment key={niveau}>
+                    {/* Séparateur de niveau (uniquement si plusieurs niveaux) */}
+                    {aPlusiersNiveaux && (
+                      <tr>
+                        <td colSpan="5" className="px-3 py-3 bg-blue-50 border border-gray-300">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1 flex-1 bg-blue-300"></div>
+                            <span className="text-sm text-blue-800 font-bold uppercase tracking-wide">
+                              📚 {niveau}
+                            </span>
+                            <div className="h-1 flex-1 bg-blue-300"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* UEs du niveau */}
+                    {uesDuNiveau.map((ue, index) => {
+                      const wouldExceedLimit =
+                        !selectedUEs[ue.id] &&
+                        totalCreditsSelectionnes + ue.nbre_credit > LIMITE_CREDITS_MAX;
+
+                      return (
+                        <UERow
+                          key={ue.id}
+                          ue={ue}
+                          index={index}
+                          isSelected={selectedUEs[ue.id]}
+                          wouldExceedLimit={wouldExceedLimit}
+                          onCheckboxChange={onCheckboxChange}
+                        />
+                      );
+                    })}
+                  </React.Fragment>
                 );
               })}
             </>
           )}
         </tbody>
       </table>
+
+      {/* Footer avec statistiques */}
+      <div className="mt-4 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+        <div className="flex justify-between items-center text-sm">
+          <div>
+            <span className="text-gray-600">UE sélectionnées : </span>
+            <span className="font-bold text-gray-800">
+              {Object.values(selectedUEs).filter(Boolean).length}
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-600">Total crédits : </span>
+            <span className={`font-bold text-lg ${
+              totalCreditsSelectionnes > LIMITE_CREDITS_MAX 
+                ? 'text-red-600' 
+                : totalCreditsSelectionnes > LIMITE_CREDITS_MAX * 0.8
+                ? 'text-orange-600'
+                : 'text-green-600'
+            }`}>
+              {totalCreditsSelectionnes} / {LIMITE_CREDITS_MAX}
+            </span>
+          </div>
+        </div>
+        {totalCreditsSelectionnes > LIMITE_CREDITS_MAX && (
+          <div className="mt-2 text-xs text-red-600 font-semibold">
+            ⚠️ Limite de crédits dépassée !
+          </div>
+        )}
+      </div>
     </div>
   );
 }

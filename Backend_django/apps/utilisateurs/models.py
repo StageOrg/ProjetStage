@@ -74,8 +74,8 @@ class Etudiant(models.Model):
     num_carte = models.PositiveIntegerField(unique=True, null=True, blank=True, validators=[MaxValueValidator(999999)])  
     autre_prenom = models.CharField(max_length=50, null =True)
     photo = models.ImageField(upload_to='photos_etudiants/', null=True,blank=True)
-    date_naiss = models.DateField()
-    lieu_naiss = models.CharField(max_length=100)
+    date_naiss = models.DateField(null=True, blank=True)
+    lieu_naiss = models.CharField(max_length=100, null=True, blank=True)
     is_validated = models.BooleanField(default=False)
     evaluations = models.ManyToManyField('page_professeur.Evaluation', through='page_professeur.Note', blank=True)
 

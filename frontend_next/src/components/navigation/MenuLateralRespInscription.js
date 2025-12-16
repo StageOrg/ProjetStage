@@ -26,19 +26,16 @@ const statisticsLinks = [
     href: "/resp_inscription/dashboard/statistiques/statistiqueInscription", 
     label: "Statistiques Inscription", 
     icon: <FaChartBar />,
-    description: "Vue globale & par année"
   },
   { 
     href: "/resp_inscription/dashboard/statistiques/statistiqueAbandon", 
     label: "Taux d'Abandon", 
     icon: <FaUserSlash />,
-    description: "Abandon par niveau & filière"
   },
   { 
     href: "/resp_inscription/dashboard/statistiques/statistiqueEvolution", 
     label: "Évolution & Tendances", 
     icon: <FaChartLine />,
-    description: "Mensuelle & Annuelle"
   },
   /*{ 
     href: "/resp_inscription/dashboard/statistiques/statistiqueComparative", 
@@ -181,7 +178,7 @@ export default function MenuLateralRespInscription() {
         </nav>
 
         {/* Bouton Déconnexion */}
-        <div className="mt-auto pt-6">
+        <div className=" pt-50">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-800 to-blue-900 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2.5 rounded-xl shadow-lg transition-all duration-200"

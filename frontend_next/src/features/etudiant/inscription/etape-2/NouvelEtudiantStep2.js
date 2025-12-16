@@ -3,12 +3,29 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { validateField, calculerDateMinimale, validerPhoto } from '@/components/ui/ValidationUtils';
-import api from "@/services/api";  // Pour les checks API (num_carte).
+import api from "@/services/api";
 
-export default function NouvelEtudiantStep2() {
+// 🔑 FONCTION HELPER : Générer une clé unique par utilisateur
+const getStorageKey = (baseKey) => {
+  const user = localStorage.getItem('user');
+  if (!user) return baseKey;
+  
+  try {
+    const userData = JSON.parse(user);
+    // Utiliser l'ID utilisateur ou username pour créer une clé unique
+    const userId = userData.id || userData.username || 'guest';
+    return `${baseKey}_${userId}`;
+  } catch {
+    return baseKey;
+  }
+};
+
+export default function EtapeInfosPersonnelles() {
   const [typeInscription, setTypeInscription] = useState(null);
   const [ancienEtudiantData, setAncienEtudiantData] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [formulaire, setFormulaire] = useState({
+    username: "",
     last_name: "",
     first_name: "",
     telephone: "",
@@ -23,10 +40,13 @@ export default function NouvelEtudiantStep2() {
   const [erreurs, setErreurs] = useState({});
   const [champsModifies, setChampsModifies] = useState({});
   const [chargement, setChargement] = useState(false);
-  const [verificationEnCours, setVerificationEnCours] = useState({});  // Loader pour vérif (ex: {num_carte: true}).
+  const [verificationEnCours, setVerificationEnCours] = useState({});
+  const [dejaInscrit, setDejaInscrit] = useState(false);
+  const [messageInscription, setMessageInscription] = useState(null);
   const router = useRouter();
 
   const champsRequis = {
+    username: { required: false },
     last_name: { required: true },
     first_name: { required: true },
     telephone: { required: true },
@@ -38,85 +58,128 @@ export default function NouvelEtudiantStep2() {
     sexe: { required: true },
   };
 
+  // 🔥 MODIFIÉ : Utiliser des clés uniques par utilisateur
   useEffect(() => {
-    const typeData = localStorage.getItem("type_inscription");
-    if (typeData) {
-      const parsed = JSON.parse(typeData);
-      setTypeInscription(parsed);
-      
-      if (parsed.typeEtudiant === 'ancien') {
-        const ancienData = localStorage.getItem("ancien_etudiant_complet");
-        if (ancienData) {
-          const parsedAncien = JSON.parse(ancienData);
-          setAncienEtudiantData(parsedAncien);
-          
-          // Valider la valeur de sexe
-          const sexeValide = ["M", "F"].includes(parsedAncien.etudiant.sexe) ? parsedAncien.etudiant.sexe : "";
-          
-          setFormulaire(prev => ({
-            ...prev,
-            last_name: parsedAncien.etudiant.nom || "",
-            first_name: parsedAncien.etudiant.prenom || "",
-            telephone: parsedAncien.etudiant.telephone || "",
-            date_naiss: parsedAncien.etudiant.date_naissance || "",
-            lieu_naiss: parsedAncien.etudiant.lieu_naissance || "",
-            autre_prenom: parsedAncien.etudiant.autre_prenom || "",
-            num_carte: parsedAncien.etudiant.num_carte || "",
-            sexe: sexeValide,
-            photo: null,
-          }));
-          
-          // Valider le sexe immédiatement
-          if (!sexeValide) {
-            setErreurs(prev => ({
-              ...prev,
-              sexe: "Le sexe enregistré est invalide. Veuillez sélectionner Masculin ou Féminin.",
-            }));
-            setChampsModifies(prev => ({ ...prev, sexe: true }));
+    if (Object.keys(champsModifies).length > 0) {
+      const donneesASauvegarder = {
+        ...formulaire,
+        photoNom: formulaire.photo?.name,
+        photoBase64: apercu,
+      };
+      const cle = getStorageKey("inscription_step1_temp");
+      localStorage.setItem(cle, JSON.stringify(donneesASauvegarder));
+    }
+  }, [formulaire, apercu, champsModifies]);
+
+  useEffect(() => {
+    const chargerDonnees = async () => {
+      const typeData = localStorage.getItem("type_inscription");
+      if (typeData) {
+        const parsed = JSON.parse(typeData);
+        setTypeInscription(parsed);
+        
+        if (parsed.typeEtudiant === 'ancien') {
+          // ANCIEN ÉTUDIANT
+          const ancienData = localStorage.getItem("ancien_etudiant_complet");
+          localStorage.setItem("ancien_etudiant_complet", JSON.stringify(response.data));
+          localStorage.setItem("type_inscription", JSON.stringify({ typeEtudiant: 'ancien' }));
+
+// Recharge obligatoire pour charger les infos ancien
+window.location.href = '/etudiant/inscription/etape-1';
+          if (ancienData) {
+            const parsedAncien = JSON.parse(ancienData);
+            setAncienEtudiantData(parsedAncien);
+            
+            // Vérifier si déjà inscrit
+            try {
+              const verif = await api.get(`/inscription/verifier-inscription/${parsedAncien.etudiant.id}/`);
+              if (verif.data.deja_inscrit) {
+                setDejaInscrit(true);
+                setMessageInscription({
+                  annee: verif.data.annee_academique,
+                  details: verif.data.details
+                });
+                return;
+              }
+            } catch (err) {
+              console.error("Erreur vérification inscription:", err);
+            }
+            
+            // 🔥 MODIFIÉ : Charger avec clé unique
+            const cleTemp = getStorageKey("inscription_step1_temp");
+            const donneesTemp = localStorage.getItem(cleTemp);
+            
+            if (donneesTemp) {
+              const parsedTemp = JSON.parse(donneesTemp);
+              setFormulaire(parsedTemp);
+              if (parsedTemp.photoBase64) {
+                setApercu(parsedTemp.photoBase64);
+              }
+            } else {
+              const sexeValide = ["M", "F"].includes(parsedAncien.etudiant.sexe) ? parsedAncien.etudiant.sexe : "";
+              
+              setFormulaire(prev => ({
+                ...prev,
+                username: parsedAncien.etudiant.username || "",
+                last_name: parsedAncien.etudiant.nom || "",
+                first_name: parsedAncien.etudiant.prenom || "",
+                telephone: parsedAncien.etudiant.telephone || "",
+                date_naiss: parsedAncien.etudiant.date_naissance || "",
+                lieu_naiss: parsedAncien.etudiant.lieu_naissance || "",
+                autre_prenom: parsedAncien.etudiant.autre_prenom || "",
+                num_carte: parsedAncien.etudiant.num_carte || "",
+                sexe: sexeValide,
+                photo: null,
+              }));
+              
+              if (parsedAncien.etudiant.photo_url) {
+                setApercu(parsedAncien.etudiant.photo_url);
+              }
+            }
           }
-          
-          if (parsedAncien.etudiant.photo_url) {
-            setApercu(parsedAncien.etudiant.photo_url);
-          }
-        }
-      } else {
-        const donneesSauvegardees = localStorage.getItem("inscription_step2");
-        if (donneesSauvegardees) {
-          const parsed = JSON.parse(donneesSauvegardees);
-          const sexeValide = ["M", "F"].includes(parsed.sexe) ? parsed.sexe : "";
-          
-          setFormulaire(prev => ({
-            ...prev,
-            last_name: parsed.last_name || "",
-            first_name: parsed.first_name || "",
-            telephone: parsed.telephone || "",
-            date_naiss: parsed.date_naiss || "",
-            lieu_naiss: parsed.lieu_naiss || "",
-            autre_prenom: parsed.autre_prenom || "",
-            num_carte: parsed.num_carte || "",
-            sexe: sexeValide,
-            photo: null,
-          }));
-          
-          if (!sexeValide && parsed.sexe) {
-            setErreurs(prev => ({
-              ...prev,
-              sexe: "Le sexe enregistré est invalide. Veuillez sélectionner Masculin ou Féminin.",
-            }));
-            setChampsModifies(prev => ({ ...prev, sexe: true }));
-          }
-          
-          if (parsed.photoBase64) {
-            setApercu(parsed.photoBase64);
+        } else {
+          // NOUVEAU ÉTUDIANT
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            setUserData(user);
+            
+            // 🔥 MODIFIÉ : Charger avec clé unique
+            const cleTemp = getStorageKey("inscription_step1_temp");
+            const donneesTemp = localStorage.getItem(cleTemp);
+            
+            if (donneesTemp) {
+              const parsedTemp = JSON.parse(donneesTemp);
+              setFormulaire(parsedTemp);
+              if (parsedTemp.photoBase64) {
+                setApercu(parsedTemp.photoBase64);
+              }
+            } else {
+              setFormulaire(prev => ({
+                ...prev,
+                username: user.username || "",
+                last_name: user.last_name || "",
+                first_name: user.first_name || "",
+                sexe: user.sexe || "",
+              }));
+            }
           }
         }
       }
-    }
+    };
+    
+    chargerDonnees();
   }, []);
 
-  // Changement champ (basique : Update state, efface erreur si valide).
   const gererChangement = (e) => {
     const { name, value } = e.target;
+    
+    if (typeInscription?.typeEtudiant === 'ancien') {
+      if (name !== 'telephone') return;
+    } else {
+      if (['username', 'last_name', 'first_name', 'sexe'].includes(name)) return;
+    }
+    
     setFormulaire(prev => ({ ...prev, [name]: value }));
     setChampsModifies(prev => ({ ...prev, [name]: true }));
     
@@ -124,20 +187,19 @@ export default function NouvelEtudiantStep2() {
     setErreurs(prev => ({ ...prev, [name]: erreur }));
   };
 
-  // Fonction générique pour vérifier un champ sur onBlur (unicité/validité).
   const verifierChamp = async (champ) => {
-    if (typeInscription?.typeEtudiant !== 'nouveau' || champsRequis[champ]?.required === false && !formulaire[champ]?.trim()) return;  // Seulement pour nouveaux, et si fourni pour optionnels.
+    if (typeInscription?.typeEtudiant !== 'nouveau' || champsRequis[champ]?.required === false && !formulaire[champ]?.trim()) return;
 
     const value = formulaire[champ]?.trim();
     if (!value) {
-      setErreurs(prev => ({ ...prev, [champ]: '' }));  // Efface si vide.
+      setErreurs(prev => ({ ...prev, [champ]: '' }));
       return;
     }
 
-    if (champ !== 'num_carte') return;  // Pour l'instant, seulement num_carte a API.
+    if (champ !== 'num_carte') return;
 
     setVerificationEnCours(prev => ({ ...prev, [champ]: true }));
-    setErreurs(prev => ({ ...prev, [champ]: '' }));  // Efface précédente.
+    setErreurs(prev => ({ ...prev, [champ]: '' }));
 
     try {
       const reponse = await api.post('utilisateurs/check-num-carte/', { num_carte: value });
@@ -176,13 +238,6 @@ export default function NouvelEtudiantStep2() {
     lecteur.onload = () => {
       const resultatBase64 = lecteur.result;
       setApercu(resultatBase64);
-      
-      const donneesExistantes = JSON.parse(localStorage.getItem("inscription_step2") || "{}");
-      localStorage.setItem("inscription_step2", JSON.stringify({
-        ...donneesExistantes,
-        photoNom: fichier.name,
-        photoBase64: resultatBase64,
-      }));
     };
     lecteur.readAsDataURL(fichier);
 
@@ -193,7 +248,7 @@ export default function NouvelEtudiantStep2() {
     const nouvellesErreurs = {};
     
     Object.keys(champsRequis).forEach(key => {
-      if (key !== 'photo') {
+      if (key !== 'photo' && key !== 'username') {
         nouvellesErreurs[key] = validateField(key, formulaire[key], champsRequis[key].required);
       }
     });
@@ -209,24 +264,20 @@ export default function NouvelEtudiantStep2() {
     return Object.values(nouvellesErreurs).every(error => !error);
   };
 
-  // Soumission formulaire (validation + sauvegarde).
   const soumettreFormulaire = async (e) => {
     e.preventDefault();
     
-    // Reset erreurs globales.
     setErreurs({});
     
     if (!validerFormulaire()) return;
 
-    // Re-calculer les erreurs de format localement pour décision synchrone.
     const formatErreurs = {};
     Object.keys(champsRequis).forEach(key => {
-      if (key !== 'photo') {
+      if (key !== 'photo' && key !== 'username') {
         formatErreurs[key] = validateField(key, formulaire[key], champsRequis[key].required);
       }
     });
 
-    // Vérif unicité num_carte seulement pour nouveau et si format OK et fourni.
     if (typeInscription?.typeEtudiant === 'nouveau' && formulaire.num_carte?.trim() && !formatErreurs.num_carte) {
       setVerificationEnCours(prev => ({ ...prev, num_carte: true }));
       try {
@@ -235,17 +286,17 @@ export default function NouvelEtudiantStep2() {
           setErreurs(prev => ({ ...prev, num_carte: 'Ce numéro de carte est déjà utilisé.' }));
           const inputErrone = document.querySelector('[name="num_carte"]');
           if (inputErrone) inputErrone.focus();
-          return;  // Bloque !
+          return;
         }
       } catch (error) {
-        console.error("Erreur lors de la vérification num_carte:", error);
+        console.error("Erreur vérification num_carte:", error);
         const msg = error.response?.status === 400 
           ? (error.response.data.erreur || 'Données invalides.')
           : 'Erreur de vérification. Réessayez.';
         setErreurs(prev => ({ ...prev, num_carte: msg }));
         const inputErrone = document.querySelector('[name="num_carte"]');
         if (inputErrone) inputErrone.focus();
-        return;  // Bloque !
+        return;
       } finally {
         setVerificationEnCours(prev => ({ ...prev, num_carte: false }));
       }
@@ -254,29 +305,20 @@ export default function NouvelEtudiantStep2() {
     setChargement(true);
 
     try {
-      const donneesEtape1 = JSON.parse(localStorage.getItem("inscription_step1") || "{}");
-      
       const donneesCompletes = {
-        email: donneesEtape1.email,
-        username: donneesEtape1.username,
-        password: donneesEtape1.password,
-        password_confirmation: donneesEtape1.password_confirmation,
         ...formulaire,
         photoNom: formulaire.photo?.name,
         photoBase64: apercu,
       };
 
-      localStorage.setItem("inscription_step2", JSON.stringify(donneesCompletes));
+      // 🔥 MODIFIÉ : Sauvegarder avec clé unique
+      const cleStep1 = getStorageKey("inscription_step1");
+      const cleTemp = getStorageKey("inscription_step1_temp");
       
-      if (typeInscription?.typeEtudiant === 'ancien') {
-        if (ancienEtudiantData?.derniere_inscription && ancienEtudiantData?.prochaine_annee) {
-          router.push('/etudiant/inscription/etape-3');
-        } else {
-          router.push('/etudiant/inscription/etape-3');
-        }
-      } else {
-        router.push('/etudiant/inscription/etape-3');
-      }
+      localStorage.setItem(cleStep1, JSON.stringify(donneesCompletes));
+      localStorage.removeItem(cleTemp);
+      
+      router.push('/etudiant/inscription/etape-2');
       
     } catch (error) {
       console.error("Erreur:", error);
@@ -286,22 +328,74 @@ export default function NouvelEtudiantStep2() {
     }
   };
 
+  if (dejaInscrit) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full">
+          <div className="flex items-center justify-center mb-4">
+            <svg className="w-16 h-16 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
+            Déjà inscrit
+          </h2>
+          <p className="text-center text-gray-600 mb-4">
+            Vous êtes déjà inscrit pour l'année académique <strong>{messageInscription?.annee}</strong>.
+          </p>
+          {messageInscription?.details && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-sm space-y-2">
+              <p><span className="font-semibold">Parcours :</span> {messageInscription.details.parcours}</p>
+              <p><span className="font-semibold">Filière :</span> {messageInscription.details.filiere}</p>
+              <p><span className="font-semibold">Année :</span> {messageInscription.details.annee_etude}</p>
+            </div>
+          )}
+          <p className="text-center text-sm text-gray-500 mb-6">
+            Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le responsable d'inscription.
+          </p>
+          <div className="flex gap-4">
+            <Link
+              href="/"
+              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-all text-center"
+            >
+              Accueil
+            </Link>
+            <Link
+              href="/etudiant/dashboard/donnees-personnelles"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all text-center"
+            >
+              Mon Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={soumettreFormulaire} className="bg-white backdrop-blur-md px-8 py-10 w-full max-w-4xl flex flex-col gap-6 border border-gray-300 rounded-lg shadow-lg mx-auto">
       <h2 className="text-2xl font-bold text-center text-blue-800 mb-4">
-        {typeInscription?.typeEtudiant === 'ancien' ? 'Vos informations personnelles' : 'Informations personnelles'}
+        {typeInscription?.typeEtudiant === 'ancien' ? 'Vérification de vos informations' : 'Complétez vos informations personnelles'}
       </h2>
       
       {typeInscription?.typeEtudiant === 'ancien' && ancienEtudiantData && (
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
-          <h3 className="text-sm font-semibold text-green-800 mb-2">Profil chargé !</h3>
-          <p className="text-sm text-green-700">
-            Vos informations ont été pré-remplies. Vous pouvez modifier le sexe si nécessaire.
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">Profil chargé</h3>
+          <p className="text-sm text-blue-700">
+            Vos informations ont été pré-remplies. Vous pouvez uniquement modifier votre photo et votre numéro de téléphone.
           </p>
         </div>
       )}
 
-      {/* Affichage erreur générale si existe. */}
+      {typeInscription?.typeEtudiant === 'nouveau' && (
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
+          <h3 className="text-sm font-semibold text-green-800 mb-2">Nouvelle inscription</h3>
+          <p className="text-sm text-green-700">
+            Votre nom d'utilisateur, nom, prénom et sexe sont pré-remplis et ne peuvent pas être modifiés.
+          </p>
+        </div>
+      )}
+
       {erreurs.general && (
         <div className="bg-red-50 p-3 rounded-lg border border-red-200">
           <p className="text-red-600 text-sm">{erreurs.general}</p>
@@ -338,8 +432,25 @@ export default function NouvelEtudiantStep2() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-6">
+          {typeInscription?.typeEtudiant === 'nouveau' && (
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">
+                Nom d'utilisateur <span className="text-xs text-gray-500">(lecture seule)</span>
+              </label>
+              <input
+                name="username"
+                value={formulaire.username}
+                type="text"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none bg-gray-100 cursor-not-allowed"
+                readOnly
+              />
+            </div>
+          )}
+
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Nom*</label>
+            <label className="block text-gray-700 font-semibold mb-2">
+              Nom* {typeInscription?.typeEtudiant === 'nouveau' && <span className="text-xs text-gray-500">(lecture seule)</span>}
+            </label>
             <input
               name="last_name"
               value={formulaire.last_name}
@@ -347,18 +458,17 @@ export default function NouvelEtudiantStep2() {
               type="text"
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.last_name ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-100 cursor-not-allowed`}
               placeholder="Entrez votre nom"
-              readOnly={typeInscription?.typeEtudiant === 'ancien'}
+              readOnly
             />
             {erreurs.last_name && <p className="text-red-500 text-sm mt-1">{erreurs.last_name}</p>}
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1">Pré-rempli avec vos informations</p>
-            )}
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Prénom*</label>
+            <label className="block text-gray-700 font-semibold mb-2">
+              Prénom* {typeInscription?.typeEtudiant === 'nouveau' && <span className="text-xs text-gray-500">(lecture seule)</span>}
+            </label>
             <input
               name="first_name"
               value={formulaire.first_name}
@@ -366,14 +476,11 @@ export default function NouvelEtudiantStep2() {
               type="text"
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.first_name ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-100 cursor-not-allowed`}
               placeholder="Entrez votre prénom"
-              readOnly={typeInscription?.typeEtudiant === 'ancien'}
+              readOnly
             />
             {erreurs.first_name && <p className="text-red-500 text-sm mt-1">{erreurs.first_name}</p>}
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1">Pré-rempli avec vos informations</p>
-            )}
           </div>
 
           <div>
@@ -383,13 +490,12 @@ export default function NouvelEtudiantStep2() {
               value={formulaire.autre_prenom}
               onChange={gererChangement}
               type="text"
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              placeholder="prénom restant"
+              className={`w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${
+                typeInscription?.typeEtudiant === 'ancien' ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+              placeholder="Prénom restant"
               readOnly={typeInscription?.typeEtudiant === 'ancien'}
             />
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1">Pré-rempli avec vos informations</p>
-            )}
           </div>
 
           <div>
@@ -398,22 +504,23 @@ export default function NouvelEtudiantStep2() {
               name="num_carte"
               value={formulaire.num_carte}
               onChange={gererChangement}
-              onBlur={() => verifierChamp('num_carte')}  // Vérif unicité sur blur.
+              onBlur={() => verifierChamp('num_carte')}
               type="text"
-              className={`w-full px-4 py-2 rounded-lg border ${erreurs.num_carte ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${verificationEnCours.num_carte ? 'opacity-70' : ''}`}
-              placeholder="Ex:523456"
+              className={`w-full px-4 py-2 rounded-lg border ${erreurs.num_carte ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${
+                typeInscription?.typeEtudiant === 'ancien' ? 'bg-gray-100 cursor-not-allowed' : ''
+              } ${verificationEnCours.num_carte ? 'opacity-70' : ''}`}
+              placeholder="Ex: 523456"
               readOnly={typeInscription?.typeEtudiant === 'ancien'}
             />
             {erreurs.num_carte && <p className="text-red-500 text-sm mt-1">{erreurs.num_carte}</p>}
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1">Pré-rempli avec vos informations</p>
-            )}
           </div>
         </div>
 
         <div className="space-y-6">
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Téléphone*</label>
+            <label className="block text-gray-700 font-semibold mb-2">
+              Téléphone* {typeInscription?.typeEtudiant === 'ancien' && <span className="text-xs text-green-600">(modifiable)</span>}
+            </label>
             <input
               name="telephone"
               value={formulaire.telephone}
@@ -428,23 +535,23 @@ export default function NouvelEtudiantStep2() {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Sexe*</label>
+            <label className="block text-gray-700 font-semibold mb-2">
+              Sexe* {typeInscription?.typeEtudiant === 'nouveau' && <span className="text-xs text-gray-500">(lecture seule)</span>}
+            </label>
             <select
               name="sexe"
               value={formulaire.sexe}
               onChange={gererChangement}
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.sexe ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-100 cursor-not-allowed`}
+              disabled
             >
               <option value="">Sélectionnez votre sexe</option>
               <option value="M">Masculin</option>
               <option value="F">Féminin</option>
             </select>
             {erreurs.sexe && <p className="text-red-500 text-sm mt-1">{erreurs.sexe}</p>}
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1"></p>
-            )}
           </div>
 
           <div>
@@ -457,13 +564,12 @@ export default function NouvelEtudiantStep2() {
               max={calculerDateMinimale()}
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.date_naiss ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${
+                typeInscription?.typeEtudiant === 'ancien' ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
               readOnly={typeInscription?.typeEtudiant === 'ancien'}
             />
             {erreurs.date_naiss && <p className="text-red-500 text-sm mt-1">{erreurs.date_naiss}</p>}
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1">Pré-rempli avec vos informations</p>
-            )}
           </div>
 
           <div>
@@ -475,14 +581,13 @@ export default function NouvelEtudiantStep2() {
               type="text"
               className={`w-full px-4 py-2 rounded-lg border ${
                 erreurs.lieu_naiss ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white`}
+              } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white ${
+                typeInscription?.typeEtudiant === 'ancien' ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
               placeholder="Ex: Lomé, Togo"
               readOnly={typeInscription?.typeEtudiant === 'ancien'}
             />
             {erreurs.lieu_naiss && <p className="text-red-500 text-sm mt-1">{erreurs.lieu_naiss}</p>}
-            {typeInscription?.typeEtudiant === 'ancien' && (
-              <p className="text-xs text-gray-500 mt-1">Pré-rempli avec vos informations</p>
-            )}
           </div>
         </div>
       </div>
@@ -495,7 +600,7 @@ export default function NouvelEtudiantStep2() {
           type="submit" 
           disabled={chargement}
           className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50">
-          {chargement ? "Sauvegarde..." : "Continuer →"}
+          {chargement ? "Sauvegarde..." : "Continuer"}
         </button>
       </div>
     </form>

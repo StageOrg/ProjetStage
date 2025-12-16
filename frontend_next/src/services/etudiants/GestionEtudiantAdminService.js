@@ -190,9 +190,6 @@ deleteEtudiant: async (id) => {
     
     await api.delete(`/utilisateurs/etudiants/${id}/`);
     
-    // Invalider le cache
-    api.invalidateCache('etudiants');
-    
     console.log(`Étudiant ${id} et ses inscriptions supprimés`);
   } catch (error) {
     console.error(" Erreur deleteEtudiant:", error);
@@ -206,13 +203,9 @@ deleteEtudiant: async (id) => {
   updateEtudiant: async (id, data) => {
     try {
       const response = await api.put(`/utilisateurs/etudiants/${id}/`, data);
-      
-      // Invalider le cache
-      api.invalidateCache('etudiants');
-      
       return response.data;
     } catch (error) {
-      console.error(" Erreur updateEtudiant:", error);
+      console.error("Erreur updateEtudiant:", error);
       throw error;
     }
   },

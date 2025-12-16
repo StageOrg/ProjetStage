@@ -37,7 +37,7 @@ export default function MenuLateralDashboard() {
       localStorage.removeItem("user_role");
       localStorage.removeItem("user");
       localStorage.removeItem("annee_id");
-      localStorage.removeItem("authToken"); // Au cas où
+      localStorage.removeItem("authToken"); 
       
       // Rediriger vers la page de login
       router.push("/");
@@ -61,31 +61,28 @@ export default function MenuLateralDashboard() {
           </span>
         </div>
 
-        <nav className="flex flex-col gap-2 text-sm font-semibold">
-          {links.map((link) => {
-            const active = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={
-                  (active
-                    ? "bg-gray-100 text-gray-900 font-bold shadow-md "
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 ") +
-                  "rounded-xl px-3 py-2.5 transition flex items-center gap-2"
-                }
-              >
-                <span className="text-blue-700">{link.icon}</span>
-                <span className="text-sm">{link.label}</span>
-              </Link>
-            );
-          })}
+        <nav className="flex flex-col gap-1 text-base font-medium pt-5">
+          {links.map(link => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={
+                (pathname === link.href
+                  ? "bg-transparent text-black font-semibold shadow-md border-l-2 border-blue-400"
+                  : "text-black hover:bg-gray-800/50 hover:text-white ") +
+                " px-3 py-2 transition-all duration-200 flex items-center gap-3 rounded-md"
+              }
+            >
+              <span className="text-lg flex-shrink-0 text-blue-700">{link.icon}</span>
+              <span className="truncate">{link.label}</span>
+            </Link>
+          ))}
         </nav>
 
-        <div className="mt-auto pt-6">
+        <div className=" pt-50">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2.5 rounded-xl shadow-lg transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:from-red-900 hover:to-red-900 text-white font-semibold py-2.5 rounded-xl shadow-lg transition-all duration-200"
           >
             <FaSignOutAlt className="w-4 h-4" />
             Déconnexion

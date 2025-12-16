@@ -1,20 +1,23 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { InscriptionGuard } from "@/components/common/InscriptionGuard";
+import Etape4SelectionUE from "@/features/etudiant/inscription/etape-4/NouvelEtudiantStep4";
 
-import { useRouter } from "next/navigation"; 
-import Etape3InfosPedagogiques from "@/features/etudiant/inscription/etape-3/NouvelEtudiantStep3";
-
-export default function PageStep3() {
+export default function PageStep4() {
   const router = useRouter();
-
-  // data = { parcours, filiere, annee } envoyé par l'enfant
+  
+  // Si tu as une logique de soumission finale
   const handleSubmit = (data) => {
-    console.log("Données reçues :", data);
-    router.push("/etudiant/inscription/etape-4");
+    console.log("Inscription finalisée :", data);
+    // Redirection après inscription réussie
+    router.push("/etudiant/dashboard/donnees-personnelles");
   };
-
+  
   return (
-    <main className="p-6">
-      <Etape3InfosPedagogiques onSubmit={handleSubmit} />
-    </main>
+    <InscriptionGuard etape={3}>
+      <main className="">
+        <Etape4SelectionUE onSubmit={handleSubmit} />
+      </main>
+    </InscriptionGuard>
   );
 }

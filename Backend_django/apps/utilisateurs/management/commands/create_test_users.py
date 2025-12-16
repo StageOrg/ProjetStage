@@ -50,7 +50,7 @@ class Command(BaseCommand):
                     'password': 'Etudiant@2000',
                     'first_name': 'ZODJIHOUE',
                     'last_name': 'abla',
-                    'email': 'zthibaute2003@gmail.com',
+                    'email': 'zthibaute2002@gmail.com',
                     'role': 'etudiant',
                 'sexe': 'M',
                     'num_carte': 569103,

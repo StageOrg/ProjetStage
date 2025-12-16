@@ -13,13 +13,13 @@ const slides = [
     link: "/en-savoir-plus",
   },
   {
-    image: "/images/etudiants.jpg",
+    image: "/images/epl.jpg",
     title: "L'avenir de l'ingénierie Togolaise commence ici",
     description: "",
     link: "/en-savoir-plus",
   },
   {
-    image: "/images/epl-ancy.jpg",
+    image: "/images/epl.jpg",
     title: "L'EPL, un tremplin vers l'avenir",
     description: "",
     link: "/en-savoir-plus",

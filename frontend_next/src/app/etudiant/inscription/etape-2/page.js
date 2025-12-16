@@ -1,10 +1,23 @@
 "use client";
-import { useRouter } from "next/navigation"; 
-import React from "react";
-import Etape2InfosPersonnelles from "@/features/etudiant/inscription/etape-2/NouvelEtudiantStep2";
+import { useRouter } from "next/navigation";
+import { InscriptionGuard } from "@/components/common/InscriptionGuard"; 
+import Etape3InfosPedagogiques from "@/features/etudiant/inscription/etape-3/NouvelEtudiantStep3";
 
-export default function PageStep2() {
+export default function PageStep3() {
+  const router = useRouter();
+  
+  // Logique métier conservée
+  const handleSubmit = (data) => {
+    console.log("Données reçues :", data);
+    router.push("/etudiant/inscription/etape-4");
+  };
+  
   return (
-    <Etape2InfosPersonnelles />
+    <InscriptionGuard etape={2}>
+      <main className="p-6">
+        <Etape3InfosPedagogiques onSubmit={handleSubmit} />
+      </main>
+    </InscriptionGuard>
   );
 }
+

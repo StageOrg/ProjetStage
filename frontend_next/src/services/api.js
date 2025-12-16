@@ -1,94 +1,88 @@
-// src/services/api.js → VERSION FINALE STABLE (2025)
 import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
-  timeout: 0,
+  timeout: 100000,
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, 
 });
 
+let isRefreshing = false;
+let failedQueue = [];
 
-let sessionActive = false;
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 api.interceptors.request.use((config) => {
-  // Si on a un token JWT, on l'envoie 
-  const token = localStorage.getItem("access_token");
-  if (token && !sessionActive) {
+  const token = localStorage.getItem("access");
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  const hasSession = document.cookie.includes("sessionid");
-  if (hasSession) {
-    sessionActive = true;
-    delete config.headers.Authorization; 
-  }
-
-  if (config.method !== "get") return config;
-
-  const key = `${config.url}${JSON.stringify(config.params || {})}`;
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    config.adapter = () => Promise.resolve({
-      data: cached.data,
-      status: 200,
-      statusText: "OK (cached)",
-      headers: config.headers,
-      config,
-      request: {},
-    });
-    console.log("Cache HIT →", key);
-    return config;
   }
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => {
-    // Sauvegarde en cache
-    if (response.config.method === "get") {
-      const key = `${response.config.url}${JSON.stringify(response.config.params || {})}`;
-      cache.set(key, { data: response.data, timestamp: Date.now() });
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Attendre que le refresh se termine
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = localStorage.getItem("refresh");
+        if (!refreshToken) throw new Error("No refresh token");
+
+        const response = await axios.post("http://127.0.0.1:8000/api/token/refresh/", {
+          refresh: refreshToken,
+        });
+
+        const { access } = response.data;
+        localStorage.setItem("access", access);
+
+        api.defaults.headers.Authorization = `Bearer ${access}`;
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+
+        processQueue(null, access);
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh échoué → vraie déconnexion
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        localStorage.removeItem("user");
+        processQueue(refreshError, null);
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
-    return response;
-  },
-  (error) => {
-    // Si 401 → déconnexion propre
-    if (error.response?.status === 401) {
-      localStorage.clear();
-      sessionActive = false;
-      alert("Session expirée. Veuillez vous reconnecter.");
-      window.location.href = "/login";
-    }
+
     return Promise.reject(error);
   }
 );
-
-// Cache 
-const cache = new Map();
-const CACHE_DURATION = 10 * 60 * 1000;
-
-api.invalidateCache = (urlPart = "") => {
-  if (!urlPart) {
-    cache.clear();
-    console.log("Cache vidé entièrement");
-  } else {
-    let count = 0;
-    for (const key of cache.keys()) {
-      if (key.includes(urlPart)) {
-        cache.delete(key);
-        count++;
-      }
-    }
-    console.log(`Cache invalidé pour "${urlPart}" → ${count} entrées supprimées`);
-  }
-};
-
-// Fonction  forcer la session Django (après login)
-api.enableSessionMode = () => {
-  sessionActive = true;
-  delete api.defaults.headers.common.Authorization;
-};
 
 export default api;

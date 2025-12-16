@@ -16,32 +16,58 @@ export default function Header() {
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
   const [role, setRole] = useState("visiteur");
-  const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-0");
+  const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/redirect");
+  const [periodeOuverte, setPeriodeOuverte] = useState(true);
 
-
-  // Charger rôle depuis localStorage
+  // Charger rôle depuis localStorage et écouter les changements
   useEffect(() => {
-    const storedRole = localStorage.getItem("user_role");
-    if (storedRole) {
-      setRole(storedRole);
-    }
-  }, []);
+    const checkAuth = () => {
+      const storedRole = localStorage.getItem("user_role");
+      const userStr = localStorage.getItem("user");
+      
+      if (storedRole && userStr) {
+        setRole(storedRole);
+      } else {
+        setRole("visiteur");
+      }
+    };
+
+    // Vérifier au chargement
+    checkAuth();
+
+    // Écouter les changements de localStorage (ex: après logout)
+    window.addEventListener("storage", checkAuth);
+    
+    // Écouter aussi les changements de pathname (après déconnexion)
+    checkAuth();
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, [pathname]);
   
+  // Vérifier la période d'inscription
   useEffect(() => {
     const fetchPeriode = async () => {
-      if (role === "etudiant") {
+      try {
         const statut = await periodeInscriptionService.verifierStatutInscriptions();
+        setPeriodeOuverte(statut.ouvert);
+        
         if (!statut.ouvert) {
-          // Si période fermée ou expirée, redirige vers page FinInscription
           setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
         } else {
-          setInscriptionLink("/etudiant/inscription/etape-0");
+          if (role === "etudiant") {
+            setInscriptionLink("/etudiant/inscription/redirect");
+          } else {
+            setInscriptionLink("/login?redirect=inscription");
+          }
         }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la période:", error);
       }
     };
     fetchPeriode();
   }, [role]);
-
 
   // Déterminer la route du menu Personnel selon rôle
   const getPersonnelHref = (role) => {
@@ -65,20 +91,48 @@ export default function Header() {
 
   const personnelHref = getPersonnelHref(role);
 
-  // Menus pour tout le monde
+  // Gestionnaire pour le lien Inscriptions
+  const handleInscriptionClick = (e) => {
+    e.preventDefault();
+    
+    // Si la période est fermée
+    if (!periodeOuverte) {
+      router.push("/etudiant/inscription/inscriptionCloturee");
+      return;
+    }
+    
+    // Si l'utilisateur est déjà un étudiant connecté
+    if (role === "etudiant") {
+      router.push("/etudiant/inscription/redirect");
+    } else {
+      // Sinon, demander la connexion
+      localStorage.setItem("inscription_redirect", "true");
+      router.push("/login");
+    }
+  };
+
+  // 🎯 MENU UNIQUE POUR VISITEUR, ÉTUDIANT ET RESPONSABLE INSCRIPTIONS
   const baseMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
     {
       label: "Étudiant",
       children: [
-        { label: "Inscriptions", href: inscriptionLink },
+        { 
+          label: "Inscriptions", 
+          href: inscriptionLink,
+          isInscription: true
+        },
         {
           label: "Données personnelles",
           protected: true,
           href: "/etudiant/dashboard/donnees-personnelles",
         },
-        { label: "Notes", protected: true, href: "/etudiant/dashboard/notes" },
+        { 
+          label: "Notes", 
+          protected: true, 
+          href: "/etudiant/dashboard/notes" 
+        },
         {
           label: "Statistiques",
           protected: true,
@@ -90,8 +144,8 @@ export default function Header() {
     { label: "Contactez-nous", href: "/contact" },
   ];
 
-  // Menus quand c'est un membre du personnel
-  const personnelMenu = [
+  // Menu pour professeurs (avec Service examen)
+  const professeurMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
     { label: "Nos programmes", href: "/programmes" },
@@ -100,29 +154,44 @@ export default function Header() {
     { label: "Service examen", href: "/service-examen/notes/mes-ues" },
   ];
 
-  const PersonnelSaisieMenu = [
+  // Menu pour autre personnel (sans Service examen)
+  const personnelMenu = [
     { label: "Accueil", href: "/" },
     { label: "Nos Professeurs", href: "/nos-profs" },
     { label: "Nos programmes", href: "/programmes" },
     { label: "Contactez-nous", href: "/contact" },
     { label: "Personnel", href: personnelHref },
   ];
-  // Sélectionner menu selon rôle : si c'est professeur, afficher menu personnel, sinon PersonnelSaisieMenu; mais si c'est visiteur, afficher baseMenu
+
+  // 🎯 Sélectionner le menu selon le rôle
   const menuItems = (() => {
-    if (role === "visiteur" || !role) return baseMenu;
-    if (role === "professeur") return personnelMenu;
-    return PersonnelSaisieMenu;
+    switch (role) {
+      case "visiteur":
+      case "etudiant":
+      case "responsable inscriptions":
+        return baseMenu; // ✅ Menu normal pour ces 3 rôles
+      case "professeur":
+        return professeurMenu;
+      case "admin":
+      case "secretaire":
+      case "gestionnaire":
+      case "resp_notes":
+        return personnelMenu;
+      default:
+        return baseMenu;
+    }
   })();
 
-  // Redirections protégées
+  // Gestion des routes protégées
   const handleProtectedRoute = (href) => {
-    localStorage.setItem("etudiant_redirect", href);
-    router.push("/login");
-  };
-
-  const handleProtectedPersonnel = (href) => {
-    localStorage.setItem("personnel_redirect", href);
-    router.push("/login");
+    // Si c'est un étudiant ou responsable inscriptions connecté, accès direct
+    if (role === "etudiant" || role === "responsable inscriptions") {
+      router.push(href);
+    } else {
+      // Sinon, rediriger vers login
+      localStorage.setItem("etudiant_redirect", href);
+      router.push("/login");
+    }
   };
 
   useEffect(() => {
@@ -164,17 +233,16 @@ export default function Header() {
             const hasChildren = !!item.children;
             let isActive = pathname === item.href;
 
-            // Forcer l'activation du menu "Personnel"
+            // Forcer l'activation du menu "Personnel" pour le personnel (sauf étudiant et resp inscriptions)
             if (
               (role === "admin" ||
                 role === "professeur" ||
                 role === "secretaire" ||
-                role === "responsable inscriptions" ||
                 role === "gestionnaire" ||
                 role === "resp_notes") &&
               item.label === "Personnel"
             ) {
-              isActive = true;
+              isActive = pathname.includes(personnelHref);
             }
 
             return (
@@ -217,21 +285,33 @@ export default function Header() {
                 {hasChildren && openDropdown === item.label && (
                   <div className="absolute top-full left-0 bg-white shadow-md w-56 z-30">
                     {item.children.map((child) => {
-                      if (child.protected) {
+                      // Gestion spéciale pour le lien Inscriptions
+                      if (child.isInscription) {
                         return (
                           <button
                             key={child.label}
-                            onClick={() =>
-                              role !== "visiteur"
-                                ? handleProtectedPersonnel(child.href)
-                                : handleProtectedRoute(child.href)
-                            }
+                            onClick={handleInscriptionClick}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 hover:text-blue-800 transition"
                           >
                             {child.label}
                           </button>
                         );
                       }
+                      
+                      // Routes protégées (Données personnelles, Notes, etc.)
+                      if (child.protected) {
+                        return (
+                          <button
+                            key={child.label}
+                            onClick={() => handleProtectedRoute(child.href)}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 hover:text-blue-800 transition"
+                          >
+                            {child.label}
+                          </button>
+                        );
+                      }
+                      
+                      // Liens normaux
                       return (
                         <Link
                           key={child.href}
@@ -265,7 +345,8 @@ export default function Header() {
               </select>
             </div>
           )}
-          {/* Bouton Deconnexion */}
+
+          {/* Bouton Deconnexion/Connexion */}
           {role !== "visiteur" ? (
             <Link
               href="/logout"
@@ -281,7 +362,6 @@ export default function Header() {
               Connexion
             </Link>
           )}
-
         </nav>
       </div>
     </header>

@@ -117,7 +117,7 @@ export default function StatistiquesEvolution() {
   const croissanceRecente = derniereAnnee?.croissance_pct || 0;
 
   return (
-    <div className="min-h-screen  p-6">
+    <div className="min-h-screen  justify-center ">
       <div className="max-w-7xl ">
         
         {/* Titre */}
