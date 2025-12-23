@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* Contenu principal */}
-      <main className="md:ml-64 pt-20  bg-white font-sans flex flex-col  max-w-6xl mx-auto justify-between min-h-screen">
+      <main className="md:ml-64 pt-20  bg-white font-sans flex flex-col  max-w-10xl mx-auto justify-between min-h-screen">
         {children}
       </main>
     </>

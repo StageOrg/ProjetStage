@@ -2,7 +2,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
 import ClientLayoutWrapper from "../components/common/ClientLayoutWrapper";
-import { ToastProvider } from "@/components/ui/toast"; 
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,12 +23,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr"> 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ToastProvider>
-          <ClientLayoutWrapper>
-            {children}
-          </ClientLayoutWrapper>
-        </ToastProvider>
-      </body>
+      <ClientLayoutWrapper>
+        {children}
+      <Toaster
+        containerStyle={{
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
+      </ClientLayoutWrapper>
+    </body>
     </html>
   );
 }

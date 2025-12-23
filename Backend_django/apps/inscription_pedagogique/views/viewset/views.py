@@ -107,6 +107,7 @@ def verifier_ancien_etudiant(request, num_carte):
                 'prenom': etudiant.utilisateur.first_name,
                 'email': etudiant.utilisateur.email,
                 'telephone': etudiant.utilisateur.telephone or 'Non renseigné',
+                'sexe': etudiant.utilisateur.sexe,
                 'date_naissance': etudiant.date_naiss,
                 'lieu_naissance': etudiant.lieu_naiss,
                 'autre_prenom': etudiant.autre_prenom,

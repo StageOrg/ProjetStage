@@ -12,6 +12,30 @@ export default function HistoriqueOperations() {
   const [typeFilter, setTypeFilter] = useState("");
   const [toutesLesAnnees, setToutesLesAnnees] = useState([]);
 
+  // Charger les années académiques depuis le backend
+  useEffect(() => {
+    const chargerAnneesAcademiques = async () => {
+      try {
+        // Essayer d'abord l'endpoint avec cache
+        try {
+          const res = await api.get('/inscription/annees-academiques-cached/');
+          const annees = res.data.annees || res.data || [];
+          setToutesLesAnnees(annees);
+        } catch (err) {
+          // Fallback sur endpoint classique
+          console.log("Endpoint cached non disponible, fallback sur endpoint classique");
+          const res = await api.get('/inscription/annee-academique/');
+          const annees = res.data.results || res.data || [];
+          setToutesLesAnnees(annees);
+        }
+      } catch (err) {
+        console.error("Erreur chargement années académiques:", err);
+      }
+    };
+
+    chargerAnneesAcademiques();
+  }, []);
+
   useEffect(() => {
     const chargerDonnees = async () => {
       try {
@@ -24,12 +48,6 @@ export default function HistoriqueOperations() {
         const historique = res.data.historique || [];
 
         setData(historique);
-
-        // Met à jour la liste des années à chaque chargement
-        const annees = [...new Set(historique.map(item => item.annee_academique).filter(Boolean))]
-          .sort()
-          .reverse();
-        setToutesLesAnnees(annees);
       } catch (err) {
         console.error("Erreur chargement historique:", err);
       } finally {
@@ -59,27 +77,32 @@ export default function HistoriqueOperations() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-blue-100 py-8 mb-8">
         <div className="max-w-screen-2xl mx-auto px-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-4">
-            <FaHistory className="text-blue-700" size={40} />
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-4">
+            <FaHistory className="text-blue-700" size={30} />
             Historique des opérations
           </h1>
-          <p className="text-gray-700 mt-2 text-lg">
-            Suivi complet des créations et suppressions d'étudiants
-          </p>
         </div>
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-6">
         <div className="bg-white border border-gray-200 p-6 mb-8 flex flex-wrap items-center gap-6">
-          <div className="flex items-center gap-3">
-            <FaFilter className="text-blue-600" />
-            <span className="font-medium text-gray-700">Filtrer :</span>
-          </div>
+          <select
+            value={anneeFilter}
+            onChange={e => setAnneeFilter(e.target.value)}
+            className="px-5 py-3 border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none rounded-lg"
+          >
+            <option value="">Toutes les années académiques</option>
+            {toutesLesAnnees.map(annee => (
+              <option key={annee.id ?? annee.libelle} value={annee.libelle ?? annee.annee}>
+                {annee.libelle ?? annee.annee}
+              </option>
+            ))}
+          </select>
 
           <select
             value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}
-            className="px-5 py-3 border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+            className="px-5 py-3 border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none rounded-lg"
           >
             <option value="">Toutes les opérations</option>
             <option value="creation">Créations seulement</option>
@@ -92,13 +115,13 @@ export default function HistoriqueOperations() {
             <table className="w-full text-sm">
               <thead className="bg-blue-100 text-gray-800 font-semibold">
                 <tr>
-                  <th className="px-6 py-4 text-left">Date</th>
-                  <th className="px-6 py-4 text-left">Par</th>
-                  <th className="px-6 py-4 text-left">Action</th>
-                  <th className="px-6 py-4 text-left">Nom complet</th>
-                  <th className="px-6 py-4 text-left">Email</th>
-                  <th className="px-6 py-4 text-left">Username</th>
-                  <th className="px-12 py-8 text-center">Mot de passe</th>
+                  <th className="px-4 py-4 text-left">Date</th>
+                  <th className="px-4 py-4 text-left">Par</th>
+                  <th className="px-4 py-4 text-left">Action</th>
+                  <th className="px-4 py-4 text-left">Nom complet</th>
+                  <th className="px-4 py-4 text-left">Email</th>
+                  <th className="px-4 py-4 text-left">Username</th>
+                  <th className="px-4 py-4 text-center">Mot de passe</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -114,7 +137,7 @@ export default function HistoriqueOperations() {
                       <td className="px-6 py-4 text-gray-700">{e.date}</td>
                       <td className="px-6 py-4 font-medium text-gray-800">{e.cree_par}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold ${e.is_suppression ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                        <span className={`inline-flex items-center gap-2  font-bold ${e.is_suppression ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
                           {e.is_suppression ? <FaTrashAlt /> : <FaUserPlus />}
                           {e.operation}
                         </span>

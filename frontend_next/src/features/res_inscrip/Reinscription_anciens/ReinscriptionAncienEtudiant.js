@@ -121,7 +121,7 @@ export default function AnciensEtudiantsAdmin() {
 
   const inscrireAncien = async () => {
     if (selectedUes.length === 0) {
-      alert('Veuillez sélectionner au moins une UE');
+      toast.error('Veuillez sélectionner au moins une UE');
       return;
     }
     setIsLoading(true);
@@ -132,12 +132,12 @@ export default function AnciensEtudiantsAdmin() {
         ues_selectionnees: selectedUes
       };
       const res = await api.post('/inscription/ancien-etudiant/', payload);
-      alert(`Réinscription réussie !\nNuméro: ${res.data.numero_inscription}`);
+      toast.success(`Réinscription réussie !\nNuméro: ${res.data.numero_inscription}`);
       setNumCarte('');
       setEtudiantData(null);
       setSelectedUes([]);
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors de l\'inscription');
+      toast.error(err.response?.data?.error || 'Erreur lors de l\'inscription');
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +156,7 @@ export default function AnciensEtudiantsAdmin() {
 
   const handleFileUpload = async (file) => {
     if (!importFilters.parcours || !importFilters.filiere || !importFilters.annee_etude) {
-      alert('Veuillez sélectionner parcours, filière et année.');
+      toast.error('Veuillez sélectionner parcours, filière et année.');
       return;
     }
 

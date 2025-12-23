@@ -361,10 +361,9 @@ const handleConfirmInscription = async () => {
       if (step1.sexe) profilData.sexe = step1.sexe;
     }
 
-    // 🚀 ENVOI PROFIL (JSON)
     await api.patch('/inscription/update-profil/', profilData);
 
-    // ✅ ÉTAPE 2 : INSCRIPTION PÉDAGOGIQUE (JSON)
+    //  ÉTAPE 2 : INSCRIPTION PÉDAGOGIQUE (JSON)
     if (typeInscription?.typeEtudiant === 'ancien') {
       await api.post('/inscription/ancien-etudiant/', {
         etudiant_id: ancienEtudiantData.etudiant.id,
@@ -386,11 +385,11 @@ const handleConfirmInscription = async () => {
     localStorage.removeItem('type_inscription');
     localStorage.removeItem('ancien_etudiant_complet');
 
-    toast.success("🎉 Inscription réussie !", { duration: 5000 });
+    toast.success(" Inscription réussie !", { duration: 5000 });
     router.push('/etudiant/dashboard/donnees-personnelles');
 
   } catch (err) {
-    console.error("❌ Erreur inscription:", err);
+    console.error("Erreur inscription:", err);
     const msg = err.response?.data?.error 
       || err.response?.data?.detail
       || err.message 

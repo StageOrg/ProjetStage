@@ -4,21 +4,7 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { validateField, calculerDateMinimale, validerPhoto } from '@/components/ui/ValidationUtils';
 import api from "@/services/api";
-
-// 🔑 FONCTION HELPER : Générer une clé unique par utilisateur
-const getStorageKey = (baseKey) => {
-  const user = localStorage.getItem('user');
-  if (!user) return baseKey;
-  
-  try {
-    const userData = JSON.parse(user);
-    // Utiliser l'ID utilisateur ou username pour créer une clé unique
-    const userId = userData.id || userData.username || 'guest';
-    return `${baseKey}_${userId}`;
-  } catch {
-    return baseKey;
-  }
-};
+import toast from 'react-hot-toast';
 
 export default function EtapeInfosPersonnelles() {
   const [typeInscription, setTypeInscription] = useState(null);
@@ -58,118 +44,164 @@ export default function EtapeInfosPersonnelles() {
     sexe: { required: true },
   };
 
-  // 🔥 MODIFIÉ : Utiliser des clés uniques par utilisateur
+  // Sauvegarde automatique temporaire
   useEffect(() => {
     if (Object.keys(champsModifies).length > 0) {
       const donneesASauvegarder = {
         ...formulaire,
+        owner: formulaire.username,
         photoNom: formulaire.photo?.name,
         photoBase64: apercu,
       };
-      const cle = getStorageKey("inscription_step1_temp");
-      localStorage.setItem(cle, JSON.stringify(donneesASauvegarder));
+      localStorage.setItem("inscription_step1_temp", JSON.stringify(donneesASauvegarder));
     }
   }, [formulaire, apercu, champsModifies]);
 
   useEffect(() => {
     const chargerDonnees = async () => {
+      console.log("🔍 Chargement des données...");
+      
       const typeData = localStorage.getItem("type_inscription");
-      if (typeData) {
-        const parsed = JSON.parse(typeData);
-        setTypeInscription(parsed);
-        
-        if (parsed.typeEtudiant === 'ancien') {
-          // ANCIEN ÉTUDIANT
-          const ancienData = localStorage.getItem("ancien_etudiant_complet");
-          localStorage.setItem("ancien_etudiant_complet", JSON.stringify(response.data));
-          localStorage.setItem("type_inscription", JSON.stringify({ typeEtudiant: 'ancien' }));
+      
+      if (!typeData) {
+        console.error(" Aucun type d'inscription trouvé");
+        router.push('/');
+        return;
+      }
 
-// Recharge obligatoire pour charger les infos ancien
-window.location.href = '/etudiant/inscription/etape-1';
-          if (ancienData) {
-            const parsedAncien = JSON.parse(ancienData);
-            setAncienEtudiantData(parsedAncien);
-            
-            // Vérifier si déjà inscrit
-            try {
-              const verif = await api.get(`/inscription/verifier-inscription/${parsedAncien.etudiant.id}/`);
-              if (verif.data.deja_inscrit) {
-                setDejaInscrit(true);
-                setMessageInscription({
-                  annee: verif.data.annee_academique,
-                  details: verif.data.details
-                });
-                return;
-              }
-            } catch (err) {
-              console.error("Erreur vérification inscription:", err);
+      const parsed = JSON.parse(typeData);
+      console.log(" Type d'inscription:", parsed);
+      setTypeInscription(parsed);
+      
+      if (parsed.typeEtudiant === 'ancien') {
+        // ANCIEN ÉTUDIANT : Récupération fraîche depuis l'API
+        try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                
+                if (user.num_carte) {
+                    const loadingToast = toast.loading("Chargement de vos informations...");
+                    console.log("🔄 Récupération des infos ancien étudiant depuis l'API...");
+                    
+                    try {
+                        const response = await api.get(`/inscription/verifier-ancien-etudiant/${user.num_carte}/`);
+                        toast.dismiss(loadingToast);
+                        const data = response.data;
+                        
+                        if (data.existe) {
+                            setAncienEtudiantData(data);
+                            
+                            // Mettre à jour le localStorage "complet" pour les étapes suivantes qui en dépendent
+                            localStorage.setItem("ancien_etudiant_complet", JSON.stringify({
+                                etudiant: data.etudiant,
+                                derniere_inscription: data.derniere_inscription,
+                                prochaine_annee: data.prochaine_annee,
+                                ues_disponibles: data.ues_disponibles,
+                                ues_validees: data.ues_validees,
+                                ues_non_validees: data.ues_non_validees
+                            }));
+
+                            // Pré-remplissage du formulaire
+                            const etu = data.etudiant;
+                            const sexeValide = ["M", "F"].includes(etu.sexe) ? etu.sexe : "";
+                            
+                            setFormulaire(prev => ({
+                                ...prev,
+                                username: etu.username || "",
+                                last_name: etu.nom || "",
+                                first_name: etu.prenom || "",
+                                telephone: etu.telephone || "",
+                                date_naiss: etu.date_naissance || "",
+                                lieu_naiss: etu.lieu_naissance || "",
+                                autre_prenom: etu.autre_prenom || "",
+                                num_carte: etu.num_carte || "",
+                                sexe: sexeValide,
+                                photo: null, 
+                            }));
+                            
+                            if (etu.photo) {
+                                setApercu(etu.photo);
+                            }
+                            
+                            toast.success("Informations récupérées avec succès");
+                            
+                        } else {
+                            toast.error("Votre dossier étudiant est introuvable.");
+                        }
+                    } catch (err) {
+                        toast.dismiss(loadingToast);
+                        console.error("Erreur chargement API Ancien Etudiant:", err);
+                        toast.error("Mode hors ligne : Utilisation des données locales.");
+                        
+                        // Fallback localStorage si erreur réseau
+                        const ancienData = localStorage.getItem("ancien_etudiant_complet");
+                        if (ancienData) {
+                            const parsedAncien = JSON.parse(ancienData);
+                            setAncienEtudiantData(parsedAncien);
+                            const etu = parsedAncien.etudiant;
+                            setFormulaire(prev => ({
+                                ...prev,
+                                username: etu.username || "",
+                                last_name: etu.nom || "",
+                                first_name: etu.prenom || "",
+                                telephone: etu.telephone || "",
+                                date_naiss: etu.date_naissance || "",
+                                lieu_naiss: etu.lieu_naissance || "",
+                                autre_prenom: etu.autre_prenom || "",
+                                num_carte: etu.num_carte || "",
+                                sexe: ["M", "F"].includes(etu.sexe) ? etu.sexe : "",
+                            }));
+                            if (etu.photo) setApercu(etu.photo);
+                        }
+                    }
+                }
             }
-            
-            // 🔥 MODIFIÉ : Charger avec clé unique
-            const cleTemp = getStorageKey("inscription_step1_temp");
-            const donneesTemp = localStorage.getItem(cleTemp);
-            
-            if (donneesTemp) {
-              const parsedTemp = JSON.parse(donneesTemp);
+        } catch (err) {
+            console.error("Erreur globale :", err);
+        }
+      } else {
+        // NOUVEAU ÉTUDIANT
+        const userStr = localStorage.getItem('user');
+        console.log("👤 Utilisateur:", userStr ? "Trouvé" : "Non trouvé");
+        
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setUserData(user);
+          
+          // Charger données temporaires ou données de l'utilisateur
+          const donneesTemp = localStorage.getItem("inscription_step1_temp");
+          let tempLoaded = false;
+          
+          if (donneesTemp) {
+            const parsedTemp = JSON.parse(donneesTemp);
+            // Vérifier si les données temporaires appartiennent à cet utilisateur
+            if (parsedTemp.owner === user.username) {
+              console.log(" Chargement données temporaires");
               setFormulaire(parsedTemp);
               if (parsedTemp.photoBase64) {
                 setApercu(parsedTemp.photoBase64);
               }
-            } else {
-              const sexeValide = ["M", "F"].includes(parsedAncien.etudiant.sexe) ? parsedAncien.etudiant.sexe : "";
-              
-              setFormulaire(prev => ({
-                ...prev,
-                username: parsedAncien.etudiant.username || "",
-                last_name: parsedAncien.etudiant.nom || "",
-                first_name: parsedAncien.etudiant.prenom || "",
-                telephone: parsedAncien.etudiant.telephone || "",
-                date_naiss: parsedAncien.etudiant.date_naissance || "",
-                lieu_naiss: parsedAncien.etudiant.lieu_naissance || "",
-                autre_prenom: parsedAncien.etudiant.autre_prenom || "",
-                num_carte: parsedAncien.etudiant.num_carte || "",
-                sexe: sexeValide,
-                photo: null,
-              }));
-              
-              if (parsedAncien.etudiant.photo_url) {
-                setApercu(parsedAncien.etudiant.photo_url);
-              }
+              tempLoaded = true;
             }
           }
-        } else {
-          // NOUVEAU ÉTUDIANT
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const user = JSON.parse(userStr);
-            setUserData(user);
-            
-            // 🔥 MODIFIÉ : Charger avec clé unique
-            const cleTemp = getStorageKey("inscription_step1_temp");
-            const donneesTemp = localStorage.getItem(cleTemp);
-            
-            if (donneesTemp) {
-              const parsedTemp = JSON.parse(donneesTemp);
-              setFormulaire(parsedTemp);
-              if (parsedTemp.photoBase64) {
-                setApercu(parsedTemp.photoBase64);
-              }
-            } else {
-              setFormulaire(prev => ({
-                ...prev,
-                username: user.username || "",
-                last_name: user.last_name || "",
-                first_name: user.first_name || "",
-                sexe: user.sexe || "",
-              }));
-            }
+          
+          if (!tempLoaded) {
+            console.log("📝 Chargement données de l'utilisateur");
+            setFormulaire(prev => ({
+              ...prev,
+              username: user.username || "",
+              last_name: user.last_name || "",
+              first_name: user.first_name || "",
+              sexe: user.sexe || "",
+            }));
           }
         }
       }
     };
     
     chargerDonnees();
-  }, []);
+  }, []); // ← Tableau vide, s'exécute une seule fois au montage
 
   const gererChangement = (e) => {
     const { name, value } = e.target;
@@ -267,9 +299,14 @@ window.location.href = '/etudiant/inscription/etape-1';
   const soumettreFormulaire = async (e) => {
     e.preventDefault();
     
+    console.log(" Soumission du formulaire...");
+    
     setErreurs({});
     
-    if (!validerFormulaire()) return;
+    if (!validerFormulaire()) {
+      console.log(" Validation échouée");
+      return;
+    }
 
     const formatErreurs = {};
     Object.keys(champsRequis).forEach(key => {
@@ -278,6 +315,7 @@ window.location.href = '/etudiant/inscription/etape-1';
       }
     });
 
+    // Vérification numéro de carte pour nouveaux étudiants
     if (typeInscription?.typeEtudiant === 'nouveau' && formulaire.num_carte?.trim() && !formatErreurs.num_carte) {
       setVerificationEnCours(prev => ({ ...prev, num_carte: true }));
       try {
@@ -311,17 +349,19 @@ window.location.href = '/etudiant/inscription/etape-1';
         photoBase64: apercu,
       };
 
-      // 🔥 MODIFIÉ : Sauvegarder avec clé unique
-      const cleStep1 = getStorageKey("inscription_step1");
-      const cleTemp = getStorageKey("inscription_step1_temp");
+      console.log(" Sauvegarde des données...");
+      localStorage.setItem("inscription_step1", JSON.stringify(donneesCompletes));
+      localStorage.removeItem("inscription_step1_temp");
       
-      localStorage.setItem(cleStep1, JSON.stringify(donneesCompletes));
-      localStorage.removeItem(cleTemp);
+      console.log(" Données sauvegardées");
+      console.log(" Redirection vers étape 3");
       
+      // Modification : Tout le monde passe par l'étape 3
+      // Les anciens vérifieront leur année, les nouveaux choisiront tout
       router.push('/etudiant/inscription/etape-2');
       
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("❌ Erreur:", error);
       setErreurs(prev => ({ ...prev, general: "Une erreur s'est produite lors de la sauvegarde" }));
     } finally {
       setChargement(false);

@@ -238,7 +238,7 @@ export default function UETable({
                           <div className="flex items-center gap-2">
                             <div className="h-1 flex-1 bg-blue-300"></div>
                             <span className="text-sm text-blue-800 font-bold uppercase tracking-wide">
-                              📚 {niveau}
+                               {niveau}
                             </span>
                             <div className="h-1 flex-1 bg-blue-300"></div>
                           </div>
@@ -295,7 +295,7 @@ export default function UETable({
         </div>
         {totalCreditsSelectionnes > LIMITE_CREDITS_MAX && (
           <div className="mt-2 text-xs text-red-600 font-semibold">
-            ⚠️ Limite de crédits dépassée !
+             Limite de crédits dépassée !
           </div>
         )}
       </div>

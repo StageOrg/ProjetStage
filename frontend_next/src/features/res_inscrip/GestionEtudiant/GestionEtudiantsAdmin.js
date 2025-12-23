@@ -12,6 +12,7 @@ import ExportButton from "@/components/ui/ExportButton";
 import { useExportPDF } from "@/components/exports/useExportPDF";
 import api from "@/services/api"; 
 import toast from 'react-hot-toast';
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 export default function GestionEtudiantsAdmin() {
   const router = useRouter();
@@ -25,11 +26,12 @@ export default function GestionEtudiantsAdmin() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const itemsPerPage = 20;
+  const itemsPerPage = 100;
   const [filters, setFilters] = useState({search: "",annee_academique: "",parcours: "",filiere: "",annee_etude: "",
   });
   const [filieresDuParcours, setFilieresDuParcours] = useState([]);
   const [anneesDuParcours, setAnneesDuParcours] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, studentId: null });
 
   // Chargement initial
   useEffect(() => {
@@ -86,14 +88,18 @@ export default function GestionEtudiantsAdmin() {
 
   // FIX: Suppression avec traçabilité
   const supprimerEtudiant = async (id) => {
-    if (!confirm("Supprimer cet étudiant ?")) return;
+    setConfirmDialog({ isOpen: true, studentId: id });
+  };
+
+  const confirmerSuppression = async () => {
+    const id = confirmDialog.studentId;
     
     try {
       // 1. Récupérer les infos complètes de l'étudiant AVANT suppression
       const etudiant = etudiants.find(e => e.id === id);
       
       if (!etudiant) {
-        alert("Étudiant introuvable");
+        toast.error("Étudiant introuvable");
         return;
       }
 
@@ -139,11 +145,11 @@ export default function GestionEtudiantsAdmin() {
       // 6. Rafraîchir la liste
       chargerEtudiants();
       
-      alert("Étudiant supprimé avec succès");
+      toast.success("Étudiant supprimé avec succès");
       
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
-      alert("Erreur lors de la suppression: " + (err.response?.data?.error || err.message));
+      toast.error("Erreur lors de la suppression: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -155,7 +161,7 @@ export default function GestionEtudiantsAdmin() {
       setModalOpen(false);
       rafraichir();
     } catch (err) {
-      alert("Erreur lors de la sauvegarde");
+      toast.error("Erreur lors de la sauvegarde");
     }
   };
 
@@ -180,19 +186,16 @@ export default function GestionEtudiantsAdmin() {
   const getEmail = (e) => e.email || "-";
   const getTelephone = (e) => e.telephone || "-";
   
-  // Export Excel
-  const prepareExportData = () => etudiants.map(e => ({
-    "Num Carte": e.num_carte || "",
+  // Export PDF simple (sans signature, sans date/lieu naissance)
+  const prepareExportDataSimple = () => etudiants.map((e, i) => ({
+    "N°": i + 1,
+    "Num Carte": e.num_carte || "-",
     Nom: getNom(e),
     Prénoms: getPrenoms(e),
     Email: getEmail(e),
     Téléphone: getTelephone(e),
-    "Date Naissance": e.date_naiss || "",
-    "Lieu Naissance": e.lieu_naiss || "",
     "Filière-Parcours": getFiliereParcoursAbbrev(e),
   }));
-
-  const exportHeaders = ["Num Carte", "Nom", "Prénoms", "Email", "Téléphone", "Date Naissance", "Lieu Naissance", "Filière-Parcours"];
 
   // Export PDF
   const preparePDFData = () => etudiants.map((e, i) => ({
@@ -206,18 +209,105 @@ export default function GestionEtudiantsAdmin() {
   }));
 
   const handleExportPDF = () => {
-    if (!etudiants.length) return alert("Aucun étudiant");
+    if (!etudiants.length) return toast.error("Aucun étudiant à exporter");
     
-    const anneeAcademiqueLibelle = filters.annee_academique 
-      ? anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique
-      : null;
+    // 1. Validation Année Académique (Requis)
+    if (!filters.annee_academique) {
+      return toast.error("Veuillez sélectionner une année académique pour l'export.");
+    }
     
+    const anneeAcademiqueLibelle = anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique;
+
+    // 2. Récupération des infos contextuelles pour le header
+    const headerInfo = {
+        annee_academique_libelle: anneeAcademiqueLibelle // Ajout explicite dans le headerInfo aussi
+    };
+    const excludeColumns = [];
+
+    // Parcours
+    if (filters.parcours) {
+        const p = parcoursData.find(x => x.id.toString() === filters.parcours);
+        if (p) headerInfo.parcours_nom = p.libelle;
+    }
+
+    // Filière
+    if (filters.filiere) {
+        const f = filieresDuParcours.find(x => x.id.toString() === filters.filiere);
+        if (f) headerInfo.filiere_nom = f.nom;
+    }
+
+    // Année d'étude
+    if (filters.annee_etude) {
+        const a = anneesDuParcours.find(x => x.id.toString() === filters.annee_etude);
+        if (a) headerInfo.annee_etude_libelle = a.libelle;
+    }
+    
+    // 3. Optimisation : Si on a filtré par Parcours, Filière ou Année d'étude, on enlève la colonne redondante
+    // "Filière-Parcours" correspondant à la clé dans preparePDFData
+    if (filters.parcours || filters.filiere || filters.annee_etude) {
+        excludeColumns.push("Filière-Parcours");
+    }
+
     exportToPDF(preparePDFData(), `liste_classe_${new Date().toISOString().split("T")[0]}`, {
       titre: "LISTE DE CLASSE",
       orientation: "l",
       signatureColumn: true,
       signatureWidth: 50,
-      anneeAcademique: anneeAcademiqueLibelle, 
+      anneeAcademique: anneeAcademiqueLibelle, // Gardé pour l'affichage en haut à droite
+      theme: 'bw', // Blanc noir requis
+      headerInfo,
+      excludeColumns
+    });
+  };
+
+  // Export PDF simple (bouton "Exporter")
+  const handleExportPDFSimple = () => {
+    if (!etudiants.length) return toast.error("Aucun étudiant à exporter");
+    
+    // 1. Validation Année Académique (Requis)
+    if (!filters.annee_academique) {
+      return toast.error("Veuillez sélectionner une année académique pour l'export.");
+    }
+    
+    const anneeAcademiqueLibelle = anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique;
+
+    // 2. Récupération des infos contextuelles pour le header
+    const headerInfo = {
+        annee_academique_libelle: anneeAcademiqueLibelle
+    };
+    const excludeColumns = [];
+
+    // Parcours
+    if (filters.parcours) {
+        const p = parcoursData.find(x => x.id.toString() === filters.parcours);
+        if (p) headerInfo.parcours_nom = p.libelle;
+    }
+
+    // Filière
+    if (filters.filiere) {
+        const f = filieresDuParcours.find(x => x.id.toString() === filters.filiere);
+        if (f) headerInfo.filiere_nom = f.nom;
+    }
+
+    // Année d'étude
+    if (filters.annee_etude) {
+        const a = anneesDuParcours.find(x => x.id.toString() === filters.annee_etude);
+        if (a) headerInfo.annee_etude_libelle = a.libelle;
+    }
+    
+    // 3. Optimisation : Si on a filtré par Parcours, Filière ou Année d'étude, on enlève la colonne redondante
+    if (filters.parcours || filters.filiere || filters.annee_etude) {
+        excludeColumns.push("Filière-Parcours");
+    }
+
+    exportToPDF(prepareExportDataSimple(), `liste_etudiants_${new Date().toISOString().split("T")[0]}`, {
+      titre: "LISTE DES ÉTUDIANTS",
+      orientation: "l",
+      signatureColumn: false, 
+      anneeAcademique: anneeAcademiqueLibelle,
+      theme: 'bw', 
+      headerInfo,
+      excludeColumns
     });
   };
 
@@ -226,7 +316,7 @@ export default function GestionEtudiantsAdmin() {
   };
 
   return (
-    <div className="p-6 bg-gray-50">
+    <div className="p-15 bg-gray-50">
       {/* Titre + Boutons */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Gestion des Étudiants</h2>
@@ -316,10 +406,55 @@ export default function GestionEtudiantsAdmin() {
 
           <div className="flex gap-3 ml-auto">
             <ExportButton
-              data={prepareExportData()}
-              filename={`etudiants_${new Date().toISOString().split("T")[0]}`}
-              headers={exportHeaders}
+              data={prepareExportDataSimple()}
+              filename={`liste_etudiants_${new Date().toISOString().split("T")[0]}`}
               disabled={etudiants.length === 0}
+              filters={{
+                annee_academique_libelle: filters.annee_academique 
+                  ? anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique
+                  : null,
+                parcours_nom: filters.parcours 
+                  ? parcoursData.find(p => p.id.toString() === filters.parcours)?.libelle
+                  : null,
+                filiere_nom: filters.filiere 
+                  ? filieresDuParcours.find(f => f.id.toString() === filters.filiere)?.nom
+                  : null,
+                annee_etude_libelle: filters.annee_etude 
+                  ? anneesDuParcours.find(a => a.id.toString() === filters.annee_etude)?.libelle
+                  : null,
+              }}
+              options={{
+                validation: () => {
+                  if (!filters.annee_academique) {
+                    toast.error("Veuillez sélectionner une année académique pour l'export.");
+                    return "Année académique requise";
+                  }
+                  return null;
+                },
+                excludeColumns: (filters.parcours || filters.filiere || filters.annee_etude) ? ["Filière-Parcours"] : [],
+                // Options pour le PDF
+                titre: "LISTE DES ÉTUDIANTS",
+                orientation: "l",
+                signatureColumn: false,
+                theme: 'bw',
+                anneeAcademique: filters.annee_academique 
+                  ? anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique
+                  : null,
+                headerInfo: {
+                  annee_academique_libelle: filters.annee_academique 
+                    ? anneesAcademiques.find(a => (a.libelle ?? a.annee) === filters.annee_academique)?.libelle || filters.annee_academique
+                    : null,
+                  parcours_nom: filters.parcours 
+                    ? parcoursData.find(p => p.id.toString() === filters.parcours)?.libelle
+                    : null,
+                  filiere_nom: filters.filiere 
+                    ? filieresDuParcours.find(f => f.id.toString() === filters.filiere)?.nom
+                    : null,
+                  annee_etude_libelle: filters.annee_etude 
+                    ? anneesDuParcours.find(a => a.id.toString() === filters.annee_etude)?.libelle
+                    : null,
+                }
+              }}
               className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               <FaFileExport /> Exporter
@@ -337,7 +472,7 @@ export default function GestionEtudiantsAdmin() {
       </div>
 
       {/* Tableau */}
-      <div className="bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="p-16 text-center">
             <FaSync className="animate-spin mx-auto text-4xl text-blue-600 mb-4" />
@@ -388,21 +523,21 @@ export default function GestionEtudiantsAdmin() {
                               className="text-blue-600 hover:text-blue-800"
                               title="Modifier"
                             >
-                              <FaEdit size={18} />
+                              <FaEdit size={17} />
                             </button>
                             <button
                               onClick={() => supprimerEtudiant(e.id)}
                               className="text-red-600 hover:text-red-800"
                               title="Supprimer"
                             >
-                              <FaTrash size={18} />
+                              <FaTrash size={17} />
                             </button>
                             <button
                               onClick={() => router.push(`/resp_inscription/etudiants/${e.id}/inscriptions`)}
                               className="flex items-center gap-1 text-green-600 hover:text-green-800"
                               title="Voir détails"
                             >
-                              <FaAddressCard size={18} />
+                              <FaAddressCard size={17} />
                               <span className="text-xs">Détails</span>
                             </button>
                           </div>
@@ -469,6 +604,17 @@ export default function GestionEtudiantsAdmin() {
         onClose={() => setModalOpen(false)}
         student={selectedStudent}
         onSave={sauvegarderEtudiant}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, studentId: null })}
+        onConfirm={confirmerSuppression}
+        title="Supprimer l'étudiant"
+        message="Êtes-vous sûr de vouloir supprimer cet étudiant ? Cette action est irréversible."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
       />
     </div>
   );

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { UserPlus, Upload, AlertCircle, CheckCircle, X, RotateCw } from 'lucide-react';
 import inscriptionService from '@/services/inscription/inscriptionService';
+import { validateField } from '@/components/ui/ValidationUtils';
 
 export default function CreationCompteEtudiant() {
   const [activeTab, setActiveTab] = useState('manuel');
@@ -13,6 +14,9 @@ export default function CreationCompteEtudiant() {
     email: '',
     sexe: 'M'
   });
+
+  // États de validation
+  const [validationErrors, setValidationErrors] = useState({});
 
   // États import fichier
   const [file, setFile] = useState(null);
@@ -26,7 +30,15 @@ export default function CreationCompteEtudiant() {
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Validation en temps réel
+    const error = validateField(name, value, true);
+    setValidationErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
   const handleFile = (e) => {
@@ -42,9 +54,22 @@ export default function CreationCompteEtudiant() {
 
   // 1. Création manuelle
   const submitManual = async () => {
-    if (!formData.first_name || !formData.last_name || !formData.email) {
-      return setError("Prénom, nom et email sont obligatoires");
+    // Validation complète avant soumission
+    const errors = {};
+    errors.first_name = validateField('first_name', formData.first_name, true);
+    errors.last_name = validateField('last_name', formData.last_name, true);
+    errors.email = validateField('email', formData.email, true);
+    
+    // Filtrer les erreurs null
+    const validErrors = Object.fromEntries(
+      Object.entries(errors).filter(([_, v]) => v !== null)
+    );
+    
+    if (Object.keys(validErrors).length > 0) {
+      setValidationErrors(validErrors);
+      return setError("Veuillez corriger les erreurs dans le formulaire");
     }
+    
     setLoading(true); setError(null); setResult(null);
     try {
       const data = await inscriptionService.creerCompteEtudiant(formData);
@@ -54,6 +79,7 @@ export default function CreationCompteEtudiant() {
         details: data
       });
       setFormData({ first_name: '', last_name: '', email: '', sexe: 'M' });
+      setValidationErrors({});
     } catch (err) {
       setError(err.response?.data?.error || "Erreur lors de la création");
     } finally {
@@ -181,16 +207,50 @@ export default function CreationCompteEtudiant() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Prénom <span className="text-red-500">*</span></label>
-                    <input name="first_name" value={formData.first_name} onChange={handleChange} placeholder="Entrez le prénom" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input 
+                      name="first_name" 
+                      value={formData.first_name} 
+                      onChange={handleChange} 
+                      placeholder="Entrez le prénom" 
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.first_name ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors.first_name && (
+                      <p className="text-red-600 text-sm mt-1">{validationErrors.first_name}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nom <span className="text-red-500">*</span></label>
-                    <input name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Entrez le nom" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input 
+                      name="last_name" 
+                      value={formData.last_name} 
+                      onChange={handleChange} 
+                      placeholder="Entrez le nom" 
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.last_name ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors.last_name && (
+                      <p className="text-red-600 text-sm mt-1">{validationErrors.last_name}</p>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
-                  <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="exemple@email.com" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                  <input 
+                    name="email" 
+                    type="email" 
+                    value={formData.email} 
+                    onChange={handleChange} 
+                    placeholder="exemple@email.com" 
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {validationErrors.email && (
+                    <p className="text-red-600 text-sm mt-1">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sexe <span className="text-red-500">*</span></label>

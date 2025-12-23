@@ -25,6 +25,24 @@ export const useExportPDF = () => {
       const pageHeight = doc.internal.pageSize.getHeight();
       let y = 15;
 
+      // ========== COULEURS THEME ==========
+      const isBW = options.theme === 'bw';
+      const colors = isBW ? {
+        primary: [0, 0, 0],
+        secondary: [100, 100, 100],
+        accent: [0, 0, 0],
+        headerFill: [220, 220, 220], // Gris clair pour header tableau
+        headerText: [0, 0, 0],
+        alternateRow: [255, 255, 255] // Pas de gris alterné pour BW pour copie propre, ou très léger
+      } : {
+        primary: [41, 87, 128], // Bleu institutionnel
+        secondary: [41, 87, 128],
+        accent: [41, 87, 128],
+        headerFill: [41, 87, 128],
+        headerText: [255, 255, 255],
+        alternateRow: [245, 247, 250]
+      };
+
       // ========== LOGO + ANNÉE ACADÉMIQUE ==========
       const logoHeight = 20; // Hauteur approximative du logo
       
@@ -38,7 +56,7 @@ export const useExportPDF = () => {
       if (anneeAcademique && anneeAcademique !== "Toutes les années académiques") {
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(41, 87, 128); // Couleur bleue institutionnelle
+        doc.setTextColor(...colors.secondary); 
         doc.text(`Année académique : ${anneeAcademique}`, pageWidth - 14, y + 10, { align: 'right' });
       }
 
@@ -57,10 +75,14 @@ export const useExportPDF = () => {
       // ========== EN-TÊTE INFO (si headerInfo fourni) ==========
       const hasHeaderInfo = Object.keys(headerInfo).length > 0;
       if (hasHeaderInfo) {
-        doc.setDrawColor(41, 87, 128);
+        doc.setDrawColor(...colors.accent);
         doc.setLineWidth(0.3);
         const headerBoxHeight = 30;
+        
+        // Cadre seulement si non BW ou si souhaité. En BW souvent on veut juste le texte.
+        // On garde le cadre pour structurer
         doc.rect(14, y, pageWidth - 28, headerBoxHeight);
+        
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         let headerY = y + 8;
@@ -129,23 +151,27 @@ export const useExportPDF = () => {
           head: [headers],
           body: body,
           startY: y,
-          theme: 'grid',
+          theme: isBW ? 'plain' : 'grid', // 'plain' pour BW
           styles: {
             fontSize: 8,
             cellPadding: 3,
             overflow: 'linebreak',
             halign: 'left',
             valign: 'middle',
+            lineColor: [0, 0, 0], // Lignes noires pour BW
+            lineWidth: 0.1,
           },
           headStyles: {
-            fillColor: [41, 87, 128],
-            textColor: [255, 255, 255],
+            fillColor: colors.headerFill,
+            textColor: colors.headerText,
             fontStyle: 'bold',
             halign: 'center',
-            fontSize: 9
+            fontSize: 9,
+            lineWidth: 0.1,
+            lineColor: [0, 0, 0]
           },
           columnStyles: columnStyles,
-          alternateRowStyles: { fillColor: [245, 247, 250] },
+          alternateRowStyles: { fillColor: colors.alternateRow },
           margin: { top: 10, left: 14, right: 14 },
           didDrawPage: function () {
             const pageNum = doc.internal.getCurrentPageInfo().pageNumber;

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import inscriptionService from "@/services/inscription/inscriptionService";
+import toast from 'react-hot-toast';
 
 /**
  * Hook pour gérer la redirection post-connexion des étudiants
@@ -25,13 +26,16 @@ export function usePostLoginRedirection() {
         
         if (user.role !== 'etudiant') {
           setError("Accès non autorisé");
+          toast.error("Accès réservé aux étudiants");
           return;
         }
 
-                // Vérifier si l'étudiant a un num_carte (= ancien étudiant)
+        // Vérifier si l'étudiant a un num_carte (= ancien étudiant)
         if (user.num_carte) {
           try {
+            const loadingToast = toast.loading("Vérification du dossier...");
             const response = await inscriptionService.verifierAncienEtudiant(user.num_carte);
+            toast.dismiss(loadingToast);
             
             if (response.existe) {
               // Sauvegarder les données de l'ancien étudiant
@@ -51,12 +55,16 @@ export function usePostLoginRedirection() {
                 ancienEtudiantVerifie: true
               }));
 
+              toast.success(`Bon retour ${response.etudiant.prenom} !`);
               // Rediriger vers l'étape 1 (infos personnelles)
               router.push('/etudiant/inscription/etape-1');
             } else {
+              // Si le numéro de carte existe sur USER mais pas dans la table ETUDIANT (cas rare mais possible)
               setError("Erreur: Données étudiant introuvables");
+              toast.error("Votre numéro de carte est inconnu. Contactez l'administration.");
             }
           } catch (err) {
+            toast.dismiss();
             console.error("Erreur vérification ancien étudiant:", err);
             
             // Si erreur 404 ou étudiant non trouvé, traiter comme nouveau
@@ -66,9 +74,12 @@ export function usePostLoginRedirection() {
                 typeEtudiant: 'nouveau',
                 numCarteExistant: null
               }));
+              toast.success("Bienvenue ! Complétez votre profil.");
               router.push('/etudiant/inscription/etape-1');
             } else {
-              setError("Erreur lors de la vérification de vos informations");
+              const msg = err.response?.data?.message || "Erreur de connexion serveur";
+              setError(msg);
+              toast.error(msg);
             }
           }
         } else {
@@ -79,12 +90,14 @@ export function usePostLoginRedirection() {
             numCarteExistant: null
           }));
 
+          toast.success("Bienvenue ! Commencez votre inscription.");
           // Rediriger vers l'étape 1 (infos personnelles)
           router.push('/etudiant/inscription/etape-1');
         }
       } catch (err) {
         console.error("Erreur redirection post-login:", err);
         setError("Une erreur est survenue lors de la redirection");
+        toast.error("Erreur inattendue");
       } finally {
         setLoading(false);
       }
@@ -138,7 +151,7 @@ export function PostLoginTransition() {
               Bienvenue !
             </h2>
             <p className="text-center text-gray-600">
-              Préparation de votre formulaire d'inscription...
+              Vérification de votre dossier en cours...
             </p>
           </div>
         </div>

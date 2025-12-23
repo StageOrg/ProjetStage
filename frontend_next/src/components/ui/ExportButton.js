@@ -15,8 +15,8 @@ import { useExportExcel } from '@/components/exports/useExportExcel';
 const ExportButton = ({
   data,
   filename = 'export',
-  options = {}, // 👈 Paramètre unifié pour PDF
-  filters = {}, // 👈 Paramètre pour CSV/Excel
+  options = {}, 
+  filters = {}, 
   onExportStart,
   onExportEnd,
   className = '',
@@ -30,6 +30,18 @@ const ExportButton = ({
   const { exportToExcel } = useExportExcel();
 
   const handleExport = async (type) => {
+    // Validation externe personnalisée
+    if (options.validation) {
+      const error = options.validation();
+      if (error) {
+        try {
+            
+            alert(error); 
+        } catch(e) {}
+        return;
+      }
+    }
+
     if (isExporting || !data || data.length === 0) {
       alert('Aucune donnée à exporter.');
       return;
@@ -43,15 +55,12 @@ const ExportButton = ({
     try {
       switch (type) {
         case 'pdf':
-          // ✅ Passer options (objet) comme 3ème paramètre
           result = await exportToPDF(data, filename, options);
           break;
         case 'excel':
-          // ✅ Passer filters comme 3ème paramètre
-          result = exportToExcel(data, filename, filters);
+          result = exportToExcel(data, filename, filters, options);
           break;
         case 'csv':
-          // ✅ Passer filters comme 3ème paramètre
           result = exportToCSV(data, filename, filters);
           break;
         default:

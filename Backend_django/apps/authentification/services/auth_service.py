@@ -2,6 +2,7 @@
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from apps.utilisateurs.models import Etudiant
 
 # Récupération du modèle utilisateur personnalisé
 User = get_user_model()
@@ -29,6 +30,11 @@ class AuthService:
         # Génération des tokens JWT
         refresh = RefreshToken.for_user(user)
 
+        # Récupérer num_carte si étudiant
+        num_carte = None
+        if hasattr(user, 'etudiant') and user.etudiant:
+            num_carte = user.etudiant.num_carte
+
         # Retourne l'utilisateur + tokens
         return {
             "access": str(refresh.access_token),
@@ -42,6 +48,7 @@ class AuthService:
                 "role":  user.role ,
                 "sexe": user.sexe,
                 "telephone": user.telephone,
+                "num_carte": num_carte, # Ajout du numéro de carte
             },
             "message": f"Bienvenue {user.first_name} !"
         }

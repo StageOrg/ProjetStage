@@ -1,14 +1,9 @@
-// ========================================
-// SERVICE - inscriptionService.js
-// ========================================
-// 📁 Emplacement : services/inscription/inscriptionService.js
-// 🔄 Remplacer TOUT le contenu du fichier
 
 import api from "@/services/api";
 
 const inscriptionService = {
   /**
-   * 🎯 Récupère les UE avec chargement intelligent
+   *  Récupère les UE avec chargement intelligent
    * 
    * @param {Object} params - Paramètres de filtrage
    * @param {number} params.parcours - ID du parcours
@@ -23,15 +18,15 @@ const inscriptionService = {
     try {
       const { isNewStudent = false, anneeLibelle = null } = options;
       
-      console.log("📡 getUEs - Appel avec:", { params, options });
+      console.log(" getUEs - Appel avec:", { params, options });
       
-      // 🔥 MODE MULTI-NIVEAUX pour nouveaux étudiants
+      //  MODE MULTI-NIVEAUX pour nouveaux étudiants
       if (isNewStudent && anneeLibelle) {
-        console.log("🚀 Mode MULTI-NIVEAUX activé");
-        console.log("📚 Niveau sélectionné:", anneeLibelle);
+        console.log(" Mode MULTI-NIVEAUX activé");
+        console.log(" Niveau sélectionné:", anneeLibelle);
         
         const response = await api.get("/inscription/ues/multi-niveaux/", { params });
-        console.log("✅ Réponse multi-niveaux:", response.data);
+        console.log(" Réponse multi-niveaux:", response.data);
         
         const data = response.data;
         
@@ -43,11 +38,11 @@ const inscriptionService = {
         };
       }
       
-      // 📌 MODE STANDARD pour anciens étudiants
-      console.log("📌 Mode STANDARD (ancien étudiant)");
+      //  MODE STANDARD pour anciens étudiants
+      console.log(" Mode STANDARD (ancien étudiant)");
       
       const response = await api.get("/notes/ues/filtrer/", { params });
-      console.log("✅ Réponse standard:", response.data);
+      console.log(" Réponse standard:", response.data);
       
       const data = response.data;
       if (!data) return { ues: [], niveaux_charges: [], total_ues: 0 };
@@ -62,7 +57,7 @@ const inscriptionService = {
       };
       
     } catch (error) {
-      console.error("❌ Erreur dans getUEs:", error);
+      console.error(" Erreur dans getUEs:", error);
       throw error;
     }
   },
@@ -118,6 +113,28 @@ const inscriptionService = {
       return response.data;
     } catch (error) {
       console.error("Erreur dans renvoyerIdentifiants:", error);
+      throw error;
+    }
+  },
+
+  // Vérifier ancien étudiant
+  verifierAncienEtudiant: async (numCarte) => {
+    try {
+      const response = await api.get(`/inscription/verifier-ancien-etudiant/${numCarte}/`);
+      return response.data;
+    } catch (error) {
+      console.error("Erreur verifierAncienEtudiant:", error);
+      throw error;
+    }
+  },
+
+  // Inscription Ancien Étudiant
+  inscriptionAncienEtudiant: async (data) => {
+    try {
+      const response = await api.post("/inscription/ancien-etudiant/", data);
+      return response.data;
+    } catch (error) {
+      console.error("Erreur inscriptionAncienEtudiant:", error);
       throw error;
     }
   }

@@ -44,7 +44,7 @@ export default function InscriptionAdmin() {
           </Link>
         </div>
         <Link href="/resp_inscription/dashboard/CreationCompte">
-        <div className="bg-white rounded-xl shadow-md p-8 hover:shadow-lg transition-shadow cursor-pointer border-2 border-purple-100">
+        <div className="bg-white rounded-xl shadow-md p-8 hover:shadow-lg transition-shadow cursor-pointer border-2 border-purple-100 mt-5">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-purple-100 rounded-lg">
               <UserPlus className="w-8 h-8 text-purple-600" />

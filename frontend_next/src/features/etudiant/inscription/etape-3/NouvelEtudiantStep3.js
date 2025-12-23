@@ -27,6 +27,8 @@ export default function EtapeSelectionParcours() {
 
   const router = useRouter();
 
+  const [isAncien, setIsAncien] = useState(false);
+
   useEffect(() => {
     const fetchOptions = async () => {
       setLoading(true);
@@ -37,11 +39,45 @@ export default function EtapeSelectionParcours() {
           api.get("/inscription/annee-etude/"),
         ]);
 
-        setOptions({
+        const optionsData = {
           parcours: parcoursRes.data,
           filieres: filieresRes.data,
           annees: anneesRes.data,
-        });
+        };
+        setOptions(optionsData);
+
+        // 🟢 LOGIQUE ANCIEN ÉTUDIANT
+        const typeData = localStorage.getItem("type_inscription");
+        if (typeData) {
+          const parsedType = JSON.parse(typeData);
+          if (parsedType.typeEtudiant === 'ancien') {
+            setIsAncien(true);
+            const ancienData = localStorage.getItem("ancien_etudiant_complet");
+            if (ancienData) {
+              const parsedAncien = JSON.parse(ancienData);
+              const derniereInscription = parsedAncien.derniere_inscription;
+              const prochaineAnnee = parsedAncien.prochaine_annee;
+
+              // Pré-remplissage
+              setFormulaire(prev => ({
+                ...prev,
+                parcours_id: derniereInscription.parcours.id,
+                filiere_id: derniereInscription.filiere.id,
+                annee_etude_id: prochaineAnnee ? prochaineAnnee.id : "", // Pré-sélection
+                parcours_libelle: derniereInscription.parcours.libelle,
+                filiere_nom: derniereInscription.filiere.nom,
+                annee_etude_libelle: prochaineAnnee ? prochaineAnnee.libelle : ""
+              }));
+
+              // Déclencher les filtres manuellement car le useEffect dépend de options
+              filtrerOptions(derniereInscription.parcours.id, optionsData);
+              
+              // Si déjà une sauvegarde locale step 2, on peut vouloir l'utiliser
+              // Mais priorité aux données certifiées si c'est la première arrivée
+            }
+          }
+        }
+
       } catch (err) {
         console.error("Erreur lors du chargement des options :", err);
         setErreurs({ formulaire: "Erreur lors du chargement des options." });
@@ -52,29 +88,34 @@ export default function EtapeSelectionParcours() {
 
     fetchOptions();
 
+    // Récupération sauvegarde si existe (écrase le pré-remplissage si l'user a déjà modifié)
     const savedData = localStorage.getItem("inscription_step2");
     if (savedData) {
       setFormulaire(JSON.parse(savedData));
     }
   }, []);
 
-  useEffect(() => {
-    if (formulaire.parcours_id) {
+  const filtrerOptions = (parcoursId, currentOptions = options) => {
       // Filtrer les filières par parcours
-      const filieresFiltrees = options.filieres.filter(
+      const filieresFiltrees = currentOptions.filieres.filter(
         (filiere) =>
           filiere.parcours &&
-          filiere.parcours.includes(parseInt(formulaire.parcours_id))
+          filiere.parcours.includes(parseInt(parcoursId))
       );
       setFiltredFilieres(filieresFiltrees);
 
-      // Filtrer les années par parcours → PLUS AUCUNE RESTRICTION L1
-      const anneesParcours = options.annees.filter(
+      // Filtrer les années par parcours
+      const anneesParcours = currentOptions.annees.filter(
         (annee) =>
           annee.parcours &&
-          annee.parcours.includes(parseInt(formulaire.parcours_id))
+          annee.parcours.includes(parseInt(parcoursId))
       );
       setFiltredAnnees(anneesParcours);
+  };
+
+  useEffect(() => {
+    if (formulaire.parcours_id && options.filieres.length > 0) {
+      filtrerOptions(formulaire.parcours_id);
     } else {
       setFiltredFilieres([]);
       setFiltredAnnees([]);
@@ -120,6 +161,7 @@ export default function EtapeSelectionParcours() {
     if (!validerFormulaire()) return;
 
     localStorage.setItem("inscription_step2", JSON.stringify(formulaire));
+    // Correction redirection : Tout le monde va vers Step 4 (Choix UE)
     router.push("/etudiant/inscription/etape-3");
   };
 
@@ -143,9 +185,12 @@ export default function EtapeSelectionParcours() {
           name="parcours_id"
           value={formulaire.parcours_id}
           onChange={gererChangement}
+          disabled={isAncien} // Bloqué pour ancien
           className={`w-full px-4 py-2 rounded-lg border ${
             erreurs.parcours_id ? "border-red-500" : "border-gray-200"
-          } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/70`}
+          } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/70 ${
+            isAncien ? "bg-gray-100 cursor-not-allowed opacity-70" : ""
+          }`}
         >
           <option value="">Sélectionnez un parcours</option>
           {options.parcours.map((parcours) => (
@@ -164,11 +209,11 @@ export default function EtapeSelectionParcours() {
           name="filiere_id"
           value={formulaire.filiere_id}
           onChange={gererChangement}
-          disabled={!formulaire.parcours_id}
+          disabled={!formulaire.parcours_id || isAncien} // Bloqué si pas de parcours OU si ancien
           className={`w-full px-4 py-2 rounded-lg border ${
             erreurs.filiere_id ? "border-red-500" : "border-gray-200"
           } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/70 ${
-            !formulaire.parcours_id ? "opacity-50 cursor-not-allowed" : ""
+            (!formulaire.parcours_id || isAncien) ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
           <option value="">

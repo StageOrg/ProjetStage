@@ -140,7 +140,7 @@ export default function InscriptionEtudiantsAdmin() {
 
   const handleFileUpload = async (file) => {
     if (!importFilters.parcours || !importFilters.filiere || !importFilters.annee_etude) {
-      alert('Veuillez sélectionner un parcours, une filière et une année d\'étude avant d\'importer.');
+      toast.error('Veuillez sélectionner un parcours, une filière et une année d\'étude avant d\'importer.'); // Replaced alert
       return;
     }
 
@@ -162,16 +162,16 @@ export default function InscriptionEtudiantsAdmin() {
         a.href = url;
         a.download = `identifiants_import.csv`;
         a.click();
-        alert('Import terminé ! Fichier CSV téléchargé.');
+        toast.success('Import terminé ! Fichier CSV téléchargé.'); // Replaced alert
       } else {
-        alert(`Import terminé `);
+        toast.success(`Import terminé `); // Replaced alert
       }
 
       setImportFilters({ parcours: '', filiere: '', annee_etude: '' });
       if (fileInputRef.current) fileInputRef.current.value = '';
       
     } catch (err) {
-      alert('Erreur lors de l\'import : ' + (err.response?.data?.error || err.message));
+      toast.error('Erreur lors de l\'import : ' + (err.response?.data?.error || err.message)); // Replaced alert
     } finally {
       setIsLoading(false);
     }
@@ -180,7 +180,7 @@ export default function InscriptionEtudiantsAdmin() {
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     if (!form.parcours || !form.filiere || !form.annee_etude) {
-      alert('Veuillez sélectionner un parcours, une filière et une année d\'étude.');
+      toast.error('Veuillez sélectionner un parcours, une filière et une année d\'étude.'); // Replaced alert
       return;
     }
 
@@ -202,7 +202,7 @@ export default function InscriptionEtudiantsAdmin() {
         ues_selectionnees: []
       });
 
-      alert(`Étudiant créé ! Email envoyé à ${form.email}\nUsername: ${response.data.username}\nMot de passe: ${response.data.mot_de_passe_temporaire}`);
+      toast.success(`Étudiant créé ! Email envoyé à ${form.email}. Username: ${response.data.username}. Mot de passe: ${response.data.mot_de_passe_temporaire}`); // Replaced alert and adjusted message for toast
 
       setForm({
         first_name: '', last_name: '', email: '', telephone: '', date_naiss: '',
@@ -212,7 +212,7 @@ export default function InscriptionEtudiantsAdmin() {
       setErrors({});
 
     } catch (error) {
-      alert(error.response?.data?.error || 'Erreur lors de la création');
+      toast.error(error.response?.data?.error || 'Erreur lors de la création'); // Replaced alert
     } finally {
       setIsLoading(false);
     }

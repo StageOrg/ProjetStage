@@ -26,7 +26,8 @@ const etudiantService = {
       );
       
       // Page size pour récupérer beaucoup de résultats
-      cleanFilters.page_size = 1000;
+      // Page size pour récupérer beaucoup de résultats
+      // cleanFilters.page_size = 1000; // Suppression de l'override pour permettre la pagination correcte
       
       const response = await api.get("/inscription/etudiants/filtrer/", { 
         params: cleanFilters 
