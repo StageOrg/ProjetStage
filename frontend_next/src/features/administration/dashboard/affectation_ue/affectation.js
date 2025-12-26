@@ -110,7 +110,7 @@ export default function AffectationUE() {
             className="w-full mb-3 p-2 border rounded"
           />
 
-          <table className="w-full border-collapse">
+          <table className="w-150 border-collapse">
             <thead>
               <tr className="bg-gray-200">
                 <th className="p-2">Nom</th>

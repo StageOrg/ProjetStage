@@ -79,7 +79,7 @@ export default function ProfilProfesseur({ profId }) {
       </div>
 
       {/* Contenu principal */}
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-8 w-250">
         {/* Photo de profil */}
         <div className="flex flex-col items-center md:items-start">
        <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-blue-200 shadow-xl">
@@ -95,7 +95,7 @@ export default function ProfilProfesseur({ profId }) {
           
           {/* Badge titre si présent */}
           {profData.titre && (
-            <div className="mt-4 px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-center font-semibold">
+            <div className="ml-8 mt-4 px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-center font-semibold">
               {profData.titre}
             </div>
           )}

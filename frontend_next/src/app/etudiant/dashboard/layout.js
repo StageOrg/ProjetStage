@@ -1,12 +1,12 @@
 import MenuLateralDashboard from "../../../components/navigation/MenuLateralDashboard";
-import HeaderConnexion from "../../../components/ui/HeaderConnexion";
+import Header from "../../../components/ui/Header";
 
 export default function DashboardLayout({ children }) {
   return (
     <>
       {/* Header en haut */}
       <header className="fixed top-0 left-0 right-0 z-40  bg-gradient-to-r from-blue-600 to-blue-600">
-        <HeaderConnexion />
+        <Header/>
       </header>
 
       {/* Menu latéral */}

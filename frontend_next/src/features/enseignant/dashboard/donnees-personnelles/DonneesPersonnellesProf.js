@@ -56,7 +56,7 @@ export default function DonneesPersonnellesProf() {
           } else {
             // Si c'est un chemin relatif, construire l'URL complète
             // Adapter selon votre configuration backend
-            setPhotoPreview(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${prof.photo}`);
+            setPhotoPreview(`http://localhost:8000/api/utilisateurs/professeur/${prof.photo}`);
           }
         } else {
           setPhotoPreview("/images/prof.png");

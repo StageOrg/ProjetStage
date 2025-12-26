@@ -4,14 +4,16 @@ import UEService from "@/services/ueService";
 import { Link as LinkIcon, AlertCircle } from "lucide-react";
 
 export default function InfosUePublic({ ueId }) {
+  console.log("UE ID reçue :", ueId);
   const [formData, setFormData] = useState({
     description: "",
-    lien_support: "",
-    lien_tds: "",
-    lien_evaluations: "",
+    lien_cours: "",
+    lien_td: "",
+    lien_evaluation: "",
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const role = localStorage.getItem("user_role");
 
   // Charger les infos de l’UE
   useEffect(() => {
@@ -20,9 +22,9 @@ export default function InfosUePublic({ ueId }) {
         const ue = await UEService.getUEById(ueId);
         setFormData({
           description: ue.description || "",
-          lien_support: ue.lien_support || "",
-          lien_tds: ue.lien_tds || "",
-          lien_evaluations: ue.lien_evaluations || "",
+          lien_cours: ue.lien_cours || "",
+          lien_td: ue.lien_td || "",
+          lien_evaluation: ue.lien_evaluation || "",
         });
       } catch (error) {
         console.error("Erreur lors du chargement de l’UE :", error);
@@ -44,7 +46,7 @@ export default function InfosUePublic({ ueId }) {
   }
 
   const hasInfo =
-    formData.description || formData.lien_support || formData.lien_tds || formData.lien_evaluations;
+    formData.description || formData.lien_cours || formData.lien_td || formData.lien_evaluation;
 
   if (!hasInfo) {
     return (
@@ -69,45 +71,49 @@ export default function InfosUePublic({ ueId }) {
           <p>{formData.description}</p>
         </div>
       )}
+     {role === "etudiant" && (
+  <>
+    {formData.lien_cours && (
+      <div className="flex items-center border p-3 rounded">
+        <a
+          href={formData.lien_cours}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-blue-700 hover:underline"
+        >
+          <LinkIcon size={16} /> Lien vers le support du cours
+        </a>
+      </div>
+    )}
 
-      {formData.lien_support && (
-        <div className="flex items-center border p-3 rounded">
-          <a
-            href={formData.lien_support}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-blue-700 hover:underline"
-          >
-            <LinkIcon size={16} /> Lien vers le support du cours
-          </a>
-        </div>
-      )}
+    {formData.lien_td && (
+      <div className="flex items-center border p-3 rounded">
+        <a
+          href={formData.lien_td}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-blue-700 hover:underline"
+        >
+          <LinkIcon size={16} /> Lien vers les TDs
+        </a>
+      </div>
+    )}
 
-      {formData.lien_tds && (
-        <div className="flex items-center border p-3 rounded">
-          <a
-            href={formData.lien_tds}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-blue-700 hover:underline"
-          >
-            <LinkIcon size={16} /> Lien vers les TDs
-          </a>
-        </div>
-      )}
+    {formData.lien_evaluation && (
+      <div className="flex items-center border p-3 rounded">
+        <a
+          href={formData.lien_evaluation}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-blue-700 hover:underline"
+        >
+          <LinkIcon size={16} /> Lien vers les évaluations passées
+        </a>
+      </div>
+    )}
+  </>
+)}
 
-      {formData.lien_evaluations && (
-        <div className="flex items-center border p-3 rounded">
-          <a
-            href={formData.lien_evaluations}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-blue-700 hover:underline"
-          >
-            <LinkIcon size={16} /> Lien vers les évaluations passées
-          </a>
-        </div>
-      )}
     </div>
   );
 }

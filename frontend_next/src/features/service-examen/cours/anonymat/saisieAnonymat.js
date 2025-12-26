@@ -35,6 +35,7 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
       }
     } catch (err) {
       console.error("Erreur lors de la mise à jour du numéro anonyme :", err);
+      alert("Ce numéro d'anonymat existe dejà pour un autre etudiant");
     }
   };
 

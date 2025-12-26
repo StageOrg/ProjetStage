@@ -62,7 +62,7 @@ export default function RegisterForm() {
 
     alert("Compte créé avec succès !");
     console.log("Réponse backend :", res);
-    router.push('/administration/dashboard/utilisateurs');
+    router.push('/administration/dashboard/gestion-utilisateurs');
 
   } catch (error) {
     console.error("Erreur à l'inscription :", error.response?.data || error.message);

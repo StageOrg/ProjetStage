@@ -64,15 +64,7 @@ class UEViewSet(viewsets.ModelViewSet):
             return queryset.filter(professeur=self.request.user.professeur)
         
         return queryset
-        
-# Récupération des UEs dont aucune note n'a été saisie
-    """  @action(detail=True, methods=['get'])
-    def etudiantsInscrits(self, request, pk=None):
-        ue = self.get_object()
-        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue)
-        serializer = EtudiantSerializer(etudiantsInscrits, many=True)
-        return Response(serializer.data) """
-    
+
    
 # Récupération des étudiants inscrits à une UE donnée
 
@@ -535,7 +527,7 @@ class NoteViewSet(viewsets.ModelViewSet):
         enregistrer_action(
             utilisateur=self.request.user,
             action="Création d'une note",
-            objet=f"Note ID {note.id} pour Étudiant ID {note.etudiant}",
+            objet=f"Création de Note {note.note} pour Étudiant ID {note.etudiant}",
             ip=self.request.META.get('REMOTE_ADDR'),
             description="Une note a été créée avec succès"
         )
@@ -642,18 +634,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(professeur=self.request.user.professeur)
     
-    #Endpoint pour recuperer les articles par professeur
-    @action(detail=False, methods=['get'], url_path='par-professeur/(?P<prof_id>[^/.]+)')
-    def articles_par_professeur(self, request, prof_id=None):
-        articles = Article.objects.filter(professeur__id=prof_id)
+    #Endpoint pour recuperer les articles du prof connecte
+    @action(detail=False, methods=['get'], url_path='mes-articles')
+    def mes_articles(self, request):
+        articles = Article.objects.filter(professeur=self.request.user.professeur)
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
     pagination_class = None
-    
-    # Endpoint pour recuperer les articles publies par l'id du professeur
-    @action(detail=False, methods=['get'], url_path='publies-par-professeur/(?P<prof_id>[^/.]+)')
+    # Endpoint pour recuperer les articles publies par le professeur par l'id 
+    @action(detail=False, methods=['get'], url_path='par-professeurId/(?P<prof_id>[^/.]+)')
     def par_professeur(self, request, prof_id=None):
-        articles = Article.objects.filter(professeur__id=prof_id, publie=True)
+        articles = Article.objects.filter(professeur__id=prof_id)
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
 

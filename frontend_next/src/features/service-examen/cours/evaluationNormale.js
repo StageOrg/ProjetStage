@@ -55,8 +55,7 @@ export default function EvaluationNormale({ueId, evaluations, evaluation, etudia
             <th className="border px-2 py-1 text-center">
               {evaluation.type} ({evaluation.poids}%)
             </th>
-            <th className="border px-2 py-1 text-center">Moyenne</th>
-          </tr>
+         </tr>
         </thead>
         <tbody>
           {etudiants.length === 0 ? (
@@ -91,9 +90,7 @@ export default function EvaluationNormale({ueId, evaluations, evaluation, etudia
                       </span>
                     )}
                   </td>
-                  <td className="border px-2 py-1 text-center font-semibold">
-                    {calculerMoyenne(etu)}
-                  </td>
+               
                 </tr>
               );
             })

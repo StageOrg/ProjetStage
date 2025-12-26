@@ -7,7 +7,7 @@ import NotificationBell from "@/features/notifications/notificationBell";
 const links = [
   { href: "/enseignant/dashboard/donnees-personnelles", label: "Données personnelles", icon: <FaUser /> },
   { href: "/enseignant/dashboard/cours/mes-ues", label: "Mes UEs", icon: <FaChalkboardTeacher /> },
-  { href: "/enseignant/dashboard/projets", label: "Projets encadrés", icon: <FaProjectDiagram /> },
+  { href: "/enseignant/dashboard/projets", label: "Projets", icon: <FaProjectDiagram /> },
   { href: "/enseignant/dashboard/articles", label: "Articles publiés", icon: <FaFileAlt /> },
   { href: "/enseignant/dashboard/encadrements", label: "Encadrements", icon: <FaUsers /> },
   { href: "/enseignant/dashboard/statistiques", label: "Statistiques", icon: <FaChartBar /> },

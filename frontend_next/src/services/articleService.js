@@ -4,7 +4,7 @@ const ArticleService = {
     // Récupérer tous les articles
     getMesArticles: async () => {
         try {
-            const response = await api.get("/notes/articles/");
+            const response = await api.get("/notes/articles/mes-articles/");
             return response.data;
         } catch (error) {
             console.error("Erreur lors de la récupération de la liste des articles:", error);
@@ -15,7 +15,7 @@ const ArticleService = {
     // Récupérer un article par ID
     getArticleById: async (id) => {
         try {
-            const response = await api.get(`/notes/articles/${id}/`);
+            const response = await api.get(`/notes/articles/publies-par-professeur/${id}/`);
             return response.data;
         } catch (error) {
             console.error(`Erreur lors de la récupération de l'article ${id}:`, error);
@@ -60,7 +60,7 @@ const ArticleService = {
 
     getArticleByProfId: async (profId) => {
         try {
-            const response = await api.get(`/notes/articles/par_professeur/${profId}/`);
+            const response = await api.get(`/notes/articles/par-professeurId/${profId}/`);
             return response.data;
         } catch (error) {
             console.error(`Erreur lors de la récupération des articles pour le professeur ${profId}:`, error);

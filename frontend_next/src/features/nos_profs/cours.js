@@ -148,7 +148,9 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
   const handleRowClick = (course) => {
     setSelectedCourse(course.code === selectedCourse?.code ? null : course);
     const SelectedUeId = course.id;
+    console.log("UE ID sélectionnée :", SelectedUeId);
     setSelectedUeId(SelectedUeId);
+    console.log("Redirection vers la page des infos de l'UE", SelectedUeId);
     router.push(`/nos-profs/${profId}/unites-d-enseignement/${SelectedUeId}/infos`);
   };
 
