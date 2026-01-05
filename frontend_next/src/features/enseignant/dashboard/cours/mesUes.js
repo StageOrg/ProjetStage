@@ -130,15 +130,10 @@ const sortedCourses = [...(filteredCourses || [])].sort((a, b) => {
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in">
       {/* Titre avec année scolaire et bouton + */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-center items-center mb-2">
         <h1 className="text-2xl font-bold text-blue-900">
-          Cours enseignés
+         Mes unités d'enseignement
         </h1>
-        <div className="flex items-center gap-4">
-          <div className="text-sm font-medium text-gray-600">
-            2023-2024 | Semestre 1
-          </div>
-        </div>
       </div>
 
       {/* Filtre */}

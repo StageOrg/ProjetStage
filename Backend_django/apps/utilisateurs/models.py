@@ -29,7 +29,7 @@ class Utilisateur(AbstractUser):
     
 
     # Lien vers le manager
-    objects = UtilisateurManager()
+    #objects = UtilisateurManager()
     
     def __str__(self):
         return f"{self.username} ({self.role})"
@@ -81,7 +81,7 @@ class Etudiant(models.Model):
 
 class Professeur(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="professeur")
-    titre = models.CharField(max_length=50)
+    titre = models.CharField(max_length=50, blank=True)
     bio = models.TextField(blank=True)
     photo = models.ImageField(upload_to='photos_profils/', null=True,blank=True)
     ues = models.ManyToManyField('page_professeur.UE', through='page_professeur.AffectationUe', blank=True)
@@ -104,11 +104,33 @@ class Gestionnaire(models.Model):
 class ChefDepartement(models.Model):
     utilisateur = models.OneToOneField(Utilisateur, on_delete=models.CASCADE, related_name="chef_dpt")
 
-class Connexion(models.Model):
-    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='connexions')
-    date_connexion = models.DateTimeField(auto_now_add=True)
-    ip = models.GenericIPAddressField()
-    statut = models.CharField(max_length=50)
-    navigateur = models.CharField(max_length=200)
-    resultat = models.TextField(blank=True)
-    
+class JournalAction(models.Model):
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="actions"
+    )
+
+    action = models.CharField(max_length=255)
+    objet = models.CharField(max_length=255, blank=True, null=True)
+
+    date_action = models.DateTimeField(auto_now_add=True)
+
+    ip = models.GenericIPAddressField(null=True, blank=True)
+
+    statut = models.CharField(
+        max_length=20,
+        choices=[
+            ('SUCCES', 'Succès'),
+            ('ECHEC', 'Échec')
+        ],
+        default='SUCCES'
+    )
+
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.utilisateur} - {self.action} - {self.date_action}"
+

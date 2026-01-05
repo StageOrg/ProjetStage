@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import EvaluationService from "@/services/evaluationsService";
+import UELibelle from "@/features/util/UELibelle";
 
 
 export default function Evaluations({ ue_id }) {
@@ -35,47 +36,63 @@ export default function Evaluations({ ue_id }) {
     };
 
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">Gestion des Évaluations</h1>
-           <ul>
-            {evaluations.length > 0 ? evaluations.map((ev) => (
-                <li key={ev.id} className="flex flex-col gap-2 border p-2 rounded mb-7">
-                <div className="flex items-center justify-between">
-                    <span>{ev.type} - {ev.poids}%</span> 
-                </div>
+        <div className="p-8 max-w-3xl mx-auto">
+  <h1 className="text-3xl font-bold mb-6 text-gray-800">
+    Gestion des Évaluations de l'UE <UELibelle ueId={ue_id} />
+  </h1>
 
-                {/* Si c'est un examen, on affecte à evaluationId la valeur de ev.id et on affiche les options */}
-                {ev.type === "Examen" && (
-                 <div className="flex gap-6 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                        type="radio"
-                        name={`anonymat-${ev.id}`} // groupe unique par évaluation
-                        value= "anonyme"
-                        checked={ev.anonyme === true} 
-                        onChange={(e) => handleAnonymatChange(ev.id, true)}
-                        />
-                        Anonymé
-                    </label>
+  <ul className="space-y-6">
+    {evaluations.length > 0 ? (
+      evaluations.map((ev) => (
+        <li
+          key={ev.id}
+          className="bg-white shadow-md rounded-xl p-5 border hover:shadow-lg transition-shadow"
+        >
+          {/* En-tête */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-lg font-semibold text-gray-900">
+              {ev.type}
+            </span>
+            <span className="text-sm px-3 py-1 bg-blue-100 text-blue-600 rounded-full font-medium">
+              Poids : {ev.poids}%
+            </span>
+          </div>
 
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                        type="radio"
-                        name={`anonymat-${ev.id}`}
-                        value="non_anonyme"
-                        checked={ev.anonyme === false}
-                        onChange={(e) => handleAnonymatChange(ev.id, false)}
-                        />
-                        Non anonymé
-                    </label>
-                 </div>
-                )}
-                </li>
-            )) : (
-                <li className="py-2">Aucune évaluation trouvée.</li>
-            )}
-            </ul>
+          {/* Options examen */}
+          {ev.type === "Examen" && (
+            <div className="flex gap-10 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-gray-900">
+                <input
+                  type="radio"
+                  name={`anonymat-${ev.id}`}
+                  value="anonyme"
+                  checked={ev.anonyme === true}
+                  onChange={() => handleAnonymatChange(ev.id, true)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium">Anonymé</span>
+              </label>
 
-        </div>
+              <label className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-gray-900">
+                <input
+                  type="radio"
+                  name={`anonymat-${ev.id}`}
+                  value="non_anonyme"
+                  checked={ev.anonyme === false}
+                  onChange={() => handleAnonymatChange(ev.id, false)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium">Non anonymé</span>
+              </label>
+            </div>
+          )}
+        </li>
+      ))
+    ) : (
+      <li className="text-gray-500 text-center py-4">Aucune évaluation trouvée.</li>
+    )}
+  </ul>
+</div>
+
     );
 }

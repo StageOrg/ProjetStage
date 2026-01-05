@@ -8,6 +8,15 @@ const AnneeAcademiqueService = {
     const data = { libelle };
     const response = await api.post("/inscription/annee-academique/", data);
     return response.data;
+  },
+  updateAnneeAcademique: async (id, libelle) => {
+    const data = { libelle };
+    const response = await api.put(`/inscription/annee-academique/${id}/`, data);
+    return response.data;
+  },
+  deleteAnneeAcademique: async (id) => {
+    const response = await api.delete(`/inscription/annee-academique/${id}/`);
+    return response.data;
   }
 
 };

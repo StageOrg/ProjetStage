@@ -2,17 +2,20 @@
 import React, { useState, useEffect } from "react";
 import UEService from "@/services/ueService";
 import { Save, AlertCircle, Edit2, Link as LinkIcon } from "lucide-react";
+import UELibelle from "@/features/util/UELibelle";
+import { useRouter } from "next/navigation";
 
 export default function InfosUe({ ueId }) {
   const [formData, setFormData] = useState({
     description: "",
-    lien_support: "",
-    lien_tds: "",
-    lien_evaluations: "",
+    lien_cours: "",
+    lien_td: "",
+    lien_evaluation: "",
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState(false);
+  const router = useRouter();
 
   // Charger les infos actuelles de l’UE
   useEffect(() => {
@@ -21,13 +24,13 @@ export default function InfosUe({ ueId }) {
         const ue = await UEService.getUEById(ueId);
         setFormData({
           description: ue.description || "",
-          lien_support: ue.lien_support || "",
-          lien_tds: ue.lien_tds || "",
-          lien_evaluations: ue.lien_evaluations || "",
+          lien_cours: ue.lien_cours || "",
+          lien_td: ue.lien_td || "",
+          lien_evaluation: ue.lien_evaluation || "",
         });
         // Si aucune info, passer directement en mode édition
         const hasInfo =
-          ue.description || ue.lien_support || ue.lien_tds || ue.lien_evaluations;
+          ue.description || ue.lien_cours || ue.lien_td || ue.lien_evaluation;
         setEditing(!hasInfo);
       } catch (error) {
         console.error("Erreur lors du chargement de l’UE :", error);
@@ -62,12 +65,21 @@ export default function InfosUe({ ueId }) {
 
   // Vérifie si au moins une info est présente
   const hasInfo =
-    formData.description || formData.lien_support || formData.lien_tds || formData.lien_evaluations;
+    formData.description || formData.lien_cours || formData.lien_td || formData.lien_evaluation;
 
   return (
+    <div>
+    <div className="p-6 bg-white rounded-lg shadow-md mb-10">
+       <button
+          onClick={() => router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`)}
+          className="ml-4 text-lg font-bold text-blue-800"
+        >
+          Evaluations de l'UE <UELibelle ueId={ueId} />
+        </button> 
+    </div>
     <div className="p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-lg font-bold text-blue-800 mb-4">
-        Informations supplémentaires de l'UE
+        Informations supplémentaires de l'UE <UELibelle ueId={ueId} />
       </h2>
 
       {message && (
@@ -96,7 +108,7 @@ export default function InfosUe({ ueId }) {
           {formData.lien_support && (
             <div className="flex items-center justify-between border p-3 rounded">
               <a
-                href={formData.lien_support}
+                href={formData.lien_cours}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-blue-700 hover:underline"
@@ -116,7 +128,7 @@ export default function InfosUe({ ueId }) {
           {formData.lien_tds && (
             <div className="flex items-center justify-between border p-3 rounded">
               <a
-                href={formData.lien_tds}
+                href={formData.lien_td}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-blue-700 hover:underline"
@@ -133,10 +145,10 @@ export default function InfosUe({ ueId }) {
             </div>
           )}
 
-          {formData.lien_evaluations && (
+          {formData.lien_evaluation && (
             <div className="flex items-center justify-between border p-3 rounded">
               <a
-                href={formData.lien_evaluations}
+                href={formData.lien_evaluation}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-blue-700 hover:underline"
@@ -169,8 +181,8 @@ export default function InfosUe({ ueId }) {
 
           <input
             type="url"
-            name="lien_support"
-            value={formData.lien_support}
+            name="lien_cours  "
+            value={formData.lien_cours}
             onChange={handleChange}
             placeholder="Lien vers le support du cours"
             className="border p-2 rounded w-full"
@@ -178,8 +190,8 @@ export default function InfosUe({ ueId }) {
 
           <input
             type="url"
-            name="lien_tds"
-            value={formData.lien_tds}
+            name="lien_td"
+            value={formData.lien_td}
             onChange={handleChange}
             placeholder="Lien vers les TDs"
             className="border p-2 rounded w-full"
@@ -187,8 +199,8 @@ export default function InfosUe({ ueId }) {
 
           <input
             type="url"
-            name="lien_evaluations"
-            value={formData.lien_evaluations}
+            name="lien_evaluation"
+            value={formData.lien_evaluation}
             onChange={handleChange}
             placeholder="Lien vers les évaluations passées"
             className="border p-2 rounded w-full"
@@ -213,5 +225,6 @@ export default function InfosUe({ ueId }) {
         </div>
       )}
     </div>
+  </div>
   );
 }

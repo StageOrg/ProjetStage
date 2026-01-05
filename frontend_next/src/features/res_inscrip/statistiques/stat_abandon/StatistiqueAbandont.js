@@ -37,7 +37,7 @@ export default function StatistiquesAbandon() {
         }
       })
       .catch((err) => {
-        console.error("❌ Erreur chargement années:", err);
+        console.error(" Erreur chargement années:", err);
       });
   }, []);
 

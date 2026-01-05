@@ -1,5 +1,8 @@
 
 from rest_framework import serializers
+from apps.authentification.services.register_service import RegisterService
+from apps.utilisateurs.models import Utilisateur
+from .utils import generate_username
 from apps.utilisateurs.models import Etudiant, Utilisateur
 from apps.utilisateurs.serializers import (
     EtudiantSerializer,
@@ -10,6 +13,15 @@ from apps.utilisateurs.serializers import (
     AdministrateurSerializer,
     GestionnaireSerializer,
     ChefDepartementSerializer
+)
+from apps.utilisateurs.models import (
+    Professeur,
+    Secretaire,
+    RespInscription,
+    ResponsableSaisieNote,
+    Administrateur,
+    Gestionnaire,
+    ChefDepartement
 )
 from django.contrib.auth.password_validation import validate_password
 # Association rôle → serializer correspondant
@@ -24,6 +36,7 @@ ROLE_SERIALIZER_MAP = {
     'chef_dpt': ChefDepartementSerializer,
 }
 
+# Serializer principal pour l'enregistrement
 class RegisterSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=list(ROLE_SERIALIZER_MAP.keys()))
     data = serializers.DictField()
@@ -46,7 +59,62 @@ class RegisterSerializer(serializers.Serializer):
         nested_data = validated_data['validated_data']
         # On délègue la création à la logique du serializer spécifique
         return serializer_class().create(nested_data)
-    
+ 
+ 
+ 
+ 
+# Serializer pour l'enregistrement partiel
+class PartialRegisterSerializer(serializers.Serializer):
+    nom = serializers.CharField()
+    prenom = serializers.CharField()
+    email = serializers.EmailField()
+    telephone = serializers.CharField()
+    sexe = serializers.ChoiceField(choices=['M', 'F'])
+    role = serializers.ChoiceField(choices=Utilisateur.ROLES)
+
+    def create(self, validated_data):
+        prenom = validated_data['prenom']
+        nom = validated_data['nom']
+        role = validated_data['role']
+
+        username = generate_username(prenom, nom)
+
+        # ✅ 1. Création de l'utilisateur
+        user = Utilisateur.objects.create(
+            username=username,
+            first_name=prenom,
+            last_name=nom,
+            email=validated_data['email'],
+            telephone=validated_data['telephone'],
+            sexe=validated_data['sexe'],
+            role=role,
+            is_active=True
+        )
+
+        # ✅ 2. Création AUTOMATIQUE du profil lié selon le rôle
+       
+        if role == 'professeur':
+            Professeur.objects.create(utilisateur=user)
+
+        elif role == 'secretaire':
+            Secretaire.objects.create(utilisateur=user)
+
+        elif role == 'responsable_inscription':
+            RespInscription.objects.create(utilisateur=user)
+
+        elif role == 'responsable_notes':
+            ResponsableSaisieNote.objects.create(utilisateur=user)
+
+        elif role == 'admin':
+            Administrateur.objects.create(utilisateur=user)
+
+        return user
+
+
+
+
+
+# Serializer pour l'enregistrement d'un étudiant avec création utilisateur intégrée
 class StudentRegisterSerializer(serializers.ModelSerializer):
     # Champs utilisateur
     username = serializers.CharField()

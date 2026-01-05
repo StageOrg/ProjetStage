@@ -13,7 +13,10 @@ export default function AffectationUE() {
   const [showUESelector, setShowUESelector] = useState(false);
   const [selectedUEs, setSelectedUEs] = useState([]);
 
-  // Récupérer les professeurs et UEs au chargement
+  // ✅ Filtres
+  const [searchProf, setSearchProf] = useState("");
+  const [searchUE, setSearchUE] = useState("");
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -23,34 +26,53 @@ export default function AffectationUE() {
         const ueData = await UEService.getAllUE();
         setUes(ueData);
       } catch (error) {
-        console.error("Erreur lors du chargement des données :", error);
+        console.error("Erreur lors du chargement :", error);
       }
     }
     fetchData();
   }, []);
 
-  // Sélection d’un prof
   const handleSelectProf = async (prof) => {
     setSelectedProf(prof);
     setShowUESelector(false);
     setSelectedUEs([]);
 
-    // récupérer les UEs de ce prof
     try {
       const profUeData = await ProfesseurService.getMesUesId(prof.id);
-      setProfUes(profUeData); // attend un tableau d'UE avec au moins id et nom
+      setProfUes(profUeData);
     } catch (error) {
-      console.error("Erreur lors de la récupération des UEs du prof :", error);
+      console.error("Erreur récupération UEs :", error);
       setProfUes([]);
     }
   };
 
-  // Toggle sélection d'une UE à affecter
-  const handleToggleUE = (ue) => {
-    if (selectedUEs.includes(ue.id)) {
-      setSelectedUEs(selectedUEs.filter((id) => id !== ue.id));
-    } else {
-      setSelectedUEs([...selectedUEs, ue.id]);
+  // ✅ Toggle avec affectation ET désaffectation
+  const handleToggleUE = async (ue) => {
+    const isAlreadyAffected = profUes.some((pu) => pu.id === ue.id);
+
+    try {
+      if (isAlreadyAffected) {
+        if (window.confirm("Êtes-vous sûr de vouloir désaffecter cette UE ?")) {
+
+        // ✅ DESAFFECTATION
+        await AffectationService.desaffecter(selectedProf.id, ue.id);
+
+        setProfUes((prev) => prev.filter((u) => u.id !== ue.id));
+        setSelectedUEs((prev) => prev.filter((id) => id !== ue.id));
+
+        console.log("Désaffectée !");
+        }
+      } else {
+        // ✅ AFFECTATION
+        await AffectationService.affecter(ue.id, selectedProf.id);
+
+        setProfUes((prev) => [...prev, ue]);
+        setSelectedUEs((prev) => [...prev, ue.id]);
+
+        console.log("Affectée !");
+      }
+    } catch (error) {
+      console.error("Erreur affectation/désaffectation :", error);
     }
   };
 
@@ -58,147 +80,136 @@ export default function AffectationUE() {
     setShowUESelector(true);
   };
 
-const handleValidate = async ( ) => {
-  if (!selectedProf || selectedUEs.length === 0) return;
-  try {
-    // Vérifier combien d'UEs sont sélectionnées
-    console.log("Nombre d'UEs à affecter :", selectedUEs.length);
+  // ✅ FILTRAGE PROF
+  const profFiltered = professeurs.filter((prof) =>
+    `${prof.utilisateur.first_name} ${prof.utilisateur.last_name}`
+      .toLowerCase()
+      .includes(searchProf.toLowerCase())
+  );
 
-    // Boucler sur chaque UE et appeler l'API
-    for (let i = 0; i < selectedUEs.length; i++) {
-      let ueId = selectedUEs[i];
-      await AffectationService.affecter(ueId, selectedProf.id);
-      console.log(`UE ${ueId} affectée au prof ${selectedProf.id}`);
-    }
-
-    // Mettre à jour localement pour un retour immédiat
-    const nouvellesUes = ues.filter((ue) => selectedUEs.includes(ue.id));
-    setProfUes((prev) => [...prev, ...nouvellesUes]);
-
-    // Réinitialiser la sélection et fermer le sélecteur
-    setSelectedUEs([]);
-    setShowUESelector(false);
-
-    console.log("Toutes les UEs ont été affectées avec succès !");
-  } catch (error) {
-    console.error("Erreur lors de l'affectation :", error);
-    console.log(`UE ${ueId} non affectée au prof ${selectedProf.id}`);
-  }
-};
+  // ✅ FILTRAGE UE
+  const ueFiltered = ues.filter((ue) =>
+    ue.libelle.toLowerCase().includes(searchUE.toLowerCase())
+  );
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-bold mb-6">Affectation des UEs aux professeurs</h2>
 
       <div className="grid grid-cols-2 gap-6">
-        {/* Colonne gauche : Liste des professeurs */}
+
+        {/* ✅ COLONNE PROFESSEURS */}
         <div>
           <h3 className="font-semibold mb-2">Liste des professeurs</h3>
-          <table className="w-full border-collapse border border-gray-300">
+
+          {/* ✅ Filtre prof */}
+          <input
+            type="text"
+            placeholder="Rechercher un professeur..."
+            value={searchProf}
+            onChange={(e) => setSearchProf(e.target.value)}
+            className="w-full mb-3 p-2 border rounded"
+          />
+
+          <table className="w-150 border-collapse">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border p-2">Nom</th>
-                <th className="border p-2">Prénom</th>
-                <th className="border p-2">Titre</th>
+                <th className="p-2">Nom</th>
+                <th className="p-2">Prénom</th>
+                <th className="p-2">Titre</th>
               </tr>
             </thead>
             <tbody>
-              {professeurs && professeurs.length > 0 ? (
-                professeurs.map((prof) => (
-                  <tr
-                    key={prof.id}
-                    className={`cursor-pointer hover:bg-gray-100 ${
-                      selectedProf?.id === prof.id ? "bg-blue-100" : ""
-                    }`}
-                    onClick={() => handleSelectProf(prof)}
-                  >
-                    <td className="border p-2">{prof.utilisateur.first_name}</td>
-                    <td className="border p-2">{prof.utilisateur.last_name}</td>
-                    <td className="border p-2">{prof.titre}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td className="border p-2" colSpan="3">Aucun professeur disponible.</td>
+              {profFiltered.map((prof) => (
+                <tr
+                  key={prof.id}
+                  className={`cursor-pointer hover:bg-gray-100 ${
+                    selectedProf?.id === prof.id ? "bg-blue-100" : ""
+                  }`}
+                  onClick={() => handleSelectProf(prof)}
+                >
+                  <td className="p-2">{prof.utilisateur.first_name}</td>
+                  <td className="p-2">{prof.utilisateur.last_name}</td>
+                  <td className="p-2">{prof.titre}</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Colonne droite : UEs du prof sélectionné */}
+        {/* ✅ COLONNE UEs */}
         <div>
           {selectedProf ? (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">
-                UEs de {selectedProf.titre} {selectedProf.utilisateur.last_name} {selectedProf.utilisateur.first_name}
+            <>
+              <h3 className="text-lg font-semibold mb-3">
+                UEs de {selectedProf.utilisateur.last_name}
               </h3>
 
               <button
                 onClick={handleAddUE}
                 className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
               >
-                ➕ Affecter une UE
+                ➕ Gérer les UE
               </button>
 
-              {/* Liste des UEs déjà affectées */}
-              {profUes?.length > 0 ? (
+              {/* ✅ UEs actuelles */}
+              {profUes.length > 0 ? (
                 <ul className="list-disc ml-6 mb-4">
                   {profUes.map((ue) => (
-                    <li key={ue.code}>{ue.libelle}</li>
+                    <li key={ue.id}>{ue.libelle}</li>
                   ))}
                 </ul>
               ) : (
                 <p className="text-gray-500 mb-4">Aucune UE affectée.</p>
               )}
 
-              {/* Sélecteur d’UEs à affecter */}
               {showUESelector && (
                 <div className="p-4 border rounded bg-gray-50">
-                  <h4 className="font-medium mb-2">Sélectionnez les UEs à affecter :</h4>
-                  <table className="w-full border-collapse border border-gray-300 mb-4">
+
+                  {/* ✅ Filtre UE */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher une UE..."
+                    value={searchUE}
+                    onChange={(e) => setSearchUE(e.target.value)}
+                    className="w-full mb-3 p-2 border rounded"
+                  />
+
+                  <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-gray-200">
-                        <th className="border p-2">Choisir</th>
-                        <th className="border p-2">Nom de l’UE</th>
+                        <th className="p-2 text-center">Choisir</th>
+                        <th className="p-2">Nom UE</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {ues.map((ue) => (
-                        <tr key={ue.id}>
-                          <td className="border p-2 text-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedUEs.includes(ue.id)}
-                              onChange={() => handleToggleUE(ue)}
-                              disabled={(profUes ?? []).some((pu) => pu.id === ue.id)}
-                            />
-                          </td>
-                          <td
-                            className={`border p-2 ${
-                              (profUes ?? []).some((pu) => pu.id === ue.id)
-                                ? "text-gray-400 italic"
-                                : ""
-                            }`}
-                          >
-                            {ue.libelle}
-                          </td>
-                        </tr>
-                      ))}
+                      {ueFiltered.map((ue) => {
+                        const isChecked = profUes.some(
+                          (pu) => pu.id === ue.id
+                        );
+
+                        return (
+                          <tr key={ue.id}>
+                            <td className="p-2 text-center">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleUE(ue)}
+                              />
+                            </td>
+                            <td className="p-2">{ue.libelle}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
 
-                  <button
-                    onClick={handleValidate}
-                    className="bg-green-600 text-white px-4 py-2 rounded"
-                  >
-                    ✅ Valider
-                  </button>
                 </div>
               )}
-            </div>
+            </>
           ) : (
-            <p className="text-gray-500">Sélectionnez un professeur à gauche.</p>
+            <p className="text-gray-500">
+              Sélectionnez un professeur.
+            </p>
           )}
         </div>
       </div>

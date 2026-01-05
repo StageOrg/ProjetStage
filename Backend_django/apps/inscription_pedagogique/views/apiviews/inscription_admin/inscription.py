@@ -200,7 +200,7 @@ class InscriptionEtudiantView(APIView):
         Lien direct : {lien_premiere}
 
         Cordialement,
-        Responsable d'inscription 
+        Ecole Polytecnique de Lomé
         """
 
         send_mail(

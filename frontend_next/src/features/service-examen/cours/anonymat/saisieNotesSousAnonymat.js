@@ -59,10 +59,9 @@ export default function SaisieNotesSousAnonymat({
       <table className="w-full border-collapse border">
         <thead className="bg-gray-100">
           <tr>
-            <th className="border px-2 py-1 text-center">N° Anonyme</th>
+            <th className="border px-2 py-1 text-center">N° Anonymat</th>
             <th className="border px-2 py-1 text-center">Note</th>
-            <th className="border px-2 py-1 text-center">Moyenne</th>
-          </tr>
+         </tr>
         </thead>
         <tbody>
           {/* Affichage de tous les étudiants.
@@ -94,8 +93,10 @@ export default function SaisieNotesSousAnonymat({
                         setEditedData((prev) => ({ ...prev, note: e.target.value }))
                       }
                       onBlur={() => handleSaveNote(index, etu)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSaveNote(index, etu)}
-                      autoFocus
+                       onKeyDown={(e) => e.key === "Enter" && handleSaveNote(index, etu)
+                      }
+                      autoFocus 
+                      
                       className="w-16 text-center border rounded"
                     />
                   ) : (
@@ -120,11 +121,8 @@ export default function SaisieNotesSousAnonymat({
                     </span>
                   )}
                   {!etu.num_anonymat && (
-                    <div className="text-xs text-red-600 mt-1">Numéro anonyme manquant</div>
+                    <div className="text-xs text-red-600 mt-1">Numéro anonymat manquant</div>
                   )}
-                </td>
-                <td className="border px-2 py-1 text-center font-semibold">
-                  {calculerMoyenne(etu)}
                 </td>
               </tr>
             );

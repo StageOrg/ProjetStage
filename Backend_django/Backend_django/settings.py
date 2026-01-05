@@ -17,7 +17,7 @@ SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = True
 #ALLOWED_HOSTS = ["*"]  # Change this to your actual domain or IP address in production
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Configuration plus sécurisée pour le développement
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'apps.page_professeur',
     'apps.utilisateurs',
     'apps.authentification',
+    'apps.notifications',
     
      # Packages tiers
     'rest_framework',
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,7 +56,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 # Configuration CORS  sécurisée
@@ -62,15 +63,29 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",  
+    "https://epl-pedago.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # CSRF Configuration
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-]
+    "https://epl-projet-api.onrender.com",
+    "https://epl-pedago.vercel.app",
+    ]
 
 ROOT_URLCONF = 'Backend_django.urls'
 
@@ -101,6 +116,7 @@ DATABASES = {
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default=5432, cast=int),
         
+
     }
 }
 # Media files
@@ -225,5 +241,6 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 PASSWORD_RESET_TIMEOUT = 10 * 24 * 60 * 60
+EMAIL_TIMEOUT = 30
 # URL Frontend
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaUsers } from "react-icons/fa";
-import EncadrementService from "@/services/encadrementService"; // À adapter selon ton service
-
+import EncadrementService from "@/services/encadrementService"; 
+import ProfInfos from "@/features/util/profInfos";
 export default  function EncadrementsPublic({ profId }) {
   const [encadrements, setEncadrements] = useState([]);
   const [search, setSearch] = useState("");
@@ -46,7 +46,7 @@ export default  function EncadrementsPublic({ profId }) {
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in max-w-5xl mx-auto">
       <h2 className="flex items-center gap-3 text-2xl font-bold text-blue-900 mb-6">
-        <FaUsers className="text-blue-700" /> Encadrements
+        <FaUsers className="text-blue-700" /> Encadrements du <ProfInfos profId={profId} />
       </h2>
 
       {/* Filtre recherche */}

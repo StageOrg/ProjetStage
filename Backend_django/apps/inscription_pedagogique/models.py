@@ -73,7 +73,7 @@ class PeriodeInscription(models.Model):
 class ImportEtudiant(models.Model):
     OPERATION_CHOICES = [
         ('manuel', 'Création manuelle'),
-        ('import', 'Import fichier'),        # ← CSV/XLSX/PDF → tout en un
+        ('import', 'Import fichier'),        
         ('suppression', 'Suppression étudiant'),
     ]
 
@@ -84,16 +84,12 @@ class ImportEtudiant(models.Model):
         null=True,
         blank=True
     )
-    fichier = models.FileField(upload_to='imports_etudiants/', null=True, blank=True)
-    
+    fichier = models.FileField(upload_to='imports_etudiants/', null=True, blank=True) 
     methode = models.CharField(max_length=20, choices=OPERATION_CHOICES, default='manuel')
-
     reussis = models.PositiveIntegerField(default=0)
     echoues = models.PositiveIntegerField(default=0)
     date_import = models.DateTimeField(auto_now_add=True, db_index=True)
-
     details = models.JSONField(default=dict, blank=True)
-
     class Meta:
         ordering = ['-date_import']
         verbose_name = "Historique des opérations étudiants"

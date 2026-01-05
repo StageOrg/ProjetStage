@@ -1,21 +1,22 @@
 "use client";
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import FiliereService from "@/services/filiereService";
 import ParcoursService from "@/services/parcoursService";
 import AnneeEtudeService from "@/services/anneeEtudeService";
 import SemestreService from "@/services/semestreService";
-import { FaClipboardList, FaSort, FaSortUp, FaSortDown, FaPlus, FaTimes } from "react-icons/fa";
-import UEService from "@/services/ueService";
-import ProfService from "@/services/profService";
+import { FaClipboardList, FaSort, FaSortUp, FaSortDown, FaCheckCircle } from "react-icons/fa";
 import ProfesseurService from "@/services/profService";
+import EtudiantService from "@/services/etudiantService";
+import ProfInfos from "@/features/util/profInfos";
 
 export default function UEs({profId}) {
 const [filieres, setFilieres] = useState([]);
 const [parcours, setParcours] = useState([]);
 const [anneesEtude, setAnneesEtude] = useState([]);
 const [semestres, setSemestres] = useState([]);
-const [courses, setCourses] = useState([]);
+const [coursesProf, setCoursesProf] = useState([]);
+const [coursesEtudiant, setCoursesEtudiant] = useState([]);
 const [selectedFiliere, setSelectedFiliere] = useState("");
 const [selectedParcours, setSelectedParcours] = useState("");
 const [selectedAnneeEtude, setSelectedAnneeEtude] = useState("");
@@ -28,13 +29,13 @@ const [selectedSemestreObject, setSelectedSemestreObject] = useState(null);
 const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 const [selectedUeId, setSelectedUeId] = useState(null);
 const router = useRouter();
+const role = localStorage.getItem("user_role");
 
 //recuperer les filieres
 useEffect(() => {
     FiliereService.getFilieres()
       .then((data) => setFilieres(data))
       .catch((err) => console.error(err));
-      console.log("Filieres data result:", filieres);
 }, []);
 
 //recuperer les parcours
@@ -42,7 +43,6 @@ useEffect(() => {
     ParcoursService.getParcours()
       .then((data) => setParcours(data))
       .catch((err) => console.error(err));
-      console.log("Parcours data:", parcours);
 }, []);
 
 //recuperer les années d'étude
@@ -50,22 +50,47 @@ useEffect(() => {
     AnneeEtudeService.getAnneesEtude()
       .then((data) => setAnneesEtude(data))
       .catch((err) => console.error(err));
-      console.log("Annees d'etude data:", anneesEtude);
 }, []);
+
 //recuperer les semestres
 useEffect(() => {
     SemestreService.getSemestres()
       .then((data) => setSemestres(data))
       .catch((err) => console.error(err));
-      console.log("Semestres data:", semestres);
 }, []);
-// récupère les UEs 
+
+// récupère les UEs du professeur
 useEffect(() => {
     ProfesseurService.getMesUesId(profId)
-      .then((data) => setCourses(data))
+      .then((data) => {
+        setCoursesProf(data);
+        console.log("UEs du professeur:", data);
+      })
       .catch((err) => console.error(err));
-      console.log("Courses data:", courses);
+  }, [profId]);
+
+// recuperer les ues de l'étudiant
+useEffect(() => {
+  if (role !== "etudiant") return;
+    const fetchUes = async () => {
+      try {
+        const ues = await EtudiantService.getMesUes();
+        setCoursesEtudiant(ues);
+        console.log("UEs de l'étudiant:", ues);
+      }
+      catch (err) {
+        console.error("Erreur récupération UEs de l'étudiant:", err);
+      }
+    };
+    fetchUes();
   }, []);
+
+// Fonction pour vérifier si une UE du prof correspond à une UE de l'étudiant
+const isUeCorrespondante = (ueProf) => {
+  return coursesEtudiant.some(ueEtudiant => 
+    ueEtudiant.id === ueProf.id || ueEtudiant.code === ueProf.code
+  );
+};
 
 // Gestion du tri
   const requestSort = (key) => {
@@ -82,13 +107,14 @@ useEffect(() => {
       ? <FaSortUp className="ml-1 text-blue-600" /> 
       : <FaSortDown className="ml-1 text-blue-600" />;
   };
-  const trouverObjetParId = (array,id) => {
+
+  const trouverObjetParId = (array, id) => {
     const objet = array?.find(f => f.id === parseInt(id));
     return objet;
   }
 
 //Filtres
-const filteredCourses = courses.filter((c) => {
+const filteredCourses = coursesProf.filter((c) => {
   const filiereOk =
     !selectedFiliere ||
     trouverObjetParId(filieres, c.filiere)?.abbreviation === selectedFiliere;
@@ -96,7 +122,6 @@ const filteredCourses = courses.filter((c) => {
   const parcoursOk =
     !selectedParcours ||
     trouverObjetParId(parcours, c.parcours)?.libelle === selectedParcours;
-    console.log("ParcoursOk:", parcoursOk);
 
   const semestreOk =
     !selectedSemestre || trouverObjetParId(semestres, c.semestre)?.libelle === selectedSemestre;
@@ -122,24 +147,20 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
   // Gestion de la sélection d'une ligne
   const handleRowClick = (course) => {
     setSelectedCourse(course.code === selectedCourse?.code ? null : course);
-    const SelectedUeId= course.id;
-    console.log("SelectedUeId:", SelectedUeId);
+    const SelectedUeId = course.id;
+    console.log("UE ID sélectionnée :", SelectedUeId);
     setSelectedUeId(SelectedUeId);
+    console.log("Redirection vers la page des infos de l'UE", SelectedUeId);
     router.push(`/nos-profs/${profId}/unites-d-enseignement/${SelectedUeId}/infos`);
   };
 
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in">
       {/* Titre avec année scolaire et bouton + */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-center items-center mb-2">
         <h1 className="text-2xl font-bold text-blue-900">
-          Cours enseignés
+          Unités d'Enseignement du <ProfInfos profId={profId} />
         </h1>
-        <div className="flex items-center gap-4">
-          <div className="text-sm font-medium text-gray-600">
-            2023-2024 | Semestre 1
-          </div>
-        </div>
       </div>
 
       {/* Filtre */}
@@ -153,9 +174,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
           onChange={(e) => {
               const filiereObj = filieres.find(f => f.abbreviation === e.target.value);
               setSelectedFiliere(e.target.value);
-              console.log("Valeur sélectionnée:", e.target.value); 
               setSelectedFiliereObject(filiereObj);
-              console.log("Filiere choisie:", filiereObj);
           }}
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
@@ -173,7 +192,6 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
             const parcoursObj = parcours.find(p => p.libelle === e.target.value);
             setSelectedParcours(e.target.value)
             setSelectedParcoursObject(parcoursObj);
-             console.log("Parcours choisi:", parcoursObj); 
           }}
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
@@ -191,8 +209,7 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
             const anneeObj = anneesEtude.find(a => a.libelle === e.target.value);
             setSelectedAnneeEtude(e.target.value)
             setSelectedAnneeEtudeObject(anneeObj);
-            console.log("Année d'étude choisie:", anneeObj);
-          } }
+          }}
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Année d'étude</option>
@@ -209,7 +226,6 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
             const semestreObj = semestres.find(s => s.libelle === e.target.value);
             setSelectedSemestre(e.target.value)
             setSelectedSemestreObject(semestreObj);
-            console.log("Semestre choisi:", semestreObj);
           }}
           className="px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
@@ -227,6 +243,11 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
             <tr className="text-left text-sm font-medium text-gray-700">
+              <th className="px-4 py-3 border-b border-gray-200 bg-gray-50 w-12">
+                <div className="flex items-center justify-center">
+                  ✓
+                </div>
+              </th>
               <th 
                 className="px-4 py-3 border-b border-gray-200 bg-gray-50 cursor-pointer"
                 onClick={() => requestSort('code')}
@@ -285,6 +306,11 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
                 }`}
                 onClick={() => handleRowClick(course)}
               >
+                <td className="px-4 py-3 border-b border-gray-200 text-center">
+                  {isUeCorrespondante(course) && (
+                    <FaCheckCircle className="text-green-500 text-xl mx-auto" />
+                  )}
+                </td>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium text-gray-900">
                   {course.code}
                 </td>
@@ -295,16 +321,16 @@ const sortedCourses = [...filteredCourses].sort((a, b) => {
                   {course.nbre_credit}
                 </td>
                 <td className="px-4 py-3 border-b border-gray-200">
-                  {trouverObjetParId(parcours,course.filiere)?.libelle }
+                  {trouverObjetParId(parcours, course.filiere)?.libelle}
                 </td>
                 <td className="px-4 py-3 border-b border-gray-200">
-                  {trouverObjetParId(filieres,course.filiere)?.abbreviation }
+                  {trouverObjetParId(filieres, course.filiere)?.abbreviation}
                 </td>
                 <td className="px-4 py-3 border-b border-gray-200 text-center">
-                  {trouverObjetParId(anneesEtude,course.annee_etude)?.libelle }
+                  {trouverObjetParId(anneesEtude, course.annee_etude)?.libelle}
                 </td>
                 <td className="px-4 py-3 border-b border-gray-200 text-center">
-                  {trouverObjetParId(semestres,course.semestre)?.libelle }
+                  {trouverObjetParId(semestres, course.semestre)?.libelle}
                 </td>
               </tr>
             ))}

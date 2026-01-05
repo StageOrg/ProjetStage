@@ -8,6 +8,8 @@ import {
 } from "react-icons/fa";
 import etudiantDashboardService from "@/services/etudiants/etudiantDashboardService";
 
+import toast from 'react-hot-toast';
+
 // FONCTION DE SÉCURITÉ : trim() sans erreur
 const safeTrim = (value) => (value ?? '').toString().trim();
 
@@ -210,9 +212,9 @@ export default function DonneesPersonnelles() {
       
       // Message différent si num_carte a été ajouté
       if (canEditNumCarte() && formData.num_carte) {
-        alert('Informations mises à jour avec succès ! Votre numéro de carte est maintenant verrouillé.');
+        toast.success('Informations mises à jour avec succès ! Votre numéro de carte est maintenant verrouillé.');
       } else {
-        alert('Informations mises à jour avec succès !');
+        toast.success('Informations mises à jour avec succès !');
       }
 
     } catch (err) {

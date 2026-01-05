@@ -6,6 +6,7 @@ import { saveAs } from "file-saver";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import UEService from "@/services/ueService";
+import UELibelle from "@/features/util/UELibelle";
 pdfMake.vfs = pdfFonts.default ? pdfFonts.default.vfs : pdfFonts.vfs;
 
 function ListeEtudiantsUE({ ueId }) {
@@ -34,9 +35,9 @@ function ListeEtudiantsUE({ ueId }) {
     const data = etudiants.map((etu) => {
       const row = {
         "N° Carte": etu.num_carte,
-        Nom: etu.utilisateur.last_name,
-        Prénom: etu.utilisateur.first_name,
-        Sexe: etu.utilisateur.sexe,
+        Nom: etu.last_name,
+        Prénom: etu.first_name,
+        Sexe: etu.sexe,
         Semestre: ' ',
         Emmargement: ' ',
       };
@@ -59,9 +60,9 @@ function ListeEtudiantsUE({ ueId }) {
     etudiants.forEach((etu) => {
       const row = [
         etu.num_carte,
-        etu.utilisateur.last_name,
-        etu.utilisateur.first_name,
-        etu.utilisateur.sexe,
+        etu.last_name,
+        etu.first_name,
+        etu.sexe,
         ' ',
         ' '
       ];
@@ -86,7 +87,7 @@ function ListeEtudiantsUE({ ueId }) {
   return (
     <div className="bg-transparent px-8 py-10 w-full h-full animate-fade-in">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-bold text-2xl">Étudiants inscrits</h2>
+        <h2 className="font-bold text-2xl">Étudiants inscrits à l'UE <UELibelle ueId={ueId} /></h2>
         <div className="flex gap-3">
           <button onClick={exportPDF} className="p-2 bg-red-500 text-white rounded-lg flex items-center gap-2">
             <FileDown size={18} /> PDF
@@ -112,9 +113,9 @@ function ListeEtudiantsUE({ ueId }) {
           {etudiants.map((etu, index) => (
             <tr key={etu.id} className="even:bg-gray-50">
               <td className="border px-2 py-1 text-center">{etu.num_carte}</td>
-              <td className="border px-2 py-1">{etu.utilisateur.last_name}</td>
-              <td className="border px-2 py-1">{etu.utilisateur.first_name}</td>
-              <td className="border px-2 py-1 text-center">{etu.utilisateur.sexe}</td>
+              <td className="border px-2 py-1">{etu.last_name}</td>
+              <td className="border px-2 py-1">{etu.first_name}</td>
+              <td className="border px-2 py-1 text-center">{etu.sexe}</td>
                 <td className="border px-2 py-1 text-center">{' '}</td>
                 <td className="border px-2 py-1 text-center">{' '}</td>
             </tr>

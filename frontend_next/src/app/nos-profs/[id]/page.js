@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
 export default async  function DashboardProfRedirect({ params }) {
-    const { id } = params;
-  redirect(`/nos-profs/${id}/unites-d-enseignement`);
-  return null;
+  console.log("Params reçus dans le redirect:", params);
+  const { id } = params;
+  console.log("ID du professeur pour le redirect:", id);
+  redirect(`/nos-profs/${id}/profil`);
 } 

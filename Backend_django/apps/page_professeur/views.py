@@ -4,6 +4,8 @@ from django.shortcuts import render
 # Create your views here.
 
 from rest_framework import viewsets, status
+from apps.utilisateurs.services.journal import enregistrer_action
+from apps.notifications.services.notification_service import NotificationService
 from apps.page_professeur.services import calculer_validation_ue, obtenir_resultats_etudiant, obtenir_ues_validees, calculer_tous_resultats_ue
 from .models import UE, AffectationUe, Evaluation, Note, Projet, Recherche, Article, Encadrement,PeriodeSaisie, Anonymat, ResultatUE
 from apps.inscription_pedagogique.models import Inscription
@@ -16,6 +18,14 @@ from apps.utilisateurs.serializers import EtudiantSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Max
+from django.core.mail import send_mail
+from django.conf import settings
+from urllib import request
+from rest_framework import viewsets
+from .models import Note
+from .serializers import NoteSerializer
+from ..utilisateurs.services.journal import enregistrer_action
+
 
 class UEViewSet(viewsets.ModelViewSet):
     queryset = UE.objects.all().order_by('code')
@@ -54,15 +64,7 @@ class UEViewSet(viewsets.ModelViewSet):
             return queryset.filter(professeur=self.request.user.professeur)
         
         return queryset
-        
-# Récupération des étudiants inscrits à une UE donnée
-    """  @action(detail=True, methods=['get'])
-    def etudiantsInscrits(self, request, pk=None):
-        ue = self.get_object()
-        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue)
-        serializer = EtudiantSerializer(etudiantsInscrits, many=True)
-        return Response(serializer.data) """
-    
+
    
 # Récupération des étudiants inscrits à une UE donnée
 
@@ -141,7 +143,7 @@ class UEViewSet(viewsets.ModelViewSet):
             #  Récupération du numéro d’anonymat
             anonymat_obj = Anonymat.objects.filter(etudiant=etu, ue=ue, annee_academique_id=annee_id).first()
             numero_anonymat = anonymat_obj.numero if anonymat_obj else None
-
+            num_anonymat_id = anonymat_obj.id if anonymat_obj else None
             #  Récupération des notes
             notes_dict = {}
             for ev in evaluations:
@@ -154,6 +156,7 @@ class UEViewSet(viewsets.ModelViewSet):
                 "prenom": etu.utilisateur.first_name,
                 "num_carte": etu.num_carte,
                 "num_anonymat": numero_anonymat,
+                "num_anonymat_id": num_anonymat_id,
                 "sexe": etu.utilisateur.sexe,
                 "notes": notes_dict,
             })
@@ -162,7 +165,7 @@ class UEViewSet(viewsets.ModelViewSet):
         pagination_class = None
 
     
-        
+# Filtrer les UEs par parcours, filière et année d'étude    
     @action(detail=False, methods=['get'], url_path='filtrer')
     def filtrer(self, request):
         """
@@ -209,28 +212,7 @@ class UEViewSet(viewsets.ModelViewSet):
                 'error': f"Erreur lors du calcul des résultats: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    #  Obtenir les résultats d'une UE
-    @action(detail=True, methods=['get'], url_path='resultats')
-    def get_resultats(self, request, pk=None):
-        """
-        Récupère tous les résultats des étudiants pour cette UE
-        URL: GET /notes/ues/{id}/resultats/
-        """
-        ue = self.get_object()
-        
-        resultats = ResultatUE.objects.filter(ue=ue).select_related('etudiant', 'etudiant__utilisateur')
-        serializer = ResultatUESerializer(resultats, many=True)
-        
-        return Response({
-            'ue': {
-                'id': ue.id,
-                'code': ue.code,
-                'libelle': ue.libelle,
-                'composite': ue.composite
-            },
-            'resultats': serializer.data
-        })
-        
+  
     #Endpoint pour recuperer les ues qui ont des examens anonymes
     @action(detail=False, methods=["get"], url_path="filter-examen")
     def ues_avec_examen(self, request):
@@ -239,7 +221,6 @@ class UEViewSet(viewsets.ModelViewSet):
         """
         # 🔍 Filtrer les UEs dont au moins une évaluation est de type 'Examen'
         ues = UE.objects.filter(evaluations__type="Examen", evaluations__anonyme=True).distinct()
-
         serializer = self.get_serializer(ues, many=True)
         return Response(serializer.data)
     pagination_class = None
@@ -264,16 +245,162 @@ class UEViewSet(viewsets.ModelViewSet):
                 ues_sans_notes.append(ue)
 
         serializer = self.get_serializer(ues_sans_notes, many=True)
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Liste des UEs avec examen anonyme sans notes",
+            objet="UEs avec examen anonyme sans notes",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des UEs avec examen anonyme sans notes consultée"
+        )
         return Response(serializer.data)
     pagination_class = None
+    
+    # ✅ Action pour récupérer l'état d'une UE spécifique
+    @action(detail=True, methods=["get"], url_path="controle-notes")
+    def controle_notes_ue(self, request, pk=None):
+        # ✅ Sécurité : seul responsable des notes ou admin
+        if not hasattr(request.user, "resp_notes") and not request.user.is_superuser:
+            return Response(
+                {"error": "Accès interdit"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            ue = UE.objects.prefetch_related("evaluations").get(id=pk)
+        except UE.DoesNotExist:
+            return Response(
+                {"error": "UE non trouvée"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        etat_ue = {
+            "ue_id": ue.id,
+            "ue_libelle": ue.libelle,
+            "ue_code": ue.code,
+            "etat_global": "complet",   # deviendra "incomplet" si une note manque
+            "evaluations": [],
+            "professeur": None
+        }
+
+        # ✅ Récupération du professeur via AffectationUe
+        affectation = AffectationUe.objects.filter(ue=ue).select_related(
+            "professeur", "professeur__utilisateur"
+        ).first()
+
+        if affectation:
+            professeur = affectation.professeur
+            etat_ue["professeur"] = {
+                "id": professeur.utilisateur.id,
+                "nom": professeur.utilisateur.last_name,
+                "prenom": professeur.utilisateur.first_name
+            }
+
+        # ✅ Vérification des notes par évaluation
+        evaluations = Evaluation.objects.filter(ue=ue)
+
+        for evaluation in evaluations:
+            notes_exist = Note.objects.filter(evaluation=evaluation).exists()
+
+            if notes_exist:
+                etat_ue["evaluations"].append({
+                    "evaluation_id": evaluation.id,
+                    "type": evaluation.type,
+                    "etat": "saisi"
+                })
+            else:
+                etat_ue["evaluations"].append({
+                    "evaluation_id": evaluation.id,
+                    "type": evaluation.type,
+                    "etat": "manquant"
+                })
+                etat_ue["etat_global"] = "incomplet"
+        enregistrer_action(
+            utilisateur=request.user,
+            action="State d'une UE pour contrôle des notes",
+            objet=f"UE  {ue.code}{ue.libelle}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des UEs avec examen anonyme consultée"
+        )
+
+        return Response(etat_ue, status=status.HTTP_200_OK)
 
 
+  #  Obtenir les résultats d'une UE
+    @action(detail=True, methods=['get'], url_path='resultats')
+    def get_resultats(self, request, pk=None):
+        """
+        Récupère tous les résultats des étudiants pour cette UE
+        URL: GET /notes/ues/{id}/resultats/
+        """
+        ue = self.get_object()
+        
+        resultats = ResultatUE.objects.filter(ue=ue).select_related('etudiant', 'etudiant__utilisateur')
+        serializer = ResultatUESerializer(resultats, many=True)
+        
+        return Response({
+            'ue': {
+                'id': ue.id,
+                'code': ue.code,
+                'libelle': ue.libelle,
+                'composite': ue.composite
+            },
+            'resultats': serializer.data
+        })
+        
 
 class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
     pagination_class = None
 
+     # ✅ CREATE
+    def perform_create(self, serializer):
+        evaluation  = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Création d'une évaluation",
+            objet=f"Évaluation ID {evaluation.type} pour UE ID {evaluation.ue}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une évaluation a été créée avec succès"
+        )
+
+    # ✅ UPDATE (PUT & PATCH)
+    def perform_update(self, serializer):
+        evaluation = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Modification d'une évaluation",
+            objet=f"Évaluation ID {evaluation.id} pour UE ID {evaluation.ue.id}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une évaluation a été modifiée"
+        )
+
+    # ✅ DELETE
+    def perform_destroy(self, instance):
+        evaluation_id = instance.id
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Suppression d'une évaluation",
+            objet=f"Évaluation ID {evaluation_id} pour UE ID {instance.ue.id}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une évaluation a été supprimée"
+        )
+
+        instance.delete()
+    # ✅ RETRIEVE (GET ONE)
+    def retrieve(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation d'une évaluation",
+            objet=f"Note ID {kwargs.get('pk')}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Détail d'une note consultée"
+        )
+
+        return super().retrieve(request, *args, **kwargs)
     
     @action (detail=False, methods=['get'], url_path='by-ue/(?P<ue_id>[^/.]+)')
     def by_ue(self, request, ue_id=None):
@@ -281,6 +408,13 @@ class EvaluationViewSet(viewsets.ModelViewSet):
             return Response({"error": "ue est requis"}, status=400)
         evaluations = Evaluation.objects.filter(ue__id=ue_id)
         serializer = self.get_serializer(evaluations, many=True)
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Liste des évaluations par UE",
+            objet=f"UE {ue_id}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des évaluations consultée"
+        )
         return Response(serializer.data)
     pagination_class = None
 
@@ -299,6 +433,68 @@ class AnonymatViewSet(viewsets.ModelViewSet):
                 return [IsProfOrSecretaire()]
             return [IsProfesseur()]
         return [permissions.IsAuthenticated()]
+     # ✅ CREATE
+    def perform_create(self, serializer):
+        anonymat = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Création d'une anonymat",
+            objet=f"Anonymat ID {anonymat.id} pour Étudiant ID {anonymat.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une anonymat a été créée avec succès"
+        )
+
+    # ✅ UPDATE (PUT & PATCH)
+    def perform_update(self, serializer):
+        anonymat = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Modification d'une anonymat",
+            objet=f"Anonymat ID {anonymat.id} pour Étudiant ID {anonymat.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une anonymat a été modifiée"
+        )
+
+    # ✅ DELETE
+    def perform_destroy(self, instance):
+        anonymat_id = instance.id
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Suppression d'une anonymat",
+            objet=f"Anonymat ID {anonymat_id} pour Étudiant ID {instance.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une anonymat a été supprimée"
+        )
+
+        instance.delete()
+
+    # ✅ LIST (GET ALL)
+    def list(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation des anonymats",
+            objet="Liste des anonymats",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des anonymats consultée"
+        )
+
+        return super().list(request, *args, **kwargs)
+
+    # ✅ RETRIEVE (GET ONE)
+    def retrieve(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation d'une anonymat",
+            objet=f"Anonymat ID {kwargs.get('pk')}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Détail d'une anonymat consultée"
+        )
+
+        return super().retrieve(request, *args, **kwargs)
+    # Liste des anonymats par UE
     @action(detail=False, methods=['get'])
     def by_ue(self, request):
         ue_id = request.query_params.get("ue")
@@ -306,6 +502,15 @@ class AnonymatViewSet(viewsets.ModelViewSet):
             return Response({"error": "ue est requis"}, status=400)
         anonymats = Anonymat.objects.filter(ue__id=ue_id)   
         serializer = self.get_serializer(anonymats, many=True)
+        
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Liste des anonymats par UE",
+            objet=f"UE {ue_id}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des anonymats consultée"
+        )
+
         return Response(serializer.data)
     pagination_class = None
 
@@ -315,6 +520,67 @@ class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
     pagination_class = None
 
+    # ✅ CREATE
+    def perform_create(self, serializer):
+        note = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Création d'une note",
+            objet=f"Création de Note {note.note} pour Étudiant ID {note.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une note a été créée avec succès"
+        )
+
+    # ✅ UPDATE (PUT & PATCH)
+    def perform_update(self, serializer):
+        note = serializer.save()
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Modification d'une note",
+            objet=f"Note ID {note.id} pour Étudiant ID {note.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une note a été modifiée"
+        )
+
+    # ✅ DELETE
+    def perform_destroy(self, instance):
+        note_id = instance.id
+
+        enregistrer_action(
+            utilisateur=self.request.user,
+            action="Suppression d'une note",
+            objet=f"Note ID {note_id} pour Étudiant ID {instance.etudiant}",
+            ip=self.request.META.get('REMOTE_ADDR'),
+            description="Une note a été supprimée"
+        )
+
+        instance.delete()
+
+    # ✅ LIST (GET ALL)
+    def list(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation des notes",
+            objet="Liste des notes",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Liste des notes consultée"
+        )
+
+        return super().list(request, *args, **kwargs)
+
+    # ✅ RETRIEVE (GET ONE)
+    def retrieve(self, request, *args, **kwargs):
+        enregistrer_action(
+            utilisateur=request.user,
+            action="Consultation d'une note",
+            objet=f"Note ID {kwargs.get('pk')}",
+            ip=request.META.get('REMOTE_ADDR'),
+            description="Détail d'une note consultée"
+        )
+
+        return super().retrieve(request, *args, **kwargs)
 
 class ProjetViewSet(viewsets.ModelViewSet):
     queryset = Projet.objects.all()
@@ -368,13 +634,19 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(professeur=self.request.user.professeur)
     
-    #Endpoint pour recuperer les articles par professeur
-    @action(detail=False, methods=['get'], url_path='par-professeur/(?P<prof_id>[^/.]+)')
-    def articles_par_professeur(self, request, prof_id=None):
-        articles = Article.objects.filter(professeur__id=prof_id)
+    #Endpoint pour recuperer les articles du prof connecte
+    @action(detail=False, methods=['get'], url_path='mes-articles')
+    def mes_articles(self, request):
+        articles = Article.objects.filter(professeur=self.request.user.professeur)
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
     pagination_class = None
+    # Endpoint pour recuperer les articles publies par le professeur par l'id 
+    @action(detail=False, methods=['get'], url_path='par-professeurId/(?P<prof_id>[^/.]+)')
+    def par_professeur(self, request, prof_id=None):
+        articles = Article.objects.filter(professeur__id=prof_id)
+        serializer = self.get_serializer(articles, many=True)
+        return Response(serializer.data)
 
 
 class EncadrementViewSet(viewsets.ModelViewSet):
@@ -415,17 +687,34 @@ class PeriodeSaisieViewSet(viewsets.ModelViewSet):
             return PeriodeSaisie.objects.all()
         return PeriodeSaisie.objects.none()
 
+    
     def perform_create(self, serializer):
         user = self.request.user
+
+        # ✅ Enregistrement de la période
         if hasattr(user, 'resp_notes'):
-            serializer.save(responsable=user.resp_notes)
+            periode = serializer.save(responsable=user.resp_notes)
+
         elif user.is_superuser:
-            responsable = self.request.data.get('responsable')
-            serializer.save(responsable_id=responsable)
+            responsable_id = self.request.data.get('responsable')
+            periode = serializer.save(responsable_id=responsable_id)
+
         else:
             raise PermissionError("Tu n'as pas le droit de créer une période.")
 
+        # ✅ ENVOI DES NOTIFICATIONS AUX PROFESSEURS
+        professeurs = Professeur.objects.all()
 
+        message = (
+            "✅ Une nouvelle période de saisie des notes sera ouverte du " + str(periode.date_debut) + " au " + str(periode.date_fin) + "   . "
+            "Veuillez procéder à la saisie dans les délais."
+        )
+
+        NotificationService.send_to_many(
+            users=[prof.utilisateur for prof in professeurs],
+            message=message
+        )
+ 
 class AffectationUeViewSet(viewsets.ModelViewSet):
     queryset = AffectationUe.objects.all()
     serializer_class = AffectationUeSerializer

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaFileAlt } from "react-icons/fa";
-import ProjetService from "@/services/projetService"; // À adapter selon ton service
-
+import ProjetService from "@/services/projetService"; 
+import ProfInfos from "@/features/util/profInfos";
 export default function ProjetsPublic({ profId }) {
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
@@ -39,7 +39,7 @@ export default function ProjetsPublic({ profId }) {
     return (
       <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in max-w-5xl mx-auto">
         <div className="text-center py-8">
-          <div className="text-blue-900">Chargement des articles...</div>
+          <div className="text-blue-900">Chargement des projets...</div>
         </div>
       </div>
     );
@@ -48,18 +48,20 @@ export default function ProjetsPublic({ profId }) {
   return (
     <div className="bg-transparent backdrop-blur-md px-8 py-10 w-full animate-fade-in max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-      <h2 className="flex items-center gap-3 text-2xl font-bold text-blue-900 mb-6">
-        <FaFileAlt className="text-blue-700" /> Projets Publics
+      <h2 className="flex items-center gap-0.5 text-2xl font-bold text-blue-900 mb-6">
+         Projets Publics du <ProfInfos profId={profId} />
       </h2>
 
       {/* Filtre recherche */}
+         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <input
           type="text"
           placeholder="Rechercher par titre ou résumé"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-900"
+          className="max-w-md px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-900"
         />
+         </div>
       </div>
 
       {/* Tableau articles */}

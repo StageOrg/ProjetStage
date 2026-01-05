@@ -4,8 +4,10 @@ import Header from "../../../components/ui/Header";
 
 
 export default async function DashboardProfLayout({ children, params }) {
-  const { id } = params;
+   const resolvedParams = await params;
+  const { id } = resolvedParams;
   const profId = id; // Récupérer l'ID du professeur depuis les paramètres de l'URL
+  console.log("Layout du professeur avec ID:", profId);
   return (
     <>
     {/* Header en haut */}
@@ -15,7 +17,7 @@ export default async function DashboardProfLayout({ children, params }) {
       <aside className="hidden md:block fixed top-15 left-0 h-screen z-30">
         <MenuLateralProfPublic profId={profId} />
       </aside>
-      <main className="md:ml-64 flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 font-sans flex flex-col items-center justify-center px-4 py-12 pt-24 gap-8">
+      <main className="md:ml-64 flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 font-sans flex flex-col items-center justify-start px-4 py-12 pt-24 gap-8">
         {children}
       </main>
     </>

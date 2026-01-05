@@ -2,7 +2,8 @@
 import React from "react";
 import ListeEtudiantsUE from "@/features/service-examen/cours/anonymat/listeEtudiant";
 
-export default function PageSaisieNumAnonyme({ params }) {
-  const { id } = React.use(params);
+export default async function PageSaisieNumAnonyme({ params }) {
+    const resolvedParams = await params;
+  const { id } = resolvedParams;
   return <ListeEtudiantsUE ueId={id} />;
 }

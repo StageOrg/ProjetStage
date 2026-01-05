@@ -112,7 +112,7 @@ function EvaluationUE({ ueId, onRetour }) {
       if (onRetour) onRetour();
       else {
         alert("OK : somme = 100, retour à la saisie des notes.");
-       Router.push(`/service-examen/notes/${ueId}/etudiants-inscrits`);
+       Router.back();
       }
     } else {
       setError(`La somme des poids est ${Number(totalPoids.toFixed(2))}%. Elle doit être égale à 100%.`);
@@ -120,14 +120,14 @@ function EvaluationUE({ ueId, onRetour }) {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 mt-5">
       {/* Bouton retour */}
       <button
         onClick={handleRetour}
         className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
       >
         <ArrowLeft className="mr-2" size={18} />
-        Retour à la saisie des notes
+        Retour 
       </button>
 
       <div className="mb-2 font-semibold">

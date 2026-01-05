@@ -6,6 +6,10 @@ from django.core.mail import send_mail
 from rest_framework.response import Response
 from rest_framework import status, views
 from django.contrib.auth.tokens import default_token_generator
+from urllib import request
+from ..utilisateurs.services.journal import enregistrer_action
+
+from ..utilisateurs.services.journal import enregistrer_action
 from .serializers import RegisterSerializer, StudentRegisterSerializer
 from rest_framework.permissions import AllowAny
 from .services.auth_service import AuthService, User
@@ -40,7 +44,23 @@ class LoginView(APIView):
         password = request.data.get("password")
         data = AuthService.login(username, password)
         if not data:
+            enregistrer_action(
+                utilisateur=None,
+                action="Tentative de connexion",
+                objet="Authentification",
+                ip=request.META.get('REMOTE_ADDR'),
+                statut="ECHEC",
+                description="Utilisateur inexistant"
+            )
             return Response({"detail": "Identifiants invalides"}, status=status.HTTP_401_UNAUTHORIZED)
+        enregistrer_action(
+            utilisateur=user,
+            action="Connexion",
+            objet="Authentification",
+            ip=request.META.get('REMOTE_ADDR'),
+            statut="SUCCES",
+            description="Connexion réussie"
+        )    
         return Response(data, status=status.HTTP_200_OK)
 
 

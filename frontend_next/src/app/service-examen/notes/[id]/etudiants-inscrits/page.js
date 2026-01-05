@@ -1,10 +1,10 @@
-"use client";
 
 import React from "react";
 import ListeEtudiantsUE from "@/features/service-examen/cours/listeEtudiantsUe";
 
-export default  function PageEtudiantUe({ params }) {
-  const { id } = React.use(params);
+export default async function PageEtudiantUe({ params }) {
+    const resolvedParams = await params;
+  const { id } = resolvedParams;
   console.log("SelectedUeId paa:", id);
   return (
     <main className=" w-full ">

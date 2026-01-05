@@ -93,7 +93,7 @@ export default function PeriodeSaisie() {
     <div className="p-6 bg-white rounded-xl shadow-md">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-blue-800">
-          Gestion des périodes de saisie
+          Périodes de saisie de notes
         </h2>
         <button
           onClick={() => {
@@ -101,7 +101,7 @@ export default function PeriodeSaisie() {
             setEditingPeriode(null);
             setFormData({ numero: "", date_debut: "", date_fin: "" });
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 ml-5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <CirclePlus size={22} /> Nouvelle période
         </button>

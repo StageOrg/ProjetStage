@@ -20,7 +20,7 @@ export default function MenuLateralRespNote() {
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
           <span className="bg-blue-100 text-black font-bold px-2 py-1  text-xs shadow">Gestion Notes</span>
         </div>
-        <nav className="flex flex-col gap-2 text-lg font-semibold mt-10 mb-10">
+        <nav className="flex flex-col gap-3 text-lg font-semibold">
           {links.map(link => (
             <Link
               key={link.href}
@@ -37,11 +37,7 @@ export default function MenuLateralRespNote() {
             </Link>
           ))}
         </nav>
-        <div className="mt-12 pt-8">
-          <button className="w-full flex items-center justify-center gap-2 bg-blue-900  hover:from-blue-600  text-white font-bold py-2 rounded-xl shadow-lg transition-all">
-            <FaSignOutAlt /> Se déconnecter
-          </button>
-        </div>
+        
         <div className="text-xs text-gray-400 mt-8 text-center select-none">&copy; EPL {new Date().getFullYear()}</div>
       </div>
     </aside>

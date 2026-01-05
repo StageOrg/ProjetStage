@@ -1,18 +1,18 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaBook, FaFileAlt, FaProjectDiagram, FaUsers, FaClipboardList } from "react-icons/fa";
+import { FaBook, FaFileAlt, FaProjectDiagram, FaUsers,FaUser, FaClipboardList } from "react-icons/fa";
 
 export default function MenuLateralProfPublic({ profId }) {
   const pathname = usePathname();
 
   // Générer les liens dynamiques avec l'ID du prof
   const links = [
+    { href: `/nos-profs/${profId}/profil`, label: "Profil   ", icon: <FaUser /> },
     { href: `/nos-profs/${profId}/unites-d-enseignement`, label: "Cours", icon: <FaBook /> },
     { href: `/nos-profs/${profId}/articles`, label: "Articles", icon: <FaFileAlt /> },
     { href: `/nos-profs/${profId}/projets`, label: "Projets", icon: <FaProjectDiagram /> },
     { href: `/nos-profs/${profId}/encadrements`, label: "Encadrements", icon: <FaUsers /> },
-    { href: `/nos-profs/${profId}/recherches`, label: "Recherches", icon: <FaClipboardList /> },
   ];
 
   return (
@@ -22,14 +22,14 @@ export default function MenuLateralProfPublic({ profId }) {
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
           <span className="bg-blue-100 text-black font-bold px-2 py-1 text-xs shadow">Enseignant</span>
         </div>
-        <nav className="flex flex-col gap-2 text-lg font-semibold mt-10">
+        <nav className="flex flex-col gap-3 text-lg font-semibold mt-6">
           {links.map(link => (
             <Link
               key={link.href}
               href={link.href}
               className={
                 (pathname === link.href
-                  ? "bg-black-100 text-black-900 font-bold shadow-md "
+                  ? "bg-blue-100 text-black-900 font-bold shadow-md "
                   : "text-black-700 hover:bg-black-50 hover:text-black-900 ") +
                 " px-4 py-2 transition flex items-center gap-3 mt-3 mb-3"
               }

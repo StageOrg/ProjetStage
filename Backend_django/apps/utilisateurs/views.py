@@ -2,24 +2,24 @@
 
 from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework import status
 
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from ..utilisateurs.models import (
-    Professeur, Etudiant,
+    JournalAction, Professeur, Etudiant,
     RespInscription, ResponsableSaisieNote, Secretaire, Gestionnaire, ChefDepartement
 )
 from apps.utilisateurs.serializers import (
-    ProfesseurSerializer, EtudiantSerializer,
+    JournalActionSerializer, ProfesseurSerializer, EtudiantSerializer,
     RespInscriptionSerializer, ResponsableSaisieNoteSerializer, SecretaireSerializer, GestionnaireSerializer, ChefDepartementSerializer
 )
 from apps.authentification.permissions import IsIntranet, IsSelfOrAdmin, IsAdminOrReadOnly
 from rest_framework.permissions import AllowAny
-from apps.utilisateurs.models import Utilisateur, Administrateur, Connexion
+from apps.utilisateurs.models import Utilisateur, Administrateur
 from apps.utilisateurs.serializers import (
     UtilisateurSerializer,
-    AdministrateurSerializer,
-    ConnexionSerializer
+    AdministrateurSerializer
 )
 from apps.page_professeur.serializers import UESerializer
 from rest_framework.decorators import api_view, permission_classes
@@ -43,6 +43,7 @@ class UtilisateurViewSet(viewsets.ModelViewSet):
         elif request.method == 'PUT':
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
+    
 
 # ----- ETUDIANT -----
 # apps/utilisateurs/views.py - Section EtudiantViewSet corrigée
@@ -123,6 +124,19 @@ class EtudiantViewSet(viewsets.ModelViewSet):
             print(f"Traceback complet: {traceback.format_exc()}")  # Debug détaillé
             return Response({"error": f"Erreur serveur: {str(e)}"}, status=500)
         
+        
+    # Recuperer les ues auxquelles l'etudiant connecté est inscrit
+    @action(detail=False, methods=['get'])
+    def mes_ues(self, request):
+        etudiant = request.user.etudiant 
+        inscriptions = etudiant.inscriptions.all()
+        ues = []
+        for inscription in inscriptions:
+            ues.extend(inscription.ues.all())
+        serializer = UESerializer(ues, many=True)
+        return Response(serializer.data)
+    
+    
 # ----- PROFESSEUR -----
 class ProfesseurViewSet(viewsets.ModelViewSet):
     queryset = Professeur.objects.all().order_by('utilisateur__last_name')
@@ -130,6 +144,7 @@ class ProfesseurViewSet(viewsets.ModelViewSet):
 
     pagination_class = None
     #permission_classes = [IsAdminOrReadOnly]
+    
    
     def get_queryset(self):
         user = self.request.user
@@ -137,16 +152,59 @@ class ProfesseurViewSet(viewsets.ModelViewSet):
             return Professeur.objects.filter(utilisateur=user)
         return super().get_queryset()
     
+    # Endpoint pour modifier les information du professeur connecté
+
     @action(detail=False, methods=['get', 'put'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        instance = request.user.professeur
-        serializer = self.get_serializer(instance, data=request.data if request.method == 'PUT' else None, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        elif request.method == 'PUT':
-            return Response(serializer.errors, status=400)
+        user = request.user
+
+        # Vérifier si un professeur existe
+        try:
+            prof = user.professeur
+        except Professeur.DoesNotExist:
+            return Response({"detail": "Aucun profil professeur trouvé pour cet utilisateur."}, status=404)
+
+        if request.method == 'PUT':
+            serializer = self.get_serializer(prof, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=400)
+        else:
+            serializer = self.get_serializer(prof)
+
+        return Response(serializer.data)
+
+    
+    # Recuperer un professeur par l'id de l'utilisateur associé
+    @action(detail=False, methods=["get"], url_path="by-user/(?P<user_id>[^/.]+)")
+    def get_by_user(self, request, user_id=None):
+        try:
+            professeur = Professeur.objects.get(utilisateur__id=user_id)
+        except Professeur.DoesNotExist:
+            return Response(
+                {"detail": "Aucun professeur associé à cet utilisateur."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.serializer_class(professeur)
         return Response(serializer.data)
     
+    #Recuperer un professeur par son id
+    @action(detail=False, methods=['get'], url_path='by-id/(?P<prof_id>[^/.]+)')
+    def get_by_id(self, request, prof_id=None):
+        try:
+            professeur = Professeur.objects.get(id=prof_id)
+        except Professeur.DoesNotExist:
+            return Response(
+                {"detail": "Aucun professeur trouvé avec cet ID."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.serializer_class(professeur)
+        return Response(serializer.data)
+    
+    #UEs du professeur connecté
     @action(detail=True, methods=['get'], url_path='ues-prof')
     def mes_ues_id(self, request, pk=None):
         professeur = self.get_object()
@@ -297,17 +355,12 @@ class ChefDepartementViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
         return Response(serializer.data)
     
-# ----- CONNEXION -----
-class ConnexionViewSet(viewsets.ModelViewSet):
-    queryset = Connexion.objects.all().order_by('-date_connexion')
-    serializer_class = ConnexionSerializer
-    permission_classes = [IsIntranet, IsAdminUser]
-    
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_staff:
-            return Connexion.objects.all()
-        return Connexion.objects.filter(utilisateur=user)
+# ----- Journal d'Actions -----
+class JournalActionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = JournalAction.objects.all().order_by('-date_action')
+    serializer_class = JournalActionSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
 
         
 @api_view(['POST'])
@@ -415,7 +468,6 @@ def etudiant_mes_ues_avec_notes(request):
                 
                 statut = "Validé" if (moyenne_ue and moyenne_ue >= 10) else "Non validé" if moyenne_ue else "En cours"
                 
-                # CORRECTION : Utilisez les bons noms d'attributs
                 result.append({
                     'id': ue.id,
                     'code': ue.code,

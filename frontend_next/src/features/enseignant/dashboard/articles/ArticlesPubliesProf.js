@@ -2,11 +2,6 @@ import React, { useEffect, useState } from "react";
 import { FaFileAlt, FaEdit, FaSave, FaTimes, FaTrash, FaPlus } from "react-icons/fa";
 import ArticleService from "@/services/articleService"
 
-const initialArticles = [
-  { id: 1, titre: "Optimisation des algorithmes", revue: "Revue Info Togo", annee: "2023", lien: "#" },
-  { id: 2, titre: "Sécurité web", revue: "Journal IT Afrique", annee: "2022", lien: "#" },
-];
-
 export default function ArticlesPubliesProf() {
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
@@ -33,8 +28,6 @@ export default function ArticlesPubliesProf() {
       .then((data)=>{setArticles(data)})
       .catch((err)=>{console.error(err)});
   },[]);
-
-  
 
   
   // Ouvrir le mode édition sur un article existant
