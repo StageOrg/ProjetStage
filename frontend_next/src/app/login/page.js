@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Formulaire from "@/components/ui/Formulaire.js";
 import Link from "next/link";
 import { authAPI } from '@/services/authService';
@@ -27,12 +27,8 @@ export default function Connexion() {
   ];
   
   async function handleFormSubmit(valeurs) {
-    // Réinitialiser les erreurs
     setError("");
     setLoading(true);
-    
-    console.log("Token:", localStorage.getItem('access_token'));
-    console.log("Form values:", valeurs);
     
     try {
       const data = await authAPI.login(valeurs.identifiant, valeurs.motdepasse);
@@ -45,11 +41,33 @@ export default function Connexion() {
       
       console.log("Connexion réussie");
       
-      // Redirection après connexion
+      // Gestion de la redirection pour les étudiants
+      if (data.user.role === "etudiant") {
+        // 1. Vérifier si demande d'inscription
+        const inscriptionRedirect = localStorage.getItem('inscription_redirect');
+        if (inscriptionRedirect) {
+          localStorage.removeItem('inscription_redirect');
+          router.push("/etudiant/inscription/redirect");
+          return;
+        }
+        
+        // 2. Vérifier si redirection vers une page protégée spécifique
+        const etudiantRedirect = localStorage.getItem('etudiant_redirect');
+        if (etudiantRedirect) {
+          const redirectPath = etudiantRedirect;
+          localStorage.removeItem('etudiant_redirect');
+          router.push(redirectPath);
+          return;
+        }
+        
+        // 3. Par défaut : aller sur données personnelles
+        router.push("/etudiant/dashboard/donnees-personnelles");
+        return;
+      }
+      
+      // Redirection pour les autres rôles
       if (data.user.role === "professeur") {
         router.push("/enseignant/dashboard");
-      } else if (data.user.role === "etudiant") {
-        router.push("/etudiant/dashboard");
       } else if (data.user.role === "admin") {
         router.push("/administration/dashboard");
       } else if (data.user.role === "resp_notes") {
@@ -66,9 +84,7 @@ export default function Connexion() {
     } catch (error) {
       console.error("Erreur de connexion", error);
       
-      // Gestion des différents types d'erreurs
       if (error.response) {
-        // Erreur retournée par le serveur
         if (error.response.status === 401) {
           setError("Identifiant ou mot de passe incorrect");
         } else if (error.response.status === 400) {
@@ -79,10 +95,8 @@ export default function Connexion() {
           setError("Une erreur est survenue. Veuillez réessayer");
         }
       } else if (error.request) {
-        // Pas de réponse du serveur
         setError("Impossible de contacter le serveur. Vérifiez votre connexion internet");
       } else {
-        // Autre type d'erreur
         setError("Une erreur inattendue est survenue");
       }
     } finally {
@@ -127,7 +141,6 @@ export default function Connexion() {
         <Formulaire champs={champs} onSubmit={handleFormSubmit} />
         
         <div className="mt-6 text-center flex flex-col gap-2">
-          {/* Lien vers mot de passe oublié */}
           <Link 
             href="/forgot-password" 
             className="text-sm text-blue-600 hover:underline hover:text-blue-800 transition-colors"
@@ -143,7 +156,7 @@ export default function Connexion() {
           </Link>
         </div>
         
-        {/* Indicateur de chargement optionnel */}
+        {/* Indicateur de chargement */}
         {loading && (
           <div className="mt-4 text-center">
             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>

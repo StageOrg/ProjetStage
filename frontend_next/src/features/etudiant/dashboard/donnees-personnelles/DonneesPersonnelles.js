@@ -4,9 +4,11 @@ import {
   FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt,
   FaVenusMars, FaGraduationCap, FaBook,
   FaCalendarAlt, FaSpinner, FaEdit, FaSave, FaTimes,
-  FaIdCard, FaCamera, FaCheckCircle, FaTimesCircle
+  FaIdCard, FaCamera, FaCheckCircle, FaTimesCircle, FaLock, FaExclamationTriangle
 } from "react-icons/fa";
 import etudiantDashboardService from "@/services/etudiants/etudiantDashboardService";
+
+import toast from 'react-hot-toast';
 
 // FONCTION DE SÉCURITÉ : trim() sans erreur
 const safeTrim = (value) => (value ?? '').toString().trim();
@@ -20,6 +22,7 @@ export default function DonneesPersonnelles() {
   const [formData, setFormData] = useState({});
   const [photoPreview, setPhotoPreview] = useState(null);
   const [newPhotoFile, setNewPhotoFile] = useState(null);
+  const [numCarteError, setNumCarteError] = useState(null);
 
   const isEmpty = (value) => {
     return value === null || value === undefined || value === '' || (typeof value === 'string' && value.trim() === '');
@@ -27,6 +30,11 @@ export default function DonneesPersonnelles() {
 
   const displayValue = (value, defaultText = "Non spécifié") => {
     return isEmpty(value) ? defaultText : value;
+  };
+
+  // Vérifier si le numéro de carte peut être modifié (vide = modifiable)
+  const canEditNumCarte = () => {
+    return isEmpty(studentData?.num_carte);
   };
 
   const fetchStudentData = async () => {
@@ -70,13 +78,15 @@ export default function DonneesPersonnelles() {
     const { name, value } = e.target;
 
     if (name === 'num_carte') {
+      // Seulement chiffres
       const numeriqueValue = value.replace(/\D/g, '');
       const truncatedValue = numeriqueValue.slice(0, 6);
 
-      if (value && value !== truncatedValue) {
-        setError("Le numéro de carte doit contenir exactement 6 chiffres");
+      // Validation en temps réel
+      if (truncatedValue.length > 0 && truncatedValue.length < 6) {
+        setNumCarteError("Le numéro de carte doit contenir exactement 6 chiffres");
       } else {
-        setError(null);
+        setNumCarteError(null);
       }
 
       setFormData(prev => ({
@@ -129,6 +139,16 @@ export default function DonneesPersonnelles() {
         return;
       }
 
+      // Validation spéciale pour num_carte si renseigné
+      if (canEditNumCarte() && formData.num_carte) {
+        const numCarte = safeTrim(formData.num_carte);
+        if (numCarte.length !== 6 || !/^\d{6}$/.test(numCarte)) {
+          setError("Le numéro de carte doit contenir exactement 6 chiffres");
+          setSaving(false);
+          return;
+        }
+      }
+
       const dataToSend = new FormData();
 
       // Champs obligatoires
@@ -138,14 +158,21 @@ export default function DonneesPersonnelles() {
       });
 
       // Champs optionnels
-      const champsOptionnels = ['autre_prenom', 'num_carte'];
+      const champsOptionnels = ['autre_prenom'];
       champsOptionnels.forEach(key => {
         const value = safeTrim(formData[key]);
         if (value) {
           dataToSend.append(key, value);
         }
-        // Si vide → pas d'append → serveur le vide
       });
+
+      // Numéro de carte : seulement si vide dans la BDD et renseigné maintenant
+      if (canEditNumCarte() && formData.num_carte) {
+        const numCarte = safeTrim(formData.num_carte);
+        if (numCarte) {
+          dataToSend.append('num_carte', numCarte);
+        }
+      }
 
       // Photo
       if (newPhotoFile) {
@@ -178,10 +205,17 @@ export default function DonneesPersonnelles() {
           : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${updatedData.photo}`;
         setPhotoPreview(photoUrl);
       }
-
+      console.log('Filière brute:', studentData?.filiere_info);
       setNewPhotoFile(null);
       setIsEditing(false);
-      alert('Informations mises à jour avec succès !');
+      setNumCarteError(null);
+      
+      // Message différent si num_carte a été ajouté
+      if (canEditNumCarte() && formData.num_carte) {
+        toast.success('Informations mises à jour avec succès ! Votre numéro de carte est maintenant verrouillé.');
+      } else {
+        toast.success('Informations mises à jour avec succès !');
+      }
 
     } catch (err) {
       console.error('Erreur mise à jour:', err);
@@ -213,6 +247,7 @@ export default function DonneesPersonnelles() {
     setNewPhotoFile(null);
     setIsEditing(false);
     setError(null);
+    setNumCarteError(null);
   };
 
   if (loading) {
@@ -230,15 +265,15 @@ export default function DonneesPersonnelles() {
     <div className="bg-transparent backdrop-blur-2xl shadow-1xl px-10 py-12 w-full animate-fade-in">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
-        <h2 className="flex items-center gap-3 text-3xl font-extrabold text-blue-900 drop-shadow">
-          <FaUser className="text-blue-700 text-3xl" />
+        <h2 className="flex items-center gap-3 text-3xl font-extrabold text-black drop-shadow">
+          <FaUser className="text-black text-3xl" />
           Mes données personnelles
         </h2>
 
         {!isEditing ? (
           <button
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="flex items-center gap-2 px-6 py-3 bg-blue-900 text-white rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             <FaEdit className="text-lg" /> Modifier
           </button>
@@ -318,14 +353,14 @@ export default function DonneesPersonnelles() {
           <div className="mt-4 text-center">
             <div className="flex items-center justify-center gap-2 text-sm">
               {studentData?.is_validated ? (
-                <span className="text-green-600 font-medium">photo de profil</span>
+                <span className="text-green-600 font-medium">Photo de profil</span>
               ) : (
-                <span className="text-orange-600 font-medium">Photo de profil</span>
+                <span className="text-green-600 font-medium">Photo de profil</span>
               )}
             </div>
             {isEditing && newPhotoFile && (
               <p className="text-xs text-green-600 mt-2">
-                New photo selected
+                Nouvelle photo sélectionnée
               </p>
             )}
           </div>
@@ -334,7 +369,7 @@ export default function DonneesPersonnelles() {
         {/* Informations */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-800 border-b-2 border-blue-200 pb-2">
+            <h3 className="text-xl font-bold text-gray-800 border-b-2 border-black pb-2">
               Informations personnelles
             </h3>
 
@@ -462,35 +497,65 @@ export default function DonneesPersonnelles() {
 
           {/* Informations scolaires */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-800 border-b-2 border-gray-200 pb-2">
+            <h3 className="text-xl font-bold text-gray-800 border-b-2 border-black pb-2">
               Informations scolaires
             </h3>
 
-            {/* Numéro de carte */}
+            {/* Numéro de carte - LOGIQUE SPÉCIALE */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
                 <FaIdCard className="text-gray-500" />
                 Numéro de carte étudiant
+                {!canEditNumCarte() && <FaLock className="text-red-500 text-xs ml-1" />}
               </label>
-              {isEditing ? (
+              
+              {isEditing && canEditNumCarte() ? (
+                // MODE ÉDITION : Vide = peut renseigner
                 <div>
                   <input
                     type="text"
                     name="num_carte"
                     value={formData.num_carte || ""}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    placeholder="Numéro de carte (6 chiffres)"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
+                      numCarteError ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Entrez 6 chiffres"
                     maxLength={6}
                     pattern="\d{6}"
                   />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Le numéro de carte doit contenir exactement 6 chiffres
-                  </p>
+                  {numCarteError && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                      <FaExclamationTriangle className="text-xs" />
+                      {numCarteError}
+                    </p>
+                  )}
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-xs text-yellow-800 flex items-center gap-2">
+                      <FaExclamationTriangle className="text-yellow-600" />
+                      <span>
+                        <strong>Attention :</strong> Une fois enregistré, ce numéro ne pourra plus être modifié. 
+                        Pour toute modification ultérieure, contactez l'administration.
+                      </span>
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <div className="px-4 py-3 bg-gray-50 rounded-xl font-mono text-gray-800 border-l-4 border-blue-500">
-                  {displayValue(studentData?.num_carte, "Non attribué")}
+                // MODE LECTURE : Affiche le numéro ou "Non attribué"
+                <div>
+                  <div className={`px-4 py-3 rounded-xl font-mono text-gray-800 border-l-4 ${
+                    isEmpty(studentData?.num_carte) 
+                      ? 'bg-gray-50 border-gray-400' 
+                      : 'bg-blue-50 border-blue-500'
+                  }`}>
+                    {displayValue(studentData?.num_carte, "Non attribué")}
+                  </div>
+                  {!isEmpty(studentData?.num_carte) && (
+                    <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                      <FaLock className="text-gray-500" />
+                      Ce numéro est verrouillé. Pour toute modification, contactez l'administration.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -530,7 +595,11 @@ export default function DonneesPersonnelles() {
                 Parcours
               </label>
               <div className="px-4 py-3 bg-blue-50 rounded-xl font-medium text-blue-800 border-l-4 border-blue-500">
-                {displayValue(studentData?.parcours_info)}
+                {displayValue(
+                  typeof studentData?.parcours_info === 'object' 
+                    ? studentData?.parcours_info?.libelle 
+                    : studentData?.parcours_info
+                )}
               </div>
             </div>
 
@@ -541,10 +610,13 @@ export default function DonneesPersonnelles() {
                 Filière
               </label>
               <div className="px-4 py-3 bg-green-50 rounded-xl font-medium text-green-800 border-l-4 border-green-500">
-                {displayValue(studentData?.filiere_info)}
+                {displayValue(
+                  typeof studentData?.filiere_info === 'object'
+                    ? studentData?.filiere_info?.nom
+                    : studentData?.filiere_info
+                )}
               </div>
             </div>
-
             {/* Année d'étude */}
             <div className="group">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
@@ -552,7 +624,11 @@ export default function DonneesPersonnelles() {
                 Année d'étude
               </label>
               <div className="px-4 py-3 bg-purple-50 rounded-xl font-medium text-purple-800 border-l-4 border-purple-500">
-                {displayValue(studentData?.annee_etude_info)}
+                {displayValue(
+                  typeof studentData?.annee_etude_info === 'object' 
+                    ? studentData?.annee_etude_info?.libelle 
+                    : studentData?.annee_etude_info
+                )}
               </div>
             </div>
           </div>

@@ -107,6 +107,7 @@ def verifier_ancien_etudiant(request, num_carte):
                 'prenom': etudiant.utilisateur.first_name,
                 'email': etudiant.utilisateur.email,
                 'telephone': etudiant.utilisateur.telephone or 'Non renseigné',
+                'sexe': etudiant.utilisateur.sexe,
                 'date_naissance': etudiant.date_naiss,
                 'lieu_naissance': etudiant.lieu_naiss,
                 'autre_prenom': etudiant.autre_prenom,
@@ -418,4 +419,57 @@ def check_annee_etude(request):
         'valide': True,
         'message': 'Année d\'étude autorisée'
     })       
-    
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verifier_inscription_en_cours(request, etudiant_id):
+    """
+    Vérifie si l'étudiant est déjà inscrit pour l'année académique active
+    """
+    try:
+        # Vérifier que l'étudiant existe
+        try:
+            etudiant = Etudiant.objects.get(id=etudiant_id)
+        except Etudiant.DoesNotExist:
+            return Response({
+                'error': 'Étudiant non trouvé'
+            }, status=404)
+        
+        # Récupérer l'année académique active
+        annee_academique = AnneeAcademique.objects.filter(est_active=True).first()
+        if not annee_academique:
+            return Response({
+                'error': "Aucune année académique active"
+            }, status=400)
+        
+        # Vérifier si l'étudiant est déjà inscrit cette année
+        inscription_existante = Inscription.objects.filter(
+            etudiant=etudiant,
+            anneeAcademique=annee_academique
+        ).select_related('parcours', 'filiere', 'annee_etude').first()
+        
+        if inscription_existante:
+            return Response({
+                'deja_inscrit': True,
+                'annee_academique': annee_academique.libelle,
+                'details': {
+                    'numero_inscription': inscription_existante.numero,
+                    'date_inscription': inscription_existante.date.isoformat() if inscription_existante.date else None,
+                    'parcours': inscription_existante.parcours.libelle,
+                    'filiere': inscription_existante.filiere.nom,
+                    'annee_etude': inscription_existante.annee_etude.libelle
+                }
+            })
+        
+        return Response({
+            'deja_inscrit': False,
+            'annee_academique': annee_academique.libelle
+        })
+        
+    except Exception as e:
+        print(f"Erreur vérification inscription: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'error': f'Erreur serveur: {str(e)}'
+        }, status=500)   

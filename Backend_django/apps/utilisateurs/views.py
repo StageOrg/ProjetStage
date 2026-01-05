@@ -468,7 +468,6 @@ def etudiant_mes_ues_avec_notes(request):
                 
                 statut = "Validé" if (moyenne_ue and moyenne_ue >= 10) else "Non validé" if moyenne_ue else "En cours"
                 
-                # CORRECTION : Utilisez les bons noms d'attributs
                 result.append({
                     'id': ue.id,
                     'code': ue.code,

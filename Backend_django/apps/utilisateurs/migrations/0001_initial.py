@@ -64,26 +64,14 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='Connexion',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_connexion', models.DateTimeField(auto_now_add=True)),
-                ('ip', models.GenericIPAddressField()),
-                ('statut', models.CharField(max_length=50)),
-                ('navigateur', models.CharField(max_length=200)),
-                ('resultat', models.TextField(blank=True)),
-                ('utilisateur', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='connexions', to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
             name='Etudiant',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('num_carte', models.PositiveIntegerField(blank=True, null=True, unique=True, validators=[django.core.validators.MaxValueValidator(999999)])),
                 ('autre_prenom', models.CharField(max_length=50, null=True)),
                 ('photo', models.ImageField(blank=True, null=True, upload_to='photos_etudiants/')),
-                ('date_naiss', models.DateField()),
-                ('lieu_naiss', models.CharField(max_length=100)),
+                ('date_naiss', models.DateField(blank=True, null=True)),
+                ('lieu_naiss', models.CharField(blank=True, max_length=100, null=True)),
                 ('is_validated', models.BooleanField(default=False)),
                 ('evaluations', models.ManyToManyField(blank=True, through='page_professeur.Note', to='page_professeur.evaluation')),
                 ('utilisateur', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='etudiant', to=settings.AUTH_USER_MODEL)),
@@ -97,10 +85,23 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='JournalAction',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('action', models.CharField(max_length=255)),
+                ('objet', models.CharField(blank=True, max_length=255, null=True)),
+                ('date_action', models.DateTimeField(auto_now_add=True)),
+                ('ip', models.GenericIPAddressField(blank=True, null=True)),
+                ('statut', models.CharField(choices=[('SUCCES', 'Succès'), ('ECHEC', 'Échec')], default='SUCCES', max_length=20)),
+                ('description', models.TextField(blank=True)),
+                ('utilisateur', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='actions', to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Professeur',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('titre', models.CharField(max_length=50)),
+                ('titre', models.CharField(blank=True, max_length=50)),
                 ('bio', models.TextField(blank=True)),
                 ('photo', models.ImageField(blank=True, null=True, upload_to='photos_profils/')),
                 ('ues', models.ManyToManyField(blank=True, through='page_professeur.AffectationUe', to='page_professeur.ue')),

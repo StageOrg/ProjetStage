@@ -16,7 +16,7 @@ const etudiantService = {
    */
   getAllEtudiants: async (filters = {}) => {
     try {
-      console.log("🔍 Recherche étudiants avec filtres:", filters);
+      console.log(" Recherche étudiants avec filtres:", filters);
       
       // Nettoyer les paramètres vides
       const cleanFilters = Object.fromEntries(
@@ -26,20 +26,21 @@ const etudiantService = {
       );
       
       // Page size pour récupérer beaucoup de résultats
-      cleanFilters.page_size = 1000;
+      // Page size pour récupérer beaucoup de résultats
+      // cleanFilters.page_size = 1000; // Suppression de l'override pour permettre la pagination correcte
       
       const response = await api.get("/inscription/etudiants/filtrer/", { 
         params: cleanFilters 
       });
       
-      console.log("✅ Étudiants reçus:", response.data.results?.length || 0);
+      console.log(" Étudiants reçus:", response.data.results?.length || 0);
       
       return {
         results: response.data.results || response.data || [],
         count: response.data.count || response.data.length || 0,
       };
     } catch (error) {
-      console.error("❌ Erreur getAllEtudiants:", error);
+      console.error(" Erreur getAllEtudiants:", error);
       throw error;
     }
   },
@@ -52,59 +53,59 @@ const etudiantService = {
       // Vérifier le cache local
       const now = Date.now();
       if (!forceRefresh && cache.parcours && cache.timestamp && (now - cache.timestamp < CACHE_DURATION)) {
-        console.log("📦 Parcours depuis cache local");
+        console.log(" Parcours depuis cache local");
         return cache.parcours;
       }
       
-      console.log("🌐 Chargement parcours avec relations...");
+      console.log(" Chargement parcours avec relations...");
       const response = await api.get("/inscription/parcours-relations/");
       
       // Mettre à jour le cache
       cache.parcours = response.data.parcours || [];
       cache.timestamp = now;
       
-      console.log("✅ Parcours chargés:", cache.parcours.length);
+      console.log(" Parcours chargés:", cache.parcours.length);
       return cache.parcours;
     } catch (error) {
-      console.error("❌ Erreur getParcoursAvecRelations:", error);
+      console.error(" Erreur getParcoursAvecRelations:", error);
       // Fallback sur getParcours simple
       return await this.getParcours();
     }
   },
 
   /**
-   * 🆕 Récupère les années académiques (avec cache)
+   *  Récupère les années académiques (avec cache)
    */
   getAnneesAcademiques: async (forceRefresh = false) => {
     try {
       // Vérifier le cache local
       const now = Date.now();
       if (!forceRefresh && cache.annees_academiques && cache.timestamp && (now - cache.timestamp < CACHE_DURATION)) {
-        console.log("📦 Années académiques depuis cache local");
+        console.log(" Années académiques depuis cache local");
         return cache.annees_academiques;
       }
       
-      console.log("🌐 Chargement années académiques...");
+      console.log(" Chargement années académiques...");
       
       // Essayer d'abord l'endpoint avec cache
       try {
         const response = await api.get("/inscription/annees-academiques-cached/");
         cache.annees_academiques = response.data.annees || [];
         cache.timestamp = now;
-        console.log("✅ Années académiques chargées (cached):", cache.annees_academiques.length);
+        console.log(" Années académiques chargées (cached):", cache.annees_academiques.length);
         return cache.annees_academiques;
       } catch (err) {
         // Fallback sur endpoint classique
-        console.log("⚠️ Endpoint cached non dispo, fallback sur endpoint classique");
+        console.log(" Endpoint cached non dispo, fallback sur endpoint classique");
         const response = await api.get("/inscription/annee-academique/");
         const annees = response.data.results || response.data || [];
         cache.annees_academiques = annees;
         cache.timestamp = now;
-        console.log("✅ Années académiques chargées:", annees.length);
+        console.log("Années académiques chargées:", annees.length);
         return annees;
       }
     } catch (error) {
-      console.error("❌ Erreur getAnneesAcademiques:", error);
+      console.error(" Erreur getAnneesAcademiques:", error);
       // Retourner un tableau vide plutôt que de crasher
       return [];
     }
@@ -114,7 +115,7 @@ const etudiantService = {
    * Vide le cache local
    */
   clearCache: () => {
-    console.log("🗑️ Cache local vidé");
+    console.log(" Cache local vidé");
     cache = {
       parcours: null,
       annees_academiques: null,
@@ -130,7 +131,7 @@ const etudiantService = {
       const response = await api.get("/inscription/parcours/");
       return response.data.results || response.data;
     } catch (error) {
-      console.error("❌ Erreur getParcours:", error);
+      console.error("Erreur getParcours:", error);
       throw error;
     }
   },
@@ -144,7 +145,7 @@ const etudiantService = {
       const response = await api.get("/inscription/filiere/", { params });
       return response.data.results || response.data;
     } catch (error) {
-      console.error("❌ Erreur getFilieresByParcours:", error);
+      console.error(" Erreur getFilieresByParcours:", error);
       throw error;
     }
   },
@@ -158,7 +159,7 @@ const etudiantService = {
       const response = await api.get("/inscription/annee-etude/", { params });
       return response.data.results || response.data;
     } catch (error) {
-      console.error("❌ Erreur getAnneesByParcours:", error);
+      console.error(" Erreur getAnneesByParcours:", error);
       throw error;
     }
   },
@@ -167,7 +168,7 @@ const etudiantService = {
    * Récupère les inscriptions d'un étudiant
    */
   getInscriptions: (etudiantId) => {
-    console.log("📋 Appel API: /inscription/etudiants/" + etudiantId + "/inscriptions/");
+    console.log(" Appel API: /inscription/etudiants/" + etudiantId + "/inscriptions/");
     return api.get(`/inscription/etudiants/${etudiantId}/inscriptions/`)
       .then((res) => res.data);
   },
@@ -182,25 +183,20 @@ const etudiantService = {
   /**
    * Supprime un étudiant
    */
-  deleteEtudiant: async (id) => {
-    try {
-      // Récupérer d'abord l'étudiant pour obtenir l'ID utilisateur
-      const etudiantResponse = await api.get(`/utilisateurs/etudiants/${id}/`);
-      const utilisateurId = etudiantResponse.data.utilisateur?.id || etudiantResponse.data.utilisateur;
-      
-      if (utilisateurId) {
-        await api.delete(`/utilisateurs/${utilisateurId}/`);
-      } else {
-        await api.delete(`/utilisateurs/etudiants/${id}/`);
-      }
-      
-      // Invalider le cache
-      api.invalidateCache('etudiants');
-    } catch (error) {
-      console.error("❌ Erreur deleteEtudiant:", error);
-      throw error;
-    }
-  },
+  /**
+ * Supprime un étudiant ET ses inscriptions (via CASCADE)
+ */
+deleteEtudiant: async (id) => {
+  try {
+    
+    await api.delete(`/utilisateurs/etudiants/${id}/`);
+    
+    console.log(`Étudiant ${id} et ses inscriptions supprimés`);
+  } catch (error) {
+    console.error(" Erreur deleteEtudiant:", error);
+    throw error;
+  }
+},
 
   /**
    * Met à jour un étudiant
@@ -208,13 +204,9 @@ const etudiantService = {
   updateEtudiant: async (id, data) => {
     try {
       const response = await api.put(`/utilisateurs/etudiants/${id}/`, data);
-      
-      // Invalider le cache
-      api.invalidateCache('etudiants');
-      
       return response.data;
     } catch (error) {
-      console.error("❌ Erreur updateEtudiant:", error);
+      console.error("Erreur updateEtudiant:", error);
       throw error;
     }
   },
@@ -224,7 +216,7 @@ const etudiantService = {
    */
   getStatistiquesInscriptions: async (filters = {}) => {
     try {
-      console.log("📊 Récupération des statistiques avec filtres:", filters);
+      console.log(" Récupération des statistiques avec filtres:", filters);
       const cleanFilters = Object.fromEntries(
         Object.entries(filters).filter(([key, value]) => 
           value !== null && value !== undefined && value !== ''
@@ -233,12 +225,17 @@ const etudiantService = {
       const response = await api.get("/inscription/stats/", {
         params: cleanFilters
       });
-      console.log("✅ Statistiques reçues");
+      console.log(" Statistiques reçues");
       return response.data;
     } catch (error) {
-      console.error("❌ Erreur getStatistiquesInscriptions:", error);
+      console.error(" Erreur getStatistiquesInscriptions:", error);
       throw error;
     }
+  },
+  getStatistiquesAbandon: async (annee = "") => {
+  const params = annee ? { annee_academique: annee } : {};
+  const res = await api.get("/inscription/stats-abandons/", { params });
+  return res.data;
   },
 };
 

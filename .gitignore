@@ -6,6 +6,7 @@ Backend_django/*.py[cod]
 **/__pycache__/
 *.py[cod]
 *.log
+data.json
 
 # === ENVIRONNEMENT VIRTUEL ===
 env/

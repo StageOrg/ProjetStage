@@ -1,11 +1,13 @@
 "use client";
-
-import { useRouter } from "next/navigation"; 
 import React from "react";
-import NouvelEtudiantStep1 from "@/features/etudiant/inscription/etape-1/NouvelEtudiantStep1";
-export default function PageStep1() {
-  const router = useRouter();
+import { InscriptionGuard } from "@/components/common/InscriptionGuard"; 
+import Etape2InfosPersonnelles from "@/features/etudiant/inscription/etape-2/NouvelEtudiantStep2";
+
+export default function PageStep2() {
   return (
-    <NouvelEtudiantStep1 />
+    <InscriptionGuard etape={1}>
+      <Etape2InfosPersonnelles />
+    </InscriptionGuard>
   );
 }
+

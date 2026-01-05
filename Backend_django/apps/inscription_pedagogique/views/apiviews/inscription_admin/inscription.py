@@ -17,7 +17,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from apps.utilisateurs.models import RespInscription  
 from apps.inscription_pedagogique.models import (
     AnneeAcademique,
     AnneeEtude,
@@ -59,7 +59,7 @@ class InscriptionEtudiantView(APIView):
         else:
             return Response({'error': 'Format non supporté'}, status=status.HTTP_400_BAD_REQUEST)
 
-        resultat = self._importer_pandas(df, fichier, extension[:4])
+        resultat = self._importer_pandas(df, fichier, extension)
         return resultat if isinstance(resultat, StreamingHttpResponse) else Response(resultat, status=status.HTTP_200_OK)
 
     # =====================================================================
@@ -184,7 +184,6 @@ class InscriptionEtudiantView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         pwd_encoded = base64.b64encode(mot_de_passe_temp.encode()).decode()
-        lien_connexion = f"{settings.FRONTEND_URL}/login"
         lien_premiere = f"{settings.FRONTEND_URL}/premiere_connexion/{uid}/{token}?pwd={pwd_encoded}"
 
         sujet = "Vos identifiants de connexion"
@@ -201,7 +200,7 @@ class InscriptionEtudiantView(APIView):
         Lien direct : {lien_premiere}
 
         Cordialement,
-        Responsable dinscription 
+        Ecole Polytecnique de Lomé
         """
 
         send_mail(
@@ -248,39 +247,47 @@ class InscriptionEtudiantView(APIView):
 
         return pd.DataFrame(etudiants)
 
+        # =====================================================================
+    # 6. Import massif – VERSION FINALE 100% FONCTIONNELLE
     # =====================================================================
-    # 6. Import massif (CORRIGÉ)
-    # =====================================================================
-    def _importer_pandas(self, df, fichier_upload, type_fichier):
+    def _importer_pandas(self, df, fichier_upload, extension):
         reussis = []
         echoues = []
-
-        # RÉCUPÉRATION DES FILTRES ENVOYÉS PAR LE FRONTEND
+    
+        # Récupération des filtres
         parcours_id = self.request.POST.get('parcours_id')
         filiere_id = self.request.POST.get('filiere_id')
         annee_etude_id = self.request.POST.get('annee_etude_id')
-
         if not all([parcours_id, filiere_id, annee_etude_id]):
             raise ValueError("Les filtres (parcours, filière, année) sont obligatoires pour l'import.")
-
+    
+        if 'date_naiss' in df.columns:
+            df['date_naiss'] = pd.to_datetime(
+                df['date_naiss'],
+                dayfirst=True,           
+                errors='coerce'          
+            )
+            df['date_naiss'] = df['date_naiss'].dt.date         
+            df['date_naiss'] = df['date_naiss'].replace({pd.NaT: None})  
+    
         for idx, row in df.iterrows():
             data = {
-                'first_name': str(row.get('first_name') or row.get('prenom', '')).strip(),
-                'last_name': str(row.get('last_name') or row.get('nom', '')).strip(),
-                'email': str(row.get('email', '')).strip(),
-                'telephone': str(row.get('telephone', '')).strip(),
-                'date_naiss': str(row.get('date_naiss', '')).strip(),
-                'lieu_naiss': str(row.get('lieu_naiss', '')).strip(),
-                'num_carte': str(row.get('num_carte', '')) if pd.notna(row.get('num_carte')) else '',
-                'autre_prenom': str(row.get('autre_prenom', '')).strip(),
-                'sexe': str(row.get('sexe', 'M')).strip().upper()[:1],
-                # INJECTION DES FILTRES
-                'parcours_id': parcours_id,
-                'filiere_id': filiere_id,
-                'annee_etude_id': annee_etude_id,
+                'first_name': str(row.get('first_name') or row.get('prenom', '') or '').strip(),
+                'last_name': str(row.get('last_name') or row.get('nom', '') or '').strip(),
+                'email': str(row.get('email', '') or '').strip().lower(),
+                'telephone': str(row.get('telephone', '') or '').strip(),
+                'date_naiss': row.get('date_naiss'),  # objet date ou None → parfait pour Django
+                'lieu_naiss': str(row.get('lieu_naiss', '') or '').strip(),
+                'num_carte': str(row.get('num_carte', '')) if pd.notna(row.get('num_carte')) else None,
+                'autre_prenom': str(row.get('autre_prenom', '') or '').strip(),
+                'sexe': str(row.get('sexe', 'M') or 'M').strip().upper()[:1],
+                'parcours_id': int(parcours_id),
+                'filiere_id': int(filiere_id),
+                'annee_etude_id': int(annee_etude_id),
             }
-            data = {k: v for k, v in data.items() if v}
-
+    
+            data = {k: v for k, v in data.items() if v not in ['', None] or k == 'date_naiss'}
+    
             try:
                 result = self._creer_etudiant_manuel(data)
                 info = {
@@ -294,32 +301,28 @@ class InscriptionEtudiantView(APIView):
                 reussis.append(info)
             except Exception as e:
                 echoues.append({'ligne': idx + 2, 'erreur': str(e)})
-
-        # === LOG D'IMPORT ===
+    
+        # Log d'import
         import_log = ImportEtudiant.objects.create(
-            admin=self.request.user,
+            admin=RespInscription.objects.get(utilisateur=self.request.user),
             fichier=fichier_upload,
-            type_fichier=type_fichier,
+            methode='import',
             reussis=len(reussis),
             echoues=len(echoues),
             details={'reussis': reussis, 'echoues': echoues}
         )
-
-        # === RETOUR CSV SI SUCCÈS ===
+    
+        # Retour CSV si succès
         if reussis:
             output = StringIO()
             writer = csv.writer(output)
             writer.writerow(['Ligne', 'Nom', 'Prénom', 'Email', 'Username', 'Mot de passe temporaire'])
             for r in reussis:
-                writer.writerow([
-                    r['ligne'], r['nom'], r['prenom'],
-                    r['email'], r['username'], r['mot_de_passe_temporaire']
-                ])
+                writer.writerow([r['ligne'], r['nom'], r['prenom'], r['email'], r['username'], r['mot_de_passe_temporaire']])
             response = StreamingHttpResponse(output.getvalue(), content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="identifiants_import_{import_log.id}.csv"'
             return response
-
-        # === RETOUR JSON SI ÉCHEC TOTAL ===
+    
         return {
             'reussis': len(reussis),
             'echoues': len(echoues),

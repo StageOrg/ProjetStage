@@ -117,7 +117,11 @@ DATABASES = {
         'PORT': config('DB_PORT', default='5432'),
         'OPTIONS': {
         # 'sslmode': 'require', 
+        'PORT': config('DB_PORT', default=5432, cast=int),
     }
+        
+        
+
     }
 }
 # Media files
@@ -244,5 +248,7 @@ DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 EMAIL_TIMEOUT = 30
 
 
+PASSWORD_RESET_TIMEOUT = 10 * 24 * 60 * 60
+EMAIL_TIMEOUT = 30
 # URL Frontend
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')

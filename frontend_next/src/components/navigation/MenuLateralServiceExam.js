@@ -9,7 +9,7 @@ export default function MenuLateralServiceExam() {
   return (
     <div className="w-64 h-full bg-gradient-to-b from-white to-gray-50 shadow-lg rounded-xl p-6 mt-30">
       <h2 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">
-        📌 Statut de la période de saisie
+         Statut de la période de saisie
       </h2>
 
       {periodeActive ? (

@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* Contenu principal */}
-      <main className="md:ml-64 pt-20 min-h-screen bg-white font-sans flex flex-col items-center justify-center px-4 py-12 gap-8">
+      <main className="md:ml-64 pt-20  bg-white font-sans flex flex-col  max-w-10xl mx-auto justify-between min-h-screen">
         {children}
       </main>
     </>

@@ -15,7 +15,7 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
-  const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-0");
+  const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-1");
   const [role, setRole] = useState(() => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem("user_role") || "visiteur";
@@ -39,7 +39,7 @@ export default function Header() {
           // Si période fermée ou expirée, redirige vers page FinInscription
           setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
         } else {
-          setInscriptionLink("/etudiant/inscription/etape-0");
+          setInscriptionLink("/etudiant/inscription/etape-1");
         }
       }
     };

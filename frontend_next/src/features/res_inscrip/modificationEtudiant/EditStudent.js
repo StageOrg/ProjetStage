@@ -35,32 +35,28 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
     }
   }, [student, isOpen]);
 
-  // Validation du formulaire
+  // Validation du formulaire (téléphone, date, lieu → facultatifs)
   const validateForm = () => {
     const newErrors = {};
-   
+
     if (!formData.first_name.trim()) {
       newErrors.first_name = 'Le prénom est requis';
     }
-   
+
     if (!formData.last_name.trim()) {
       newErrors.last_name = 'Le nom est requis';
     }
-   
+
     if (!formData.email.trim()) {
-      newErrors.email = 'L\'email est requis';
+      newErrors.email = "L'email est requis";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email invalide';
     }
-   
-    if (!formData.telephone.trim()) {
-      newErrors.telephone = 'Le téléphone est requis';
-    }
-   
+
     if (!formData.sexe) {
       newErrors.sexe = 'Le sexe est requis';
     }
-   
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -72,8 +68,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
       ...prev,
       [name]: value
     }));
-   
-    // Effacer l'erreur du champ modifié
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -82,21 +77,33 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
     }
   };
 
-  // Sauvegarde
+  // Sauvegarde avec nettoyage des champs vides → null (corrige l'erreur 400)
   const handleSubmit = async (e) => {
     e.preventDefault();
-   
+
     if (!validateForm()) {
       return;
     }
-   
+
     setLoading(true);
     try {
-      await onSave(student.id, formData);
+      const cleanData = {
+        ...formData,
+        telephone: formData.telephone.trim() === '' ? null : formData.telephone.trim(),
+        date_naiss: formData.date_naiss === '' ? null : formData.date_naiss,
+        lieu_naiss: formData.lieu_naiss.trim() === '' ? null : formData.lieu_naiss.trim(),
+        autre_prenom: formData.autre_prenom.trim() === '' ? null : formData.autre_prenom.trim(),
+      };
+
+      await onSave(student.id, cleanData);
       onClose();
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
-      setErrors({ general: 'Erreur lors de la sauvegarde' });
+      const msg = error.response?.data?.detail ||
+                  error.response?.data?.non_field_errors?.[0] ||
+                  error.response?.data?.email?.[0] ||
+                  'Erreur lors de la sauvegarde';
+      setErrors({ general: msg });
     } finally {
       setLoading(false);
     }
@@ -105,7 +112,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* En-tête */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
@@ -113,13 +120,11 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
             <User className="w-6 h-6 text-blue-600" />
             Modifier l'étudiant
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
             <X className="w-6 h-6" />
           </button>
         </div>
+
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="p-6">
           {/* Erreur générale */}
@@ -129,6 +134,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               <span>{errors.general}</span>
             </div>
           )}
+
           {/* Numéro de carte */}
           <div className="mb-4">
             <label className="block text-black font-semibold mb-2 text-sm">
@@ -138,10 +144,16 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               type="text"
               name="num_carte"
               value={formData.num_carte}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-black"
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                handleChange({ target: { name: 'num_carte', value } });
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="123456"
+              maxLength={6}
             />
           </div>
+
           {/* Nom et Prénom */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -153,9 +165,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                  errors.last_name ? 'border-red-500' : 'border-gray-300'
-                } text-black`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.last_name ? 'border-red-500' : 'border-gray-300'} text-black`}
                 placeholder="Nom"
               />
               {errors.last_name && (
@@ -165,6 +175,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 </p>
               )}
             </div>
+
             <div>
               <label className="block text-black font-semibold mb-2 text-sm">
                 Prénom*
@@ -174,9 +185,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                  errors.first_name ? 'border-red-500' : 'border-gray-300'
-                } text-black`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.first_name ? 'border-red-500' : 'border-gray-300'} text-black`}
                 placeholder="Prénom"
               />
               {errors.first_name && (
@@ -187,6 +196,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               )}
             </div>
           </div>
+
           {/* Autre prénom */}
           <div className="mb-4">
             <label className="block text-black font-semibold mb-2 text-sm">
@@ -201,6 +211,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               placeholder="Autres prénoms"
             />
           </div>
+
           {/* Sexe */}
           <div className="mb-4">
             <label className="block text-black font-semibold mb-2 text-sm">
@@ -210,9 +221,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               name="sexe"
               value={formData.sexe}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                errors.sexe ? 'border-red-500' : 'border-gray-300'
-              } text-black`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.sexe ? 'border-red-500' : 'border-gray-300'} text-black`}
             >
               <option value="">-- Sélectionner --</option>
               <option value="M">Masculin</option>
@@ -225,6 +234,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               </p>
             )}
           </div>
+
           {/* Email et Téléphone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -237,9 +247,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                } text-black`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.email ? 'border-red-500' : 'border-gray-300'} text-black`}
                 placeholder="email@example.com"
               />
               {errors.email && (
@@ -249,29 +257,23 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 </p>
               )}
             </div>
+
             <div>
               <label className="block text-black font-semibold mb-2 text-sm flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-500" />
-                Téléphone*
+                Téléphone
               </label>
               <input
                 type="tel"
                 name="telephone"
                 value={formData.telephone}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                  errors.telephone ? 'border-red-500' : 'border-gray-300'
-                } text-black`}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
                 placeholder="+228 90 12 34 56"
               />
-              {errors.telephone && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.telephone}
-                </p>
-              )}
             </div>
           </div>
+
           {/* Date et Lieu de naissance */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
@@ -287,6 +289,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
               />
             </div>
+
             <div>
               <label className="block text-black font-semibold mb-2 text-sm flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-gray-500" />
@@ -302,6 +305,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onSave }) {
               />
             </div>
           </div>
+
           {/* Boutons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <button

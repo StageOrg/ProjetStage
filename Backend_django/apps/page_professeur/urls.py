@@ -18,7 +18,6 @@ router.register(r'periodes', PeriodeSaisieViewSet, basename='periode-saisie')
 router.register(r'anonymats', AnonymatViewSet, basename='anonymat')
 router.register(r'resultats', ResultatUEViewSet, basename='resultat-ue')  
 
-
 urlpatterns = [
     path('import-ues/', import_ues, name='import-ues'),
     path('', include(router.urls)),
