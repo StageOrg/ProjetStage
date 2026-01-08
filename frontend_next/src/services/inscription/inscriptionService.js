@@ -137,6 +137,16 @@ const inscriptionService = {
       console.error("Erreur inscriptionAncienEtudiant:", error);
       throw error;
     }
+  },
+  // Vérifier si l'étudiant est déjà inscrit pour l'année active
+  verifierInscriptionEnCours: async (etudiantId) => {
+    try {
+      const response = await api.get(`/inscription/verifier-inscription/${etudiantId}/`);
+      return response.data;
+    } catch (error) {
+      console.error("Erreur verifierInscriptionEnCours:", error);
+      throw error;
+    }
   }
 };
 

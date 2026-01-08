@@ -60,8 +60,8 @@ export default function Connexion() {
           return;
         }
         
-        // 3. Par défaut : aller sur données personnelles
-        router.push("/etudiant/dashboard/donnees-personnelles");
+        // 3. Par défaut : aller sur le flux de vérification d'inscription
+        router.push("/etudiant/inscription/redirect");
         return;
       }
       

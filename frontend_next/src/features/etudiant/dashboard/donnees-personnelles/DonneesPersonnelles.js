@@ -263,6 +263,32 @@ export default function DonneesPersonnelles() {
 
   return (
     <div className="bg-transparent backdrop-blur-2xl shadow-1xl px-10 py-12 w-full animate-fade-in">
+      {/* Bandeau d'avertissement Inscription */}
+      {(!studentData?.parcours_info || !studentData?.filiere_info) && (
+        <div className="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-8 border-orange-500 rounded-2xl shadow-md animate-pulse-slow">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-orange-100 rounded-full">
+                <FaExclamationTriangle className="text-2xl text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-orange-900">Inscription incomplète</h3>
+                <p className="text-orange-800 opacity-90">
+                  Votre dossier académique n'est pas encore finalisé pour l'année en cours. 
+                  Veuillez compléter votre inscription pour accéder à toutes vos fonctionnalités.
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => window.location.href = '/etudiant/inscription/redirect'}
+              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-orange-200"
+            >
+              Combler mon inscription
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h2 className="flex items-center gap-3 text-3xl font-extrabold text-black drop-shadow">

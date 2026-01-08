@@ -1,11 +1,15 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.hashers import make_password
 from datetime import datetime
-from apps.utilisateurs.models import Utilisateur, Etudiant
-from apps.inscription_pedagogique.models import Parcours, Filiere, AnneeAcademique, AnneeEtude, Inscription
+
+from apps.utilisateurs.models import Utilisateur, Etudiant, RespInscription
+from apps.inscription_pedagogique.models import (
+    Parcours, Filiere, AnneeAcademique, AnneeEtude, Inscription
+)
+
 
 class Command(BaseCommand):
-    help = 'Crée un ancien étudiant de test'
+    help = 'Crée des utilisateurs de test'
 
     def handle(self, *args, **kwargs):
         try:
@@ -124,6 +128,46 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Ancien étudiant 2 créé ou récupéré: {user2.username}"))
 
             self.stdout.write(self.style.SUCCESS(f"Ancien étudiant créé ou récupéré: {utilisateur.username}"))
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Erreur: {str(e)}"))
+
+
+            # ==============================
+            # RESPONSABLE DES INSCRIPTIONS
+            # ==============================
+            resp_data = {
+                'username': 'respInscription',
+                'password': 'Resp@2025',
+                'first_name': 'Responsable',
+                'last_name': 'Inscription',
+                'email': 'inscription@gmail.com',
+                'role': 'resp_inscription',
+                'sexe': 'F',
+            }
+
+            resp_user, _ = Utilisateur.objects.get_or_create(
+                username=resp_data['username'],
+                defaults={
+                    'password': make_password(resp_data['password']),
+                    'first_name': resp_data['first_name'],
+                    'last_name': resp_data['last_name'],
+                    'email': resp_data['email'],
+                    'role': resp_data['role'],
+                    'sexe': resp_data['sexe'],
+                    'doit_changer_mdp': False,
+                }
+            )
+
+            RespInscription.objects.get_or_create(
+                utilisateur=resp_user
+            )
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Responsable des inscriptions créé ou récupéré : {resp_user.username}"
+                )
+            )
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Erreur: {str(e)}"))
