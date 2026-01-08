@@ -271,7 +271,7 @@ export default function EtapeSelectionParcours() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-8 rounded-full shadow transition-all disabled:opacity-50"
+          className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-all disabled:opacity-50"
         >
           {loading ? "Chargement..." : "Suivant"}
         </button>

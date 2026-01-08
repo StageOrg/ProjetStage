@@ -81,12 +81,10 @@ export default function EtapeInfosPersonnelles() {
                 const user = JSON.parse(userStr);
                 
                 if (user.num_carte) {
-                    const loadingToast = toast.loading("Chargement de vos informations...");
                     console.log("🔄 Récupération des infos ancien étudiant depuis l'API...");
                     
                     try {
                         const response = await api.get(`/inscription/verifier-ancien-etudiant/${user.num_carte}/`);
-                        toast.dismiss(loadingToast);
                         const data = response.data;
                         
                         if (data.existe) {
@@ -124,17 +122,11 @@ export default function EtapeInfosPersonnelles() {
                                 setApercu(etu.photo);
                             }
                             
-                            toast.success("Informations récupérées avec succès");
-                            
-                        } else {
-                            toast.error("Votre dossier étudiant est introuvable.");
                         }
                     } catch (err) {
-                        toast.dismiss(loadingToast);
                         console.error("Erreur chargement API Ancien Etudiant:", err);
-                        toast.error("Mode hors ligne : Utilisation des données locales.");
                         
-                        // Fallback localStorage si erreur réseau
+                        // Fallback localStorage si erreur réseau (silencieux)
                         const ancienData = localStorage.getItem("ancien_etudiant_complet");
                         if (ancienData) {
                             const parsedAncien = JSON.parse(ancienData);

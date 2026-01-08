@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { InscriptionGuard } from "@/components/common/InscriptionGuard";
-import Etape4SelectionUE from "@/features/etudiant/inscription/etape-4/NouvelEtudiantStep4";
+import Etape4SelectionUE from "@/features/etudiant/inscription/etape-3/NouvelEtudiantStep4";
 
 export default function PageStep4() {
   const router = useRouter();

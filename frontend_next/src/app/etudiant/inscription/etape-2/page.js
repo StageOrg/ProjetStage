@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { InscriptionGuard } from "@/components/common/InscriptionGuard"; 
-import Etape3InfosPedagogiques from "@/features/etudiant/inscription/etape-3/NouvelEtudiantStep3";
+import Etape3InfosPedagogiques from "@/features/etudiant/inscription/etape-2/NouvelEtudiantStep3";
 
 export default function PageStep3() {
   const router = useRouter();

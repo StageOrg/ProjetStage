@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import inscriptionService from "@/services/inscription/inscriptionService";
+import api from "@/services/api";
 import toast from 'react-hot-toast';
 
 /**
@@ -12,8 +13,13 @@ export function usePostLoginRedirection() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasExecuted = useRef(false); // Empêcher double exécution en Strict Mode
 
   useEffect(() => {
+    // Éviter double exécution si déjà fait
+    if (hasExecuted.current) return;
+    hasExecuted.current = true;
+
     const verifierEtRediriger = async () => {
       try {
         const userStr = localStorage.getItem('user');
@@ -31,13 +37,16 @@ export function usePostLoginRedirection() {
         }
 
         // Vérifier si l'étudiant a un num_carte (= ancien étudiant)
+        let etudiantId = null;
+        
         if (user.num_carte) {
           try {
-            const loadingToast = toast.loading("Vérification du dossier...");
+            const loadingToast = toast.loading("Vérification ...");
             const response = await inscriptionService.verifierAncienEtudiant(user.num_carte);
             toast.dismiss(loadingToast);
             
             if (response.existe) {
+              etudiantId = response.etudiant.id;
               // Sauvegarder les données de l'ancien étudiant
               localStorage.setItem("ancien_etudiant_complet", JSON.stringify({
                 etudiant: response.etudiant,
@@ -56,12 +65,11 @@ export function usePostLoginRedirection() {
               }));
 
               toast.success(`Bon retour ${response.etudiant.prenom} !`);
-              // Rediriger vers l'étape 1 (infos personnelles)
-              router.push('/etudiant/inscription/etape-1');
             } else {
               // Si le numéro de carte existe sur USER mais pas dans la table ETUDIANT (cas rare mais possible)
               setError("Erreur: Données étudiant introuvables");
               toast.error("Votre numéro de carte est inconnu. Contactez l'administration.");
+              return;
             }
           } catch (err) {
             toast.dismiss();
@@ -75,11 +83,11 @@ export function usePostLoginRedirection() {
                 numCarteExistant: null
               }));
               toast.success("Bienvenue ! Complétez votre profil.");
-              router.push('/etudiant/inscription/etape-1');
             } else {
               const msg = err.response?.data?.message || "Erreur de connexion serveur";
               setError(msg);
               toast.error(msg);
+              return;
             }
           }
         } else {
@@ -89,11 +97,38 @@ export function usePostLoginRedirection() {
             typeEtudiant: 'nouveau',
             numCarteExistant: null
           }));
-
+          
+          // Essayer de récupérer l'ID de l'étudiant via l'utilisateurs/me si possible
+          // Mais dans ce flux, on va passer direct à la vérification d'inscription
+          // car même un nouveau peut déjà avoir une inscription
           toast.success("Bienvenue ! Commencez votre inscription.");
-          // Rediriger vers l'étape 1 (infos personnelles)
-          router.push('/etudiant/inscription/etape-1');
         }
+
+        // --- NOUVELLE LOGIQUE : VÉRIFICATION D'INSCRIPTION EN COURS ---
+        try {
+          // On a besoin de l'ID de l'étudiant (pas de l'utilisateur)
+          // Si on ne l'a pas encore, on le récupère via le profil complet
+          if (!etudiantId) {
+             const completeData = await api.get("/utilisateurs/etudiants/me/");
+             etudiantId = completeData.data.id;
+          }
+
+          if (etudiantId) {
+            const checkInscription = await inscriptionService.verifierInscriptionEnCours(etudiantId);
+            if (checkInscription.deja_inscrit) {
+              toast.success(`Vous êtes déjà inscrit pour l'année ${checkInscription.annee_academique}`);
+              router.push('/etudiant/dashboard/donnees-personnelles');
+              return;
+            }
+          }
+        } catch (checkErr) {
+          console.error("Erreur durant la vérification d'inscription:", checkErr);
+          // On continue si cette vérification échoue, pour ne pas bloquer l'étudiant
+        }
+
+        // Si non inscrit, on redirige vers l'étape 1
+        router.push('/etudiant/inscription/etape-1');
+
       } catch (err) {
         console.error("Erreur redirection post-login:", err);
         setError("Une erreur est survenue lors de la redirection");
