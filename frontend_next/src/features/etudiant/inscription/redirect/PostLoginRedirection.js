@@ -98,16 +98,11 @@ export function usePostLoginRedirection() {
             numCarteExistant: null
           }));
           
-          // Essayer de récupérer l'ID de l'étudiant via l'utilisateurs/me si possible
-          // Mais dans ce flux, on va passer direct à la vérification d'inscription
-          // car même un nouveau peut déjà avoir une inscription
           toast.success("Bienvenue ! Commencez votre inscription.");
         }
 
-        // --- NOUVELLE LOGIQUE : VÉRIFICATION D'INSCRIPTION EN COURS ---
         try {
-          // On a besoin de l'ID de l'étudiant (pas de l'utilisateur)
-          // Si on ne l'a pas encore, on le récupère via le profil complet
+         
           if (!etudiantId) {
              const completeData = await api.get("/utilisateurs/etudiants/me/");
              etudiantId = completeData.data.id;
@@ -177,22 +172,14 @@ export function PostLoginTransition() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full">
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-6"></div>
-            <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
-              Bienvenue !
-            </h2>
-            <p className="text-center text-gray-600">
-              Vérification de votre dossier en cours...
-            </p>
-          </div>
-        </div>
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-white">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return null;
 }

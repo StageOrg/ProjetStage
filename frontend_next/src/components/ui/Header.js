@@ -253,7 +253,7 @@ export default function Header() {
           })}
 
           {/* Sélecteur d'année académique */}
-          {role !== "visiteur" && (
+          {role !== "visiteur" && role !== "etudiant" && (
             <div className="h-6">
               <select
                 onChange={(e) => {
