@@ -1,6 +1,7 @@
 import api from "./api"; 
-
+const annee = localStorage.getItem("annee_id");
 const UEService = {
+  
   getEtudiantsByUE: async (ueId) => {
     console.log("Fetching students for UE ID:", ueId);
   if (!ueId) {
@@ -15,9 +16,9 @@ const UEService = {
     console.log("Données reçues du backend:", response.data);
     return response.data;
   },
-  // Récupérer les UE associées à des évaluations d'examen anonymés
-  getUEByEvaluation: async () => {
-    const response = await api.get(`/notes/ues/filter-examen/`);
+  // Récupérer les UE associées à des évaluations d'examen anonymés par année académique
+  getUEByEvaluation: async (anneeId) => {
+    const response = await api.get(`/notes/ues/filter-examen/?annee=${anneeId}`);
     return response.data;
   },
 

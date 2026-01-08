@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useRef, useEffect } from "react";
 import { FaUser, FaSave, FaEdit, FaCamera, FaTimes } from "react-icons/fa";
 import ProfesseurService from "@/services/profService";

@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { FaFileExcel } from "react-icons/fa";
 import { HiUpload } from "react-icons/hi";

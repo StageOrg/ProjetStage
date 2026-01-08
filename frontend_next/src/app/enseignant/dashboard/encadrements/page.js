@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import EncadrementsProf from "@/features/enseignant/dashboard/encadrements/EncadrementsProf";

@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import Statistiques from "@/features/etudiant/dashboard/statistiques/Statistiques";

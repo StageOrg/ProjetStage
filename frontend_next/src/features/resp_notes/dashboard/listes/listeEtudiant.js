@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileDown, FileSpreadsheet } from "lucide-react";
@@ -86,8 +87,10 @@ function ListeEtudiantsUE({ ueId }) {
 
   return (
     <div className="bg-transparent px-8 py-10 w-full h-full animate-fade-in">
+      
+      {/* En-tête avec boutons d'export */} 
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-bold text-2xl">Étudiants inscrits à l'UE <UELibelle ueId={ueId} /></h2>
+        <h2 className="font-bold text-2xl">{etudiants.length} Étudiants inscrits à l'UE <UELibelle ueId={ueId} /></h2>
         <div className="flex gap-3">
           <button onClick={exportPDF} className="p-2 bg-red-500 text-white rounded-lg flex items-center gap-2">
             <FileDown size={18} /> PDF
@@ -98,6 +101,7 @@ function ListeEtudiantsUE({ ueId }) {
         </div>
       </div>
       {/* Tableau */}
+     
       <table className="w-full border-collapse border">
         <thead>
           <tr className="bg-gray-100">
@@ -119,7 +123,9 @@ function ListeEtudiantsUE({ ueId }) {
                 <td className="border px-2 py-1 text-center">{' '}</td>
                 <td className="border px-2 py-1 text-center">{' '}</td>
             </tr>
-          ))}
+          ))
+          }
+         
         </tbody>
       </table>
     </div>

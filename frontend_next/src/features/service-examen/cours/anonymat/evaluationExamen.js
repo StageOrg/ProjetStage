@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { useEffect } from "react";
 import SaisieAnonymat from "./saisieAnonymat";

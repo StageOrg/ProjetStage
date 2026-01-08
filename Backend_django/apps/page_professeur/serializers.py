@@ -82,8 +82,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Evaluation
-        fields = ["id", "type", "poids", "ue", "anonyme"]
-        required_fields = ['type', 'poids', 'ue']
+        fields = ["id", "type", "poids", "ue", "anonyme","annee_academique"]
+        required_fields = ['type', 'poids', 'ue', 'annee_academique']
     def create(self, validated_data):
         user = self.context['request'].user
         if not hasattr(user, 'professeur'):
@@ -121,7 +121,7 @@ class AnonymatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anonymat
         fields = '__all__'
-        required_fields = ['etudiant', 'ue', 'numero']
+        required_fields = ['etudiant', 'ue', 'numero', 'annee_academique']
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:

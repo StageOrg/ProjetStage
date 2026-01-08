@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import  ListeEtudiantsUE from "@/features/resp_notes/dashboard/listes/listeEtudiant";

@@ -66,23 +66,25 @@ class UEViewSet(viewsets.ModelViewSet):
         return queryset
 
    
-# Récupération des étudiants inscrits à une UE donnée
+# Récupération des étudiants inscrits à une UE donnée selon l'année académique sélectionnée
 
     @action(detail=True, methods=['get'])
     def etudiantsInscrits(self, request, pk=None):
         ue = self.get_object()
-        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue)
+        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue, inscriptions__anneeAcademique=request.query_params.get('annee_academique')).distinct()
         serializer = EtudiantSerializer(etudiantsInscrits, many=True)
         return Response(serializer.data)
     pagination_class = None
 
     
-    # Récupérer toutes les évaluations liées à une UE donnée
+    # Récupérer toutes les évaluations liées à une UE donnée pendant l'année académique selectionnee
     @action(detail=True, methods=['get'], url_path='evaluations')
     def get_evaluations(self, request, pk=None):
+        annee_id = request.query_params.get("annee")
+
         try:
             ue = self.get_object()
-            evaluations = ue.evaluations.all()
+            evaluations = ue.evaluations.filter(annee_academique_id=annee_id)
             serializer = EvaluationSerializer(evaluations, many=True)
             return Response(serializer.data)
         except UE.DoesNotExist:
@@ -118,8 +120,8 @@ class UEViewSet(viewsets.ModelViewSet):
         ).select_related("anneeAcademique").first()
         annee_academique = inscription_ue.anneeAcademique.libelle if inscription_ue else None
 
-        #  Toutes les évaluations de l’UE (fausse si UE inexistante)
-        evaluations = Evaluation.objects.filter(ue=ue)
+        #  Toutes les évaluations de l’UE selon l'année académique
+        evaluations = Evaluation.objects.filter(ue=ue, annee_academique_id=annee_id)
 
         # 4Tous les étudiants inscrits à cette UE et cette année
         etudiants = Etudiant.objects.filter(
@@ -213,14 +215,16 @@ class UEViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
   
-    #Endpoint pour recuperer les ues qui ont des examens anonymes
+    #Endpoint pour recuperer les ues qui ont des examens anonymes par année academique passé en parametre dans l'url
     @action(detail=False, methods=["get"], url_path="filter-examen")
     def ues_avec_examen(self, request):
+        
         """
         Liste toutes les UEs qui ont au moins une évaluation de type 'Examen'.
         """
+        annee_id = request.query_params.get('annee_etude')
         # 🔍 Filtrer les UEs dont au moins une évaluation est de type 'Examen'
-        ues = UE.objects.filter(evaluations__type="Examen", evaluations__anonyme=True).distinct()
+        ues = UE.objects.filter(evaluations__type="Examen", evaluations__anonyme=True, evaluations__annee_academique_id=annee_id).distinct()
         serializer = self.get_serializer(ues, many=True)
         return Response(serializer.data)
     pagination_class = None
@@ -233,13 +237,15 @@ class UEViewSet(viewsets.ModelViewSet):
         Liste toutes les UEs qui ont au moins une évaluation anonyme
         et pour lesquelles aucune note n'a encore été saisie.
         """
+        annee_id = request.query_params.get('annee_etude')
         ues = UE.objects.filter(
-            evaluations__anonyme=True
+            evaluations__anonyme=True,
+            evaluations__annee_academique_id=annee_id
         ).distinct()
 
         ues_sans_notes = []
         for ue in ues:
-            evaluations_anonymes = ue.evaluations.filter(anonyme=True)
+            evaluations_anonymes = ue.evaluations.filter(anonyme=True, annee_academique_id=annee_id)
             notes_existantes = Note.objects.filter(evaluation__in=evaluations_anonymes).exists()
             if not notes_existantes:
                 ues_sans_notes.append(ue)
@@ -258,6 +264,8 @@ class UEViewSet(viewsets.ModelViewSet):
     # ✅ Action pour récupérer l'état d'une UE spécifique
     @action(detail=True, methods=["get"], url_path="controle-notes")
     def controle_notes_ue(self, request, pk=None):
+        annee_id = request.query_params.get("annee")
+
         # ✅ Sécurité : seul responsable des notes ou admin
         if not hasattr(request.user, "resp_notes") and not request.user.is_superuser:
             return Response(
@@ -296,7 +304,7 @@ class UEViewSet(viewsets.ModelViewSet):
             }
 
         # ✅ Vérification des notes par évaluation
-        evaluations = Evaluation.objects.filter(ue=ue)
+        evaluations = Evaluation.objects.filter(ue=ue, annee_academique_id=annee_id)
 
         for evaluation in evaluations:
             notes_exist = Note.objects.filter(evaluation=evaluation).exists()
@@ -404,9 +412,11 @@ class EvaluationViewSet(viewsets.ModelViewSet):
     
     @action (detail=False, methods=['get'], url_path='by-ue/(?P<ue_id>[^/.]+)')
     def by_ue(self, request, ue_id=None):
+        annee_id = request.query_params.get("annee")
+
         if not ue_id:
             return Response({"error": "ue est requis"}, status=400)
-        evaluations = Evaluation.objects.filter(ue__id=ue_id)
+        evaluations = Evaluation.objects.filter(ue__id=ue_id, annee_academique_id=annee_id)
         serializer = self.get_serializer(evaluations, many=True)
         enregistrer_action(
             utilisateur=request.user,
@@ -498,9 +508,11 @@ class AnonymatViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def by_ue(self, request):
         ue_id = request.query_params.get("ue")
+        annee_id = request.query_params.get("annee")
+
         if not ue_id:
             return Response({"error": "ue est requis"}, status=400)
-        anonymats = Anonymat.objects.filter(ue__id=ue_id)   
+        anonymats = Anonymat.objects.filter(ue__id=ue_id, annee_academique_id=annee_id)   
         serializer = self.get_serializer(anonymats, many=True)
         
         enregistrer_action(

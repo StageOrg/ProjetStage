@@ -1,4 +1,3 @@
-"use client ";
 import Professeurs from "@/features/nos_profs/professeurs";
 
 export default function PageNosProfs() {

@@ -1,4 +1,6 @@
+
 // components/ExportButtons.js
+"use client";
 import { FileDown, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";

@@ -1,4 +1,3 @@
-"use client";
 import SetPasswordForm from "@/features/administration/register/setPassword";
 
 import { useParams } from "next/navigation";

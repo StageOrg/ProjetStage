@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import ProjetsEncadresProf from "@/features/enseignant/dashboard/projets/ProjetsEncadresProf";

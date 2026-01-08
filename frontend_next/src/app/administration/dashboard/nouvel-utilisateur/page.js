@@ -1,4 +1,3 @@
-"use client";
 import RegisterForm from "@/features/administration/register/AjoutUtilisateur";
 export default function NouvelUtilisateur() {
   return (

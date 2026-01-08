@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import ParcoursService from "@/services/parcoursService";
 export default function ParcoursForm({ onSuccess }) {

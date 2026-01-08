@@ -37,6 +37,8 @@ class Evaluation(models.Model):
     type = models.CharField(max_length=50, choices=TYPE)
     poids = models.FloatField()
     anonyme = models.BooleanField(null=True, blank=True, default=None)
+    annee_academique = models.ForeignKey("inscription_pedagogique.AnneeAcademique", on_delete=models.CASCADE)
+
 
 class Anonymat(models.Model):
     etudiant = models.ForeignKey("utilisateurs.Etudiant", on_delete=models.CASCADE, related_name="anonymats")

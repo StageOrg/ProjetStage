@@ -39,7 +39,7 @@ export default function Header() {
           // Si période fermée ou expirée, redirige vers page FinInscription
           setInscriptionLink("/etudiant/inscription/inscriptionCloturee");
         } else {
-          setInscriptionLink("/etudiant/inscription/etape-1");
+          setInscriptionLink("/etudiant/inscription/redirect");
         }
       }
     };

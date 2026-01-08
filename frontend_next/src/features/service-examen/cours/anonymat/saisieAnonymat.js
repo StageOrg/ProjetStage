@@ -1,4 +1,5 @@
 import AnonymatService from "@/services/anonymatService";
+import SearchBar from "@/components/ui/SearchBar";
 import { useState } from "react";
 import {useRef} from "react";
 
@@ -7,6 +8,12 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
 
  // Tableau de références pour chaque champ
   const inputRefs = useRef([]);
+  const [search, setSearch] = useState('');
+
+  const etudiantsFiltres = etudiants.filter((etu) =>
+  etu.nom?.toLowerCase().includes(search.toLowerCase()) ||
+  etu.prenom?.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleChangeNumeroAnonyme = async (index, value) => {
     try {
@@ -53,6 +60,13 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
 
   return (
     <div className="mt-6">
+      <SearchBar
+        value={search}
+        onChange={setSearch}
+        placeholder="Rechercher un étudiant"
+        className="w-[300px] mb-4"
+      />
+
 
       <table className="w-full border-collapse border">
         <thead className="bg-gray-100">
@@ -68,7 +82,7 @@ export default function SaisieAnonymat({ ueId, etudiants, setEtudiants,  evaluat
               <td className="border p-2" colSpan="3">Aucun étudiant inscrit. Revoyez l'année académique que vous avez sélectionnée.</td>
             </tr>
           ) : (
-            etudiants.map((etu, index) => (
+            etudiantsFiltres.map((etu, index) => (
               <tr key={etu.id} className="even:bg-gray-50">
                 <td className="border px-2 py-1">{etu.nom}</td>
                 <td className="border px-2 py-1">{etu.prenom}</td>

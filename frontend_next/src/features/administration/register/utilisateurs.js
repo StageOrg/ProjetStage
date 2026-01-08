@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 import UtilisateurService from "@/services/utilisateurService";
 import ImportUsersExcel from "./importUsersExcel";

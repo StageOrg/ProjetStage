@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 export default function AnneeAcademiqueForm({ onSuccess }) {

@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { HiUpload } from "react-icons/hi";
 import { FaUsers } from "react-icons/fa";

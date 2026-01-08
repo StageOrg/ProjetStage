@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import EvaluationUE from "@/features/service-examen/cours/evaluationUE";
@@ -6,11 +5,11 @@ import EvaluationUE from "@/features/service-examen/cours/evaluationUE";
 
 export default async function EvaluationUEPage({ params }) {
    const resolvedParams = await params;
-  const { idUe } = resolvedParams;
-  console.log("EvaluationUEPage id:", idUe);
+  const { ueId } = resolvedParams;
+  console.log("EvaluationUEPage id:", ueId);
   return (
     <main className=" w-full ">
-      <EvaluationUE ueId={idUe} />
+      <EvaluationUE ueId={ueId} />
     </main>
   );
-}
+}   

@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { FaFileAlt, FaEdit, FaSave, FaTimes, FaTrash, FaPlus } from "react-icons/fa";
 import ArticleService from "@/services/articleService"

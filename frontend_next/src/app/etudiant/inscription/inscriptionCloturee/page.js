@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import InscriptionFermee from "@/features/etudiant/inscription/inscriptionCloturee/FinInscription";
 

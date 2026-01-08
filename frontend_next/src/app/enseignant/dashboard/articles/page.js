@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import ArticlesPubliesProf from "@/features/enseignant/dashboard/articles/ArticlesPubliesProf";

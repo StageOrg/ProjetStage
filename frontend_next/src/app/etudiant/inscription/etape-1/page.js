@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { InscriptionGuard } from "@/components/common/InscriptionGuard"; 
 import Etape2InfosPersonnelles from "@/features/etudiant/inscription/etape-2/NouvelEtudiantStep2";

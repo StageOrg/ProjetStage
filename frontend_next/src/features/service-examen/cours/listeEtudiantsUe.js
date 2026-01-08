@@ -31,6 +31,7 @@ function ListeEtudiantsUE({ ueId }) {
         }
 
         if (res.evaluations.length === 0) {
+          console.log("cherche", ueId);
           router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`);
         }
       } catch (err) {
@@ -87,7 +88,7 @@ function ListeEtudiantsUE({ ueId }) {
           ))}
         </select>
         <button
-          onClick={() => router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`)}
+          onClick={() => router.push(`/service-examen/notes/mes-ues/${ueId}/evaluationsModify`)}
           className="ml-4 text-blue-600 underline"
         >
           Modifier les évaluations

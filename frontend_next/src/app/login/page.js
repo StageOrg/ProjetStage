@@ -77,7 +77,7 @@ export default function Connexion() {
       } else if (data.user.role === "gestionnaire") {
         router.push("/gestion/dashboard/mon-etablissement");
       } else if (data.user.role === "secretaire") {
-        router.push("/secretariat/dashboard/ue-exam");
+        router.push("/secretariat/dashboard");
       } else {
         router.push("/programmes");
       }

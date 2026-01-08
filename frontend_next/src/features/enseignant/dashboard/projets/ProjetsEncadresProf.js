@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { FaProjectDiagram, FaEdit, FaSave, FaTimes, FaTrash, FaPlus } from "react-icons/fa";
 import ProjetService from "@/services/projetService";

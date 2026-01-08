@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { FaChartBar } from "react-icons/fa";
 

@@ -1,4 +1,3 @@
-"use client";
 import RegisterForm from "@/features/administration/register/AjoutUtilisateurProvisoire";
 export default function NouvelUtilisateur() {
   return (

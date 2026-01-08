@@ -1,4 +1,3 @@
-"use client";
 import ListeUtilisateurs from "@/features/administration/register/utilisateurs";
 export default function GestionUtilisateurs() {
   return (

@@ -1,8 +1,10 @@
+"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import EtudiantService from "@/services/etudiantService";
 import EvaluationExamen from "./evaluationExamen";
 
+// Composant principal pour afficher la liste des étudiants inscrits à une UE dont les evaluations sont anonymes
 function ListeEtudiantsUE({ ueId }) {
   const [etudiants, setEtudiants] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
