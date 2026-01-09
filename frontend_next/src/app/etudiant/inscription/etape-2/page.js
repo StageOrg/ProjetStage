@@ -1,3 +1,4 @@
+"use client";
 import { useRouter } from "next/navigation";
 import { InscriptionGuard } from "@/components/common/InscriptionGuard"; 
 import Etape3InfosPedagogiques from "@/features/etudiant/inscription/etape-2/NouvelEtudiantStep3";
@@ -8,7 +9,7 @@ export default function PageStep3() {
   // Logique métier conservée
   const handleSubmit = (data) => {
     console.log("Données reçues :", data);
-    router.push("/etudiant/inscription/etape-4");
+    router.push("/etudiant/inscription/etape-3");
   };
   
   return (

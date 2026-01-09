@@ -8,6 +8,7 @@ import ParcoursService from "@/services/parcoursService";
 import AnneeEtudeService from "@/services/anneeEtudeService";
 import SemestreService from "@/services/semestreService";
 import { FaClipboardList, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 
 export default function UEsExamen() {
 const [filieres, setFilieres] = useState([]);
@@ -26,6 +27,7 @@ const [selectedSemestreObject, setSelectedSemestreObject] = useState("");
 const [selectedCourse, setSelectedCourse] = useState(null);
 const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 const [selectedUeId, setSelectedUeId] = useState(null);
+const {annee} = useAnneeAcademique();
 const router = useRouter();
 
 //recuperer les filieres
@@ -60,11 +62,12 @@ useEffect(() => {
 }, []);
 // récupère les UEs 
 useEffect(() => {
-    UEService.getUEByEvaluationSansNote()
+  if(!annee) return;
+    UEService.getUEByEvaluationSansNote(annee.id)
       .then((data) => setCourses(data))
       .catch((err) => console.error(err));
       console.log("Courses data:", courses);
-  }, []);
+  }, [annee]);
 
 // Gestion du tri
   const requestSort = (key) => {

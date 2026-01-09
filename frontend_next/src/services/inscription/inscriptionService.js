@@ -18,15 +18,11 @@ const inscriptionService = {
     try {
       const { isNewStudent = false, anneeLibelle = null } = options;
       
-      console.log(" getUEs - Appel avec:", { params, options });
       
       //  MODE MULTI-NIVEAUX pour nouveaux étudiants
       if (isNewStudent && anneeLibelle) {
-        console.log(" Mode MULTI-NIVEAUX activé");
-        console.log(" Niveau sélectionné:", anneeLibelle);
         
         const response = await api.get("/inscription/ues/multi-niveaux/", { params });
-        console.log(" Réponse multi-niveaux:", response.data);
         
         const data = response.data;
         
@@ -39,10 +35,8 @@ const inscriptionService = {
       }
       
       //  MODE STANDARD pour anciens étudiants
-      console.log(" Mode STANDARD (ancien étudiant)");
       
       const response = await api.get("/notes/ues/filtrer/", { params });
-      console.log(" Réponse standard:", response.data);
       
       const data = response.data;
       if (!data) return { ues: [], niveaux_charges: [], total_ues: 0 };
@@ -72,9 +66,7 @@ const inscriptionService = {
   // Créer une inscription
   createInscription: async (data) => {
     try {
-      console.log("Envoi requête POST inscription:", data);
       const response = await api.post("inscription/inscription/", data);
-      console.log("Réponse inscription reçue:", response.data);
       return response.data.results || response.data;
     } catch (error) {
       console.error("Erreur dans createInscription:", error);

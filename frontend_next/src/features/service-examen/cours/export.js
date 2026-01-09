@@ -6,15 +6,15 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
+import UELibelle from "@/features/util/UELibelle";
 
 pdfMake.vfs = pdfFonts.default ? pdfFonts.default.vfs : pdfFonts.vfs;
 
-export default function Export({ etudiants, evaluations, evaluation, calculerMoyenne, type, annee, semestre }) {
-  console.log("evaluation", evaluation);
+export default function Export({ etudiants, evaluations, evaluation,  type, annee, semestre, calculerMoyenne, ueId }) {
   // --- Export Excel ---
   const exportExcel = () => {
     const data = etudiants.map((etu) => {
-      const anneeCourte = annee ? annee.slice(0, 4) : "";
+      const anneeCourte = annee ? annee.libelle.slice(0, 4) : "";
       const semestreCourt = semestre.charAt(0).toUpperCase(); // par défaut, première lettre
 
       const row = type === "examen"
@@ -69,7 +69,7 @@ export default function Export({ etudiants, evaluations, evaluation, calculerMoy
 
     const docDefinition = {
       content: [
-        { text: "Liste des étudiants et notes", style: "header" },
+        { text: "Fiche de notes" , style: "header" },
         { table: { headerRows: 1, body }, layout: "lightHorizontalLines" },
       ],
       styles: {

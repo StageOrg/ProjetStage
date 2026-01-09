@@ -12,6 +12,7 @@ export default function EvaluationNormale({ueId, evaluations, evaluation, etudia
   const [editedData, setEditedData] = useState({});
   const [search, setSearch] = useState('');
   
+  console.log("anne dpuis liste eva norm", annee);
   // Tableau de références pour chaque champ de note
   const inputRefs = useRef([]);
 
@@ -72,6 +73,8 @@ export default function EvaluationNormale({ueId, evaluations, evaluation, etudia
         type="normal"
         annee={annee}
         semestre={semestre}
+        calculerMoyenne={calculerMoyenne}
+        ueId={ueId}
       />
       <SearchBar
         value={search}

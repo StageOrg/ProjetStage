@@ -15,7 +15,6 @@ export default function GestionEnseignants() {
     ProfesseurService.getAllProfesseurs()
       .then((data) => setProfesseurs(data))
       .catch((err) => console.error(err));
-      console.log("Professeurs data:", professeurs);
   }, []);
 
 

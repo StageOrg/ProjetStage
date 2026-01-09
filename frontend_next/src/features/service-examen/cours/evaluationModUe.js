@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { ArrowLeft } from "lucide-react";
 import EvaluationService from "@/services/evaluationsService";
 import { useRouter } from "next/navigation";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 
 function EvaluationUE({ ueId, onRetour }) {
   const [evaluations, setEvaluations] = useState([]);
@@ -10,6 +11,7 @@ function EvaluationUE({ ueId, onRetour }) {
   const [poids, setPoids] = useState("");
   const [error, setError] = useState("");
   const Router = useRouter();
+  const {annee} = useAnneeAcademique();
   // Récupération des évaluations (sécurisée)
   /* useEffect(() => {
     const fetch = async () => {
@@ -26,9 +28,9 @@ function EvaluationUE({ ueId, onRetour }) {
   useEffect(() => {
   const fetchEvaluations = async () => {
     try {
-      if (!ueId) return;
+      if (!ueId || !annee) return;
       console.log("🔍 Chargement des évaluations pour l’UE :", ueId);
-      const res = await EvaluationService.getEvaluationsByUE(ueId);
+      const res = await EvaluationService.getEvaluationsByUE(ueId, annee.id);
       console.log("✅ Évaluations chargées :", res);
       setEvaluations(Array.isArray(res) ? res: []);
     } catch (err) {
@@ -45,7 +47,7 @@ function EvaluationUE({ ueId, onRetour }) {
   return () => {
     window.removeEventListener("focus", handleFocus);
   };
-}, [ueId]);
+}, [ueId,annee]);
 
 
   // Somme des poids (force Number pour éviter concaténation de strings)
@@ -77,7 +79,7 @@ function EvaluationUE({ ueId, onRetour }) {
         return;
       }
       console.log("Creating evaluation with type:", type, "poids:", poidsValue, "for UE ID:", ueId);
-      const res = await EvaluationService.createEvaluation(type, poidsValue, ueId);
+      const res = await EvaluationService.createEvaluation(type, poidsValue, ueId, annee.id);
 
       setEvaluations((prev) =>
         Array.isArray(prev) ? [...prev, res.data] : [res.data]

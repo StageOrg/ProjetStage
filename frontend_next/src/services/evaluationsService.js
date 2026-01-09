@@ -1,23 +1,22 @@
 import api from "./api"; 
-const annee = localStorage.getItem("annee_id");
 const EvaluationService = {
-  getEvaluationsByUE: async (ueId) => {
+  getEvaluationsByUE: async (ueId, annee_id) => {
     console.log("Fetching evaluations for UE ID:", ueId);
   if (!ueId) {
     throw new Error("ueId est null ou undefined !");
   }
-    const response = await api.get(`/notes/ues/${ueId}/evaluations/?annee=${annee}`);
+    const response = await api.get(`/notes/ues/${ueId}/evaluations/?annee=${annee_id}`);
     console.log("evaluations:", response.data);
     return response.data  ;
   },
 
- async createEvaluation(type, poids, ueId) {
+ async createEvaluation(type, poids, ueId, annee_id) {
   console.log("Creating evaluation with type:", type, "poids:", poids, "for UE ID:", ueId);
     return await api.post(`/notes/evaluations/`, {
       ue: ueId,
       type,
       poids,
-      annee_academique: annee,
+      annee_academique: annee_id,
     });
   },
 

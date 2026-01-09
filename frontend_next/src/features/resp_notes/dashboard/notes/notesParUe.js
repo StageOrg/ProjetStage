@@ -8,6 +8,7 @@ import ParcoursService from "@/services/parcoursService";
 import AnneeEtudeService from "@/services/anneeEtudeService";
 import SemestreService from "@/services/semestreService";
 import NotificationService from "@/services/notificationService";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 import { 
   FaClipboardList, 
   FaSort, 
@@ -36,6 +37,7 @@ export default function Notes() {
   const [expandedRows, setExpandedRows] = useState({});
   const [openedUE, setOpenedUE] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const { annee } = useAnneeAcademique();
   const router = useRouter();
 
   // Récupération des données
@@ -88,8 +90,9 @@ export default function Notes() {
   }, [ueId]);
  */
   const recupererInfosUE = async (ueId) => {
+    if(!ueId || !annee) return;
     try {
-    const data = await UEService.controleNotesSaisies(ueId);
+    const data = await UEService.controleNotesSaisies(ueId, annee.id);
 
     setInfosUE((prev) => ({
       ...prev,

@@ -1,5 +1,4 @@
 import api from "./api";
-const annee = localStorage.getItem("annee_id");
 const AnonymatService = {
     // Lister tous les anonymats d'une UE
   listByUE: async (ueId) => {

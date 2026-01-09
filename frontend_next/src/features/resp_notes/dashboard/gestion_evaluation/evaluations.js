@@ -2,24 +2,26 @@
 import { useState, useEffect } from "react";
 import EvaluationService from "@/services/evaluationsService";
 import UELibelle from "@/features/util/UELibelle";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 
 
 export default function Evaluations({ ue_id }) {
     const [evaluations, setEvaluations] = useState([]);
     const evaluationId = null;
+    const { annee } = useAnneeAcademique();
 
 
     useEffect(() =>{
-        async function fetchEvaluations(ue_id){
+        async function fetchEvaluations(ue_id, annee){
             try {
-                const data = await EvaluationService.getEvaluationsByUE(ue_id);
+                const data = await EvaluationService.getEvaluationsByUE(ue_id, annee.id);
                 setEvaluations(data);
             } catch (error) {
                 console.error("Erreur lors de la récupération des évaluations :", error);
             }
         }
-       if(ue_id) fetchEvaluations(ue_id);
-    }, [ue_id]);
+       if(ue_id && annee) fetchEvaluations(ue_id, annee);
+    }, [ue_id,annee]);
 
     const handleAnonymatChange = async (evaluationId, value) => {
         try {

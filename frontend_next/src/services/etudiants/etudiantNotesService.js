@@ -16,8 +16,6 @@ const etudiantNotesService = {
   getMyUEsWithNotes: async () => {
     try {
       const response = await api.get("/utilisateurs/etudiants/mes_ues_avec_notes/");
-      console.log("Réponse de l'endpoint UEs avec notes:", response.data);
-
       if (!response.data || response.data.length === 0) return [];
 
       const formattedData = response.data.map(ue => ({

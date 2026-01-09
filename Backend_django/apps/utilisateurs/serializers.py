@@ -107,7 +107,7 @@ class EtudiantSerializer(serializers.ModelSerializer):
             return {
                 'id': inscription.parcours.id,
                 'libelle': inscription.parcours.libelle,
-                'abbreviation': inscription.parcours.abbreviation,   # ← AJOUTÉ
+                'abbreviation': inscription.parcours.abbreviation,   
             }
         return None
 
@@ -117,7 +117,7 @@ class EtudiantSerializer(serializers.ModelSerializer):
             return {
                 'id': inscription.filiere.id,
                 'nom': inscription.filiere.nom,
-                'abbreviation': inscription.filiere.abbreviation,   # ← AJOUTÉ
+                'abbreviation': inscription.filiere.abbreviation,   
             }
         return None
 

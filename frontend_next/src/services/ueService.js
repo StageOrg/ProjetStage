@@ -1,13 +1,12 @@
 import api from "./api"; 
-const annee = localStorage.getItem("annee_id");
 const UEService = {
-  
-  getEtudiantsByUE: async (ueId) => {
+
+  getEtudiantsByUE: async (ueId, annee) => {
     console.log("Fetching students for UE ID:", ueId);
   if (!ueId) {
     throw new Error("ueId est null ou undefined !");
   }
-    const response = await api.get(`/notes/ues/etudiantsInscrits/`);
+    const response = await api.get(`/notes/ues/${ueId}/etudiantsInscrits/?annee=${annee}`);
     console.log("Données reçues du backend:", response.data);
     return response.data  ;
   },
@@ -23,14 +22,14 @@ const UEService = {
   },
 
   //Recuperation des ues associées à des evaluations anonymés et pour lesquelles aucune note n'a été saisie
-  getUEByEvaluationSansNote: async () => {
-    const response = await api.get(`/notes/ues/ues-anonymes-sans-notes/`);
+  getUEByEvaluationSansNote: async (anneeId) => {
+    const response = await api.get(`/notes/ues/ues-anonymes-sans-notes/?annee=${anneeId}`);
     return response.data;
   },
   
   //controle des notes saisies pour une UE donnée
-  controleNotesSaisies: async (UeId) => {
-    const response = await api.get(`/notes/ues/${UeId}/controle-notes/`);
+  controleNotesSaisies: async (UeId,annee) => {
+    const response = await api.get(`/notes/ues/${UeId}/controle-notes/?annee=${annee}`);
     return response.data;
   },
 

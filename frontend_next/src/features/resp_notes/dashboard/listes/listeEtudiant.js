@@ -8,28 +8,31 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import UEService from "@/services/ueService";
 import UELibelle from "@/features/util/UELibelle";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 pdfMake.vfs = pdfFonts.default ? pdfFonts.default.vfs : pdfFonts.vfs;
 
 function ListeEtudiantsUE({ ueId }) {
   const [etudiants, setEtudiants] = useState([]);
   const [loading, setLoading] = useState(true); 
+  const {annee} = useAnneeAcademique();
 
 
   useEffect(() => {
-    console.log("Fetching students for UE ID (inside component):", ueId);
+    console.log("Fetching students for UE ID (inside component):", ueId, annee);
     const fetchData = async () => {
-      if (!ueId) return;
+      if (!ueId || !annee) return;
       try {
-        const res = await UEService.getEtudiantsByUE(ueId);
+        const res = await UEService.getEtudiantsByUE(ueId,annee.id);
         setEtudiants(res || []);
       } catch (err) {
         console.error("Erreur récupération des etudiants inscrits:", err);
+        alert("Erreur lors de la récupération des étudiants inscrits à l'UE.");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [ueId]);
+  }, [ueId, annee]);
 
   // ✅ Export Excel
   const exportExcel = () => {

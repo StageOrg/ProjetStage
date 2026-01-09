@@ -7,11 +7,12 @@ import { FaChevronDown } from "react-icons/fa";
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
 import { IoChevronDown } from "react-icons/io5";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-
+  const { annee, setAnnee } = useAnneeAcademique();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
@@ -72,7 +73,7 @@ export default function Header() {
   // Menus pour tout le monde
   const baseMenu = [
     { label: "Accueil", href: "/" },
-    { label: "Nos Professeurs", href: "/nos-profs" },
+    //{ label: "Nos Professeurs", href: "/nos-profs" },
     {
       label: "Étudiant",
       children: [
@@ -97,7 +98,7 @@ export default function Header() {
   // Menus quand c'est un membre du personnel
   const personnelMenu = [
     { label: "Accueil", href: "/" },
-    { label: "Nos Professeurs", href: "/nos-profs" },
+    //{ label: "Nos Professeurs", href: "/nos-profs" },
     { label: "Personnel", href: personnelHref },
     { label: "Service examen", href: "/service-examen/notes/mes-ues" },
     { label: "Nos programmes", href: "/programmes" },
@@ -106,7 +107,7 @@ export default function Header() {
 
   const PersonnelSaisieMenu = [
     { label: "Accueil", href: "/" },
-    { label: "Nos Professeurs", href: "/nos-profs" },
+    //{ label: "Nos Professeurs", href: "/nos-profs" },
     { label: "Personnel", href: personnelHref },
     { label: "Nos programmes", href: "/programmes" },
     { label: "Contactez-nous", href: "/contact" },
@@ -137,20 +138,26 @@ export default function Header() {
 
   useEffect(() => {
     if (annees.length > 0) {
-      setAnneeChoisie(annees[0]);
+      setAnnee(annees[0]);
       localStorage.setItem("annee_id", annees[0].id);
-      console.log("Année académique choisie :", annees[0]);
     }
   }, [annees]);
 
-  const onChange = (e) => {
+/*   const onChange = (e) => {
     const selectedId = e.target.value;
     const selectedAnnee = annees.find((annee) => annee.id.toString() === selectedId);
     setAnneeChoisie(selectedAnnee);
     localStorage.setItem("annee_id", selectedAnnee.id);
     console.log("Année académique choisie :", selectedAnnee);
   };
+ */
 
+  const onChange = (e) => {
+    const selected = annees.find(
+      (a) => a.id === Number(e.target.value)
+    );
+    setAnnee(selected);
+  };
   return (
     <header className="w-full bg-white backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
       <div className="flex justify-between items-center">

@@ -75,11 +75,9 @@ const etudiantStatsService = {
    */
   calculateMyStats: async () => {
     try {
-      console.log("🔄 Début calcul statistiques...");
 
       // Récupérer les UEs avec notes
       const uesWithNotes = await etudiantNotesService.getMyUEsWithNotes();
-      console.log("📊 UEs reçues:", uesWithNotes);
 
       // Si pas d'UEs, retourner des stats vides
       if (!uesWithNotes || uesWithNotes.length === 0) {
@@ -147,7 +145,6 @@ const etudiantStatsService = {
         lastUpdated: new Date().toISOString()
       };
 
-      console.log("✅ Statistiques calculées:", result);
       return result;
 
     } catch (error) {
@@ -265,19 +262,15 @@ const etudiantStatsService = {
    */
   testService: async () => {
     try {
-      console.log("🧪 TEST DU SERVICE");
       
       // 1. Vérifier les données étudiant
       const studentData = await etudiantStatsService.getMyCompleteData();
-      console.log("✅ Données étudiant:", studentData);
 
       // 2. Calculer les stats
       const stats = await etudiantStatsService.calculateMyStats();
-      console.log("✅ Statistiques:", stats);
 
       // 3. Résumé rapide
       const summary = await etudiantStatsService.getQuickSummary();
-      console.log("✅ Résumé:", summary);
 
       return {
         success: true,

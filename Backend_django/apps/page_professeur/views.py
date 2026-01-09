@@ -70,8 +70,9 @@ class UEViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def etudiantsInscrits(self, request, pk=None):
+        annee = request.query_params.get("annee")
         ue = self.get_object()
-        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue, inscriptions__anneeAcademique=request.query_params.get('annee_academique')).distinct()
+        etudiantsInscrits = Etudiant.objects.filter(inscriptions__ues=ue, inscriptions__anneeAcademique=annee).distinct()
         serializer = EtudiantSerializer(etudiantsInscrits, many=True)
         return Response(serializer.data)
     pagination_class = None
@@ -237,7 +238,7 @@ class UEViewSet(viewsets.ModelViewSet):
         Liste toutes les UEs qui ont au moins une évaluation anonyme
         et pour lesquelles aucune note n'a encore été saisie.
         """
-        annee_id = request.query_params.get('annee_etude')
+        annee_id = request.query_params.get('annee')
         ues = UE.objects.filter(
             evaluations__anonyme=True,
             evaluations__annee_academique_id=annee_id

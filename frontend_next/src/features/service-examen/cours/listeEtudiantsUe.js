@@ -5,35 +5,36 @@ import EtudiantService from "@/services/etudiantService";
 import EvaluationNormale from "./evaluationNormale";
 import EvaluationExamen from "./anonymat/evaluationExamen";
 import UELibelle from "@/features/util/UELibelle";
+import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
 
 function ListeEtudiantsUE({ ueId }) {
   const [etudiants, setEtudiants] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
-  const [annee, setAnnee] = useState("");
+  const [anneeac, setAnneeac] = useState("");
   const [semestre, setSemestre] = useState("");
   const [selectedEvaluation, setSelectedEvaluation] = useState(null);
+  const [noEvaluation, setNoEvaluation] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const annee_id = localStorage.getItem("annee_id");
+  //const annee_id = localStorage.getItem("annee_id");
+  const { annee } = useAnneeAcademique();
+
+
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!ueId) return;
+      if (!ueId || !annee) return;
       try {
-        const res = await EtudiantService.getNotesByUE(ueId);
+        const res = await EtudiantService.getNotesByUE(ueId, annee.id);
         setEtudiants(res.etudiants);
         setEvaluations(res.evaluations);
-        setAnnee(res.annee_academique);
+        setAnneeac(res.annee_academique);
         setSemestre(res.semestre);
         // Si une seule évaluation existe, on la sélectionne automatiquement
         if (res.evaluations.length === 1) {
           setSelectedEvaluation(res.evaluations[0]);
         }
-
-        if (res.evaluations.length === 0) {
-          console.log("cherche", ueId);
-          router.push(`/service-examen/notes/mes-ues/${ueId}/evaluations`);
-        }
+          setNoEvaluation(res.evaluations.length === 0);
       } catch (err) {
         console.error("Erreur récupération notes :", err);
       } finally {
@@ -41,7 +42,7 @@ function ListeEtudiantsUE({ ueId }) {
       }
     };
     fetchData();
-  }, [ueId]);
+  }, [ueId, annee]);
 
   //  Fonction pour calculer la moyenne pondérée d’un étudiant
   const calculerMoyenne = (etu) => {
@@ -87,13 +88,34 @@ function ListeEtudiantsUE({ ueId }) {
             </option>
           ))}
         </select>
+        {noEvaluation && (
+        <div className="bg-white-50 border border-blue-600 p-3 rounded-md my-3">
+          <p className="text-black-800 mb-2">
+            Pas d’évaluation pour cette UE.
+          </p>
+          <button
+            onClick={() =>
+              router.push(
+                `/service-examen/notes/mes-ues/${ueId}/evaluations`
+              )
+            }
+            className="bg-blue-600 text-white px-4 py-2 rounded-md"
+          >
+            ➕ En créer
+          </button>
+        </div>
+      )}
+
+       {!noEvaluation && (  
         <button
           onClick={() => router.push(`/service-examen/notes/mes-ues/${ueId}/evaluationsModify`)}
           className="ml-4 text-blue-600 underline"
         >
           Modifier les évaluations
         </button>
+       )}
       </div>
+     
 
       {/* Affichage du tableau selon le type d’évaluation  */}
      {selectedEvaluation ? (
@@ -111,7 +133,7 @@ function ListeEtudiantsUE({ ueId }) {
       calculerMoyenne={calculerMoyenne}
       annee={annee}
       semestre={semestre}
-      annee_id={annee_id}
+      annee_id={annee.id}
     />
   ) : (
     <EvaluationNormale

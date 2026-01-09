@@ -17,7 +17,6 @@ const etudiantDashboardService = {
   // Mise à jour des données (CORRIGÉ : pas de .trim() sur FormData.get())
   updateMyData: async (dataToSend) => {
     try {
-      console.log('Données envoyées pour mise à jour:', dataToSend);
       
       const formData = new FormData();
       
@@ -54,7 +53,6 @@ const etudiantDashboardService = {
         }
       });
       
-      console.log('Réponse de mise à jour:', response.data);
       return response.data;
     } catch (error) {
       console.error("Erreur mise à jour données étudiant:", error);

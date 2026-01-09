@@ -41,7 +41,6 @@ export default function DonneesPersonnelles() {
     try {
       setLoading(true);
       const response = await etudiantDashboardService.getMyCompleteData();
-      console.log('Données étudiant reçues:', response);
       setStudentData(response);
       setFormData({
         email: response.email || '',
@@ -177,16 +176,10 @@ export default function DonneesPersonnelles() {
       // Photo
       if (newPhotoFile) {
         dataToSend.append('photo', newPhotoFile);
-        console.log('Nouvelle photo ajoutée');
       }
 
-      console.log('Données envoyées:', {
-        ...Object.fromEntries(dataToSend),
-        hasPhoto: !!newPhotoFile
-      });
-
+     
       const updatedData = await etudiantDashboardService.updateMyData(dataToSend);
-      console.log('Données mises à jour:', updatedData);
 
       // Mise à jour état
       setStudentData(updatedData);
@@ -205,7 +198,6 @@ export default function DonneesPersonnelles() {
           : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${updatedData.photo}`;
         setPhotoPreview(photoUrl);
       }
-      console.log('Filière brute:', studentData?.filiere_info);
       setNewPhotoFile(null);
       setIsEditing(false);
       setNumCarteError(null);

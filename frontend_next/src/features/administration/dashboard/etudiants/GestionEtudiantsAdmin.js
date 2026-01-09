@@ -26,10 +26,8 @@ export default function GestionEtudiantsAdmin() {
 
   const chargerParcoursAvecRelations = async () => {
     try {
-      console.log("Chargement parcours...");
       const parcours = await etudiantService.getParcoursAvecRelations();
       setParcoursData(parcours);
-      console.log("Parcours chargés:", parcours);
     } catch (err) {
       console.error("Erreur parcours:", err);
     }
@@ -48,7 +46,6 @@ export default function GestionEtudiantsAdmin() {
     );
 
     if (parcoursTrouve) {
-      console.log("Parcours sélectionné:", parcoursTrouve);
       setFilieresDuParcours(parcoursTrouve.filieres || []);
       setAnneesDuParcours(parcoursTrouve.annees_etude || []);
 

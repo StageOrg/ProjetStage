@@ -1,34 +1,37 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AnneeAcademiqueContext = createContext();
 
 export function AnneeAcademiqueProvider({ children }) {
-  const [anneeChoisie, setAnneeChoisie] = useState(null);
+  const [annee, setAnnee] = useState(null);
 
   // Charger depuis localStorage au démarrage
   useEffect(() => {
     const stored = localStorage.getItem("annee_id");
     if (stored) {
-      setAnneeChoisie(Number(stored));
+      setAnnee(Number(stored));
     }
   }, []);
 
-  const changerAnnee = (annee) => {
-    setAnneeChoisie(annee.id);
-    localStorage.setItem("annee_id", annee.id);
-  };
+  // Synchroniser avec localStorage quand annee change
+  useEffect(() => {
+    if (annee !== null) {
+      localStorage.setItem("annee_id", annee);
+    }
+  }, [annee]);
 
   return (
-    <AnneeAcademiqueContext.Provider
-      value={{ anneeChoisie, changerAnnee }}
-    >
+    <AnneeAcademiqueContext.Provider value={{ annee, setAnnee }}>
       {children}
     </AnneeAcademiqueContext.Provider>
   );
 }
 
 export function useAnneeAcademique() {
-  return useContext(AnneeAcademiqueContext);
+  const context = useContext(AnneeAcademiqueContext);
+  if (context === undefined) {
+    throw new Error('useAnneeAcademique doit être utilisé dans AnneeAcademiqueProvider');
+  }
+  return context;
 }

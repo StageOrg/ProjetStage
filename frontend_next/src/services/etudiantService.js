@@ -1,13 +1,11 @@
 // src/services/EtudiantService.js
 import api from "./api";
-
-
 const EtudiantService = {
-  async getNotesByUE(ueId) {
-    const annee = localStorage.getItem("annee_id");
-    console.log("Récupération des notes pour l'UE ID :", ueId, "et année académique :", annee);
+  
+  async getNotesByUE(ueId,annee_id) {
+    console.log("Récupération des notes pour l'UE ID :", ueId, "et année académique :", annee_id);
     try {
-      const response = await api.get(`/notes/ues/${ueId}/notes/?annee=${annee}`);
+      const response = await api.get(`/notes/ues/${ueId}/notes/?annee=${annee_id}`);
       console.log("reponse", response.data)
       return response.data; // JSON contenant etudiants + evaluations + notes
 

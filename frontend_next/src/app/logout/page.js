@@ -16,7 +16,6 @@ export default function LogoutPage() {
         localStorage.removeItem("user_role");
         localStorage.removeItem("annee_id");
         localStorage.setItem("user_role", "visiteur")
-        console.log("item removed");
         router.push("/");
         } catch (error) {
         console.error("Erreur lors de la déconnexion :", error);

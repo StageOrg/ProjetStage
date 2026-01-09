@@ -16,7 +16,6 @@ const etudiantService = {
    */
   getAllEtudiants: async (filters = {}) => {
     try {
-      console.log(" Recherche étudiants avec filtres:", filters);
       
       // Nettoyer les paramètres vides
       const cleanFilters = Object.fromEntries(
@@ -24,16 +23,11 @@ const etudiantService = {
           value !== null && value !== undefined && value !== ''
         )
       );
-      
-      // Page size pour récupérer beaucoup de résultats
-      // Page size pour récupérer beaucoup de résultats
-      // cleanFilters.page_size = 1000; // Suppression de l'override pour permettre la pagination correcte
-      
+   
       const response = await api.get("/inscription/etudiants/filtrer/", { 
         params: cleanFilters 
       });
       
-      console.log(" Étudiants reçus:", response.data.results?.length || 0);
       
       return {
         results: response.data.results || response.data || [],
@@ -53,18 +47,15 @@ const etudiantService = {
       // Vérifier le cache local
       const now = Date.now();
       if (!forceRefresh && cache.parcours && cache.timestamp && (now - cache.timestamp < CACHE_DURATION)) {
-        console.log(" Parcours depuis cache local");
         return cache.parcours;
       }
       
-      console.log(" Chargement parcours avec relations...");
       const response = await api.get("/inscription/parcours-relations/");
       
       // Mettre à jour le cache
       cache.parcours = response.data.parcours || [];
       cache.timestamp = now;
       
-      console.log(" Parcours chargés:", cache.parcours.length);
       return cache.parcours;
     } catch (error) {
       console.error(" Erreur getParcoursAvecRelations:", error);
@@ -81,27 +72,22 @@ const etudiantService = {
       // Vérifier le cache local
       const now = Date.now();
       if (!forceRefresh && cache.annees_academiques && cache.timestamp && (now - cache.timestamp < CACHE_DURATION)) {
-        console.log(" Années académiques depuis cache local");
         return cache.annees_academiques;
       }
       
-      console.log(" Chargement années académiques...");
       
       // Essayer d'abord l'endpoint avec cache
       try {
         const response = await api.get("/inscription/annees-academiques-cached/");
         cache.annees_academiques = response.data.annees || [];
         cache.timestamp = now;
-        console.log(" Années académiques chargées (cached):", cache.annees_academiques.length);
         return cache.annees_academiques;
       } catch (err) {
         // Fallback sur endpoint classique
-        console.log(" Endpoint cached non dispo, fallback sur endpoint classique");
         const response = await api.get("/inscription/annee-academique/");
         const annees = response.data.results || response.data || [];
         cache.annees_academiques = annees;
         cache.timestamp = now;
-        console.log("Années académiques chargées:", annees.length);
         return annees;
       }
     } catch (error) {
@@ -115,7 +101,6 @@ const etudiantService = {
    * Vide le cache local
    */
   clearCache: () => {
-    console.log(" Cache local vidé");
     cache = {
       parcours: null,
       annees_academiques: null,
@@ -168,7 +153,6 @@ const etudiantService = {
    * Récupère les inscriptions d'un étudiant
    */
   getInscriptions: (etudiantId) => {
-    console.log(" Appel API: /inscription/etudiants/" + etudiantId + "/inscriptions/");
     return api.get(`/inscription/etudiants/${etudiantId}/inscriptions/`)
       .then((res) => res.data);
   },
@@ -191,7 +175,6 @@ deleteEtudiant: async (id) => {
     
     await api.delete(`/utilisateurs/etudiants/${id}/`);
     
-    console.log(`Étudiant ${id} et ses inscriptions supprimés`);
   } catch (error) {
     console.error(" Erreur deleteEtudiant:", error);
     throw error;
@@ -216,7 +199,6 @@ deleteEtudiant: async (id) => {
    */
   getStatistiquesInscriptions: async (filters = {}) => {
     try {
-      console.log(" Récupération des statistiques avec filtres:", filters);
       const cleanFilters = Object.fromEntries(
         Object.entries(filters).filter(([key, value]) => 
           value !== null && value !== undefined && value !== ''
@@ -225,7 +207,6 @@ deleteEtudiant: async (id) => {
       const response = await api.get("/inscription/stats/", {
         params: cleanFilters
       });
-      console.log(" Statistiques reçues");
       return response.data;
     } catch (error) {
       console.error(" Erreur getStatistiquesInscriptions:", error);
