@@ -36,7 +36,6 @@ export default function DonneesPersonnellesProf() {
 
       try {
         const prof = await ProfesseurService.getProfesseurConnecte();
-        console.log("Professeur connecté:", prof);
         
         setFormData({
           nom: user.last_name || "",
@@ -126,13 +125,10 @@ export default function DonneesPersonnellesProf() {
         formDataToSend.append("photo", newPhotoFile);
       }
 
-      console.log("Données envoyées:");
       for (let pair of formDataToSend.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
       }
 
       const response = await ProfesseurService.updateProfesseurConnecte(formDataToSend);
-      console.log("Réponse du serveur:", response);
 
       // Mettre à jour l'aperçu avec la nouvelle photo du serveur
       if (response.photo) {

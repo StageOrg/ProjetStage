@@ -59,7 +59,6 @@ export default function EtapeInfosPersonnelles() {
 
   useEffect(() => {
     const chargerDonnees = async () => {
-      console.log("🔍 Chargement des données...");
       
       const typeData = localStorage.getItem("type_inscription");
       
@@ -70,7 +69,6 @@ export default function EtapeInfosPersonnelles() {
       }
 
       const parsed = JSON.parse(typeData);
-      console.log(" Type d'inscription:", parsed);
       setTypeInscription(parsed);
       
       if (parsed.typeEtudiant === 'ancien') {
@@ -80,9 +78,7 @@ export default function EtapeInfosPersonnelles() {
             if (userStr) {
                 const user = JSON.parse(userStr);
                 
-                if (user.num_carte) {
-                    console.log("🔄 Récupération des infos ancien étudiant depuis l'API...");
-                    
+                if (user.num_carte) {                    
                     try {
                         const response = await api.get(`/inscription/verifier-ancien-etudiant/${user.num_carte}/`);
                         const data = response.data;
@@ -154,9 +150,7 @@ export default function EtapeInfosPersonnelles() {
         }
       } else {
         // NOUVEAU ÉTUDIANT
-        const userStr = localStorage.getItem('user');
-        console.log("👤 Utilisateur:", userStr ? "Trouvé" : "Non trouvé");
-        
+        const userStr = localStorage.getItem('user');        
         if (userStr) {
           const user = JSON.parse(userStr);
           setUserData(user);
@@ -169,7 +163,6 @@ export default function EtapeInfosPersonnelles() {
             const parsedTemp = JSON.parse(donneesTemp);
             // Vérifier si les données temporaires appartiennent à cet utilisateur
             if (parsedTemp.owner === user.username) {
-              console.log(" Chargement données temporaires");
               setFormulaire(parsedTemp);
               if (parsedTemp.photoBase64) {
                 setApercu(parsedTemp.photoBase64);
@@ -179,7 +172,6 @@ export default function EtapeInfosPersonnelles() {
           }
           
           if (!tempLoaded) {
-            console.log("📝 Chargement données de l'utilisateur");
             setFormulaire(prev => ({
               ...prev,
               username: user.username || "",
@@ -290,13 +282,10 @@ export default function EtapeInfosPersonnelles() {
 
   const soumettreFormulaire = async (e) => {
     e.preventDefault();
-    
-    console.log(" Soumission du formulaire...");
-    
+        
     setErreurs({});
     
     if (!validerFormulaire()) {
-      console.log(" Validation échouée");
       return;
     }
 
@@ -341,12 +330,9 @@ export default function EtapeInfosPersonnelles() {
         photoBase64: apercu,
       };
 
-      console.log(" Sauvegarde des données...");
       localStorage.setItem("inscription_step1", JSON.stringify(donneesCompletes));
       localStorage.removeItem("inscription_step1_temp");
       
-      console.log(" Données sauvegardées");
-      console.log(" Redirection vers étape 3");
       
       // Modification : Tout le monde passe par l'étape 3
       // Les anciens vérifieront leur année, les nouveaux choisiront tout
