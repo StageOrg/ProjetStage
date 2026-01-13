@@ -46,3 +46,6 @@ htmlcov/
 *.key
 # Fichiers media (upload utilisateurs)
 Backend_django/media/
+
+# Fichiers de migrations django
+**/migrations/*.py
