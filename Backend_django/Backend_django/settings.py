@@ -86,7 +86,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://epl-projet-api.onrender.com",
     "https://epl-pedago.vercel.app",
     ]
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  
 ROOT_URLCONF = 'Backend_django.urls'
 
 TEMPLATES = [
