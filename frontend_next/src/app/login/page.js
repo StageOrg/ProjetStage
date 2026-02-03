@@ -130,7 +130,7 @@ export default function Connexion() {
                   Erreur de connexion
                 </p>
                 <p className="text-sm text-red-700 mt-1">
-                  {error}
+                  Erreur lors de la connexion. Réessayez.
                 </p>
               </div>
             </div>
