@@ -135,7 +135,7 @@ class LoginView(APIView):
             key="access_token",
             value=str(data["access"]),
             httponly=True,
-            secure=True,          
+            secure=False,          
             samesite="Lax",
             max_age=60 * 60,
         )
@@ -144,7 +144,7 @@ class LoginView(APIView):
             key="refresh_token",
             value=str(data["refresh"]),
             httponly=True,
-            secure=True,         
+            secure=False,         
             samesite="Lax",
             max_age=7 * 24 * 60 * 60,
         )

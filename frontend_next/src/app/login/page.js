@@ -69,8 +69,7 @@ export default function Connexion() {
       if (data.user.role === "professeur") {
         router.push("/enseignant/dashboard");
       } else if (data.user.role === "admin") {
-        //router.push("/administration/dashboard");
-        router.push("/contact");
+        router.push("/administration/dashboard");
       } else if (data.user.role === "resp_notes") {
         router.push("/gestion-notes/dashboard");
       } else if (data.user.role === "resp_inscription") {
