@@ -4,11 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Formulaire from "@/components/ui/Formulaire.js";
 import Link from "next/link";
 import { authAPI } from '@/services/authService';
-
+import { useAuth } from "@/contexts/AuthContext";
 export default function Connexion() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { setUser } = useAuth();
   
   const champs = [
     {
@@ -32,12 +33,12 @@ export default function Connexion() {
     
     try {
       const data = await authAPI.login(valeurs.identifiant, valeurs.motdepasse);
-      
+      setUser(data.user);
       // Sauvegarde du token dans localStorage
-      localStorage.setItem("access_token", data.access);
+   /*    localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("user_role", data.user.role);
+      localStorage.setItem("user_role", data.user.role); */
       
       
       // Gestion de la redirection pour les étudiants

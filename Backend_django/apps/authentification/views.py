@@ -33,7 +33,7 @@ class RegisterView(views.APIView):
             return Response({"message": "Utilisateur créé avec succès", "id": instance.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(APIView):
+""" class LoginView(APIView):
     def post(self, request):
         user = authenticate(username=request.data['username'], password=request.data['password'])
         if user and user.doit_changer_mdp:
@@ -61,7 +61,117 @@ class LoginView(APIView):
             statut="SUCCES",
             description="Connexion réussie"
         )    
+        response = Response()
+         # 🟢 Cookies JWT
+        response.set_cookie(
+            key="access_token",
+            value=str(data["access"]),
+            httponly=True,
+            secure=False,        
+            samesite="Lax",
+            max_age=60 * 60,     
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=str(data["refresh"]),
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            max_age=7 * 24 * 60 * 60,  # 7 jours
+        )
         return Response(data, status=status.HTTP_200_OK)
+ """
+
+class LoginView(APIView):
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if not username or not password:
+            return Response(
+                {"detail": "Username et mot de passe requis"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Authentification UNIQUE
+        user = authenticate(username=username, password=password)
+
+        if not user:
+            enregistrer_action(
+                utilisateur=None,
+                action="Tentative de connexion",
+                objet="Authentification",
+                ip=request.META.get('REMOTE_ADDR'),
+                statut="ECHEC",
+                description="Identifiants invalides"
+            )
+            return Response(
+                {"detail": "Identifiants invalides"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if user.doit_changer_mdp:
+            return Response(
+                {"error": "Utilisez le lien de première connexion envoyé par email."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Génération des tokens
+        data = AuthService.login(username, password)
+
+        enregistrer_action(
+            utilisateur=user,
+            action="Connexion",
+            objet="Authentification",
+            ip=request.META.get('REMOTE_ADDR'),
+            statut="SUCCES",
+            description="Connexion réussie"
+        )
+
+        response = Response(data, status=status.HTTP_200_OK)
+
+        response.set_cookie(
+            key="access_token",
+            value=str(data["access"]),
+            httponly=True,
+            secure=True,          
+            samesite="Lax",
+            max_age=60 * 60,
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=str(data["refresh"]),
+            httponly=True,
+            secure=True,         
+            samesite="Lax",
+            max_age=7 * 24 * 60 * 60,
+        )
+
+        return response
+    
+class LogoutView(APIView):
+    def post(self, request):
+        response = Response(
+            {"message": "Déconnexion réussie"},
+            status=status.HTTP_200_OK
+        )
+
+        response.delete_cookie(
+            "access_token",
+            path="/",
+            samesite="Lax",
+        )
+
+        response.delete_cookie(
+            "refresh_token",
+            path="/",
+            samesite="Lax",
+        )
+
+        return response
+
 
 
 class StudentRegisterView(generics.CreateAPIView):

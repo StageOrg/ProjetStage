@@ -8,8 +8,10 @@ import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
 import { IoChevronDown } from "react-icons/io5";
 import { useAnneeAcademique } from "@/contexts/AnneeAcademiqueContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
+  const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { annee, setAnnee } = useAnneeAcademique();
@@ -17,20 +19,16 @@ export default function Header() {
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
   const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-1");
-  const [role, setRole] = useState(() => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem("user_role") || "visiteur";
-  }
-  return "visiteur";
-});
+  const role = user?.role ?? "visiteur";
 
   // Charger rôle depuis localStorage
-  useEffect(() => {
+  /* useEffect(() => {
     const storedRole = localStorage.getItem("user_role");
     if (storedRole) {
       setRole(storedRole);
     }
-  }, []);
+  }, []); */
+
   
   useEffect(() => {
     const fetchPeriode = async () => {
@@ -156,8 +154,10 @@ export default function Header() {
     const selected = annees.find(
       (a) => a.id === Number(e.target.value)
     );
-    setAnnee(selected);
+    setAnnee(selected); 
   };
+  if (loading) return null;
+
   return (
     <header className="w-full bg-white backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
       <div className="flex justify-between items-center">

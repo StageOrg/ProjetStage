@@ -4,6 +4,7 @@ import "../styles/globals.css";
 import ClientLayoutWrapper from "../components/common/ClientLayoutWrapper";
 import { Toaster } from "react-hot-toast";
 import { AnneeAcademiqueProvider } from "@/contexts/AnneeAcademiqueContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,6 +25,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <AuthProvider>
       <AnneeAcademiqueProvider>
       <ClientLayoutWrapper>
         {children}
@@ -36,6 +38,7 @@ export default function RootLayout({ children }) {
       />
       </ClientLayoutWrapper>
       </AnneeAcademiqueProvider>
+      </AuthProvider>
     </body>
     </html>
   );

@@ -63,7 +63,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",  
-    "https://epl-pedago.vercel.app",
+    "https://epl.univ-lome.tg/"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -164,11 +164,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',  # Permissions par défaut
     ],
     
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "apps.authentification.authentication.CookieJWTAuthentication",
+    ),
+
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_RENDERER_CLASSES': [
@@ -255,3 +254,4 @@ PASSWORD_RESET_TIMEOUT = 10 * 24 * 60 * 60
 EMAIL_TIMEOUT = 30
 # URL Frontend
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+API_URL = config('NEXT_PUBLIC_API_URL', default='http://localhost:8000')

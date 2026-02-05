@@ -1,6 +1,6 @@
 
 from django.urls import path
-from .views import RegisterView, LoginView, StudentRegisterView, check_email, check_username, demande_reset_password, reset_password, verifier_token_reset
+from .views import LogoutView, RegisterView, LoginView, StudentRegisterView, check_email, check_username, demande_reset_password, reset_password, verifier_token_reset
 from django.urls import path
 from .apiView import (
     PartialRegisterAPIView,
@@ -12,6 +12,7 @@ from .views import RegisterView, LoginView, SetPasswordView, StudentRegisterView
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path("register-etudiant/", StudentRegisterView.as_view(), name="register-etudiant"),
     path('check_username/', check_username, name='check-username'),
     path('check_email/',check_email, name='check-email'),

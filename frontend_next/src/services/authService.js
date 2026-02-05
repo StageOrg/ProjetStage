@@ -162,8 +162,13 @@ export const authAPI = {
   },
 
   getProfile: async () => {
-    const res = await api.get("utilisateurs/me/");
-    return res.data;
+    try {
+      const res = await api.get("utilisateurs/me/");
+      return res.data;
+    } catch (error) {
+      console.error("Erreur lors de la récupération du profil utilisateur:", error);
+      throw error;
+    }
   },
   
   // ====== MÉTHODES POUR RESET PASSWORD =====
