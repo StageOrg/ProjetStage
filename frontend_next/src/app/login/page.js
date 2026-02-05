@@ -67,10 +67,10 @@ export default function Connexion() {
       
       // Redirection pour les autres rôles
       if (data.user.role === "professeur") {
-        //router.push("/enseignant/dashboard");
-        router.push("/contact");
+        router.push("/enseignant/dashboard");
       } else if (data.user.role === "admin") {
-        router.push("/administration/dashboard");
+        //router.push("/administration/dashboard");
+        router.push("/contact");
       } else if (data.user.role === "resp_notes") {
         router.push("/gestion-notes/dashboard");
       } else if (data.user.role === "resp_inscription") {
