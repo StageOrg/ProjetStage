@@ -34,6 +34,7 @@ export default function Connexion() {
     try {
       const data = await authAPI.login(valeurs.identifiant, valeurs.motdepasse);
       setUser(data.user);
+      alert("Connexion réussie !",data.user);
       // Sauvegarde du token dans localStorage
    /*    localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
