@@ -65,6 +65,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",  
     "https://epl.univ-lome.tg/"
 ]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
@@ -85,12 +88,13 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://epl-projet-api.onrender.com",
     "https://epl-pedago.vercel.app",
+    "https://epl.univ-lome.tg/"
     ]
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = False  
+CSRF_COOKIE_HTTPONLY = True  
 ROOT_URLCONF = 'Backend_django.urls'
 
 TEMPLATES = [
