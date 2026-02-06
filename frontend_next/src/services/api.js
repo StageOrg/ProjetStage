@@ -2,9 +2,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  //baseURL: "http://localhost:8000/api",
   //baseURL: 'http://172.20.1.22/api', 
-  //baseURL: 'http://epl.univ-lome.tg/api',
+  baseURL: 'https://epl.univ-lome.tg/api',
  // baseURL: "/api/",
 
   timeout: 0, // ✅ Pas de timeout  
