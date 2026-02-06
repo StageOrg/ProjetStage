@@ -40,7 +40,7 @@ export default function Formulaire({ champs, onSubmit }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {champs.map((champ) => (
         <div key={champ.nom}>
-          <label className="block text-gray-700 font-semibold mb-2">{champ.label}</label>
+          <label className="block text-black font-semibold mb-2">{champ.label}</label>
           <input
             type={champ.type || "text"}
             value={valeurs[champ.nom] || ""}

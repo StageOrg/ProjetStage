@@ -21,15 +21,7 @@ export default function Header() {
   const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-1");
   const role = user?.role ?? "visiteur";
 
-  // Charger rôle depuis localStorage
-  /* useEffect(() => {
-    const storedRole = localStorage.getItem("user_role");
-    if (storedRole) {
-      setRole(storedRole);
-    }
-  }, []); */
 
-  
   useEffect(() => {
     const fetchPeriode = async () => {
       if (role === "etudiant") {
@@ -141,14 +133,7 @@ export default function Header() {
     }
   }, [annees]);
 
-/*   const onChange = (e) => {
-    const selectedId = e.target.value;
-    const selectedAnnee = annees.find((annee) => annee.id.toString() === selectedId);
-    setAnneeChoisie(selectedAnnee);
-    localStorage.setItem("annee_id", selectedAnnee.id);
-    console.log("Année académique choisie :", selectedAnnee);
-  };
- */
+
 
   const onChange = (e) => {
     const selected = annees.find(
@@ -157,7 +142,6 @@ export default function Header() {
     setAnnee(selected); 
   };
   if (loading) return null;
-
   return (
     <header className="w-full bg-white backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
       <div className="flex justify-between items-center">

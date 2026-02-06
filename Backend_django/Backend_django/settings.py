@@ -60,10 +60,10 @@ MIDDLEWARE = [
 
 # Configuration CORS  sécurisée
 CORS_ALLOWED_ORIGINS = [
+    "http://epl.univ-lome.tg",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",  
-    "http://epl.univ-lome.tg",
 ]
 
 
@@ -82,11 +82,11 @@ CORS_ALLOW_HEADERS = [
 
 # CSRF Configuration
 CSRF_TRUSTED_ORIGINS = [
+    "http://epl.univ-lome.tg",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://epl-projet-api.onrender.com",
     "https://epl-pedago.vercel.app",
-    "http://epl.univ-lome.tg",
     ]
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"

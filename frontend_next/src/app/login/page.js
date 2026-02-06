@@ -34,13 +34,7 @@ export default function Connexion() {
     try {
       const data = await authAPI.login(valeurs.identifiant, valeurs.motdepasse);
       setUser(data.user);
-      // Sauvegarde du token dans localStorage
-   /*    localStorage.setItem("access_token", data.access);
-      localStorage.setItem("refresh_token", data.refresh);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("user_role", data.user.role); */
-      
-      
+   
       // Gestion de la redirection pour les étudiants
       if (data.user.role === "etudiant") {
         // 1. Vérifier si demande d'inscription
