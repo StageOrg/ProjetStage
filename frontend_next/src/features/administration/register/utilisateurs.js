@@ -4,6 +4,7 @@ import UtilisateurService from "@/services/utilisateurService";
 import ImportUsersExcel from "./importUsersExcel";
 import  RegisterForm from "./AjoutUtilisateur";
 import { useRouter } from "next/navigation";
+import { FaTrash, FaEdit } from "react-icons/fa";
 
 
 export default function ListeUtilisateurs() {
@@ -46,6 +47,16 @@ export default function ListeUtilisateurs() {
 
   // ✅ Rôles dynamiques
   const rolesDisponibles = [...new Set(utilisateurs?.map(u => u.role))];
+  const deleteUser = async (id) => {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
+      try {
+        await UtilisateurService.deleteUtilisateur(id);
+        setUtilisateurs(prev => prev.filter(user => user.id !== id));
+      } catch (err) {
+        setError("Erreur lors de la suppression de l'utilisateur");
+      }
+    }
+  };
 
   return (
     <div className="p-6 bg-white shadow rounded-lg">
@@ -97,6 +108,7 @@ export default function ListeUtilisateurs() {
                 <th className="px-4 py-2 border">Sexe</th>
                 <th className="px-4 py-2 border">Téléphone</th>
                 <th className="px-4 py-2 border">Rôle</th>
+                <th className="px-4 py-2 border">Actions</th>
               </tr>
             </thead>
 
@@ -117,6 +129,14 @@ export default function ListeUtilisateurs() {
                     <td className="px-4 py-2 border">{user.telephone}</td>
                     <td className="px-4 py-2 border font-semibold text-blue-600">
                       {user.role}
+                    </td>
+                    <td className="px-4 py-2 border">
+                      <button
+                        onClick={() => deleteUser(user.id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-800 transition"
+                      >
+                        <FaTrash className="inline-block" /> 
+                      </button>
                     </td>
                   </tr>
                 ))

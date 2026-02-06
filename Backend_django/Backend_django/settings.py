@@ -63,7 +63,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",  
-    "https://epl.univ-lome.tg",
+    "http://epl.univ-lome.tg",
 ]
 
 
@@ -86,7 +86,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://epl-projet-api.onrender.com",
     "https://epl-pedago.vercel.app",
-    "https://epl.univ-lome.tg",
+    "http://epl.univ-lome.tg",
     ]
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
