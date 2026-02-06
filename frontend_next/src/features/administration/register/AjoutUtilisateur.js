@@ -78,13 +78,13 @@ export default function RegisterForm() {
       onSubmit={handleSubmit}
       className="max-w-2xl mx-auto p-6 bg-white rounded-2xl shadow-lg space-y-6"
     >
-      <h2 className="text-2xl font-bold text-gray-800 text-center">
+      <h2 className="text-2xl font-bold text-blue text-center">
         Création d’un compte
       </h2>
 
       {/* Rôle */}
       <div>
-        <label className="block text-gray-700 font-medium mb-1">
+        <label className="block text-black font-medium mb-1">
           Rôle
         </label>
         <select
@@ -134,7 +134,7 @@ export default function RegisterForm() {
           className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
           required
         />
-      <label className="block text-gray-700 font-medium mb-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">Sexe
+      <label className="block text-black font-medium mb-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">Sexe
           <input
             id="sexe-m"
             type="radio"

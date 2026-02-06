@@ -31,20 +31,13 @@ export default function MenuLateralDashboard() {
       // Appeler la méthode logout de authAPI
       await authAPI.logout(false); 
       
-      // Nettoyer le localStorage
-      localStorage.removeItem("access");
-      localStorage.removeItem("refresh");
-      localStorage.removeItem("user_role");
-      localStorage.removeItem("user");
-      localStorage.removeItem("annee_id");
-      localStorage.removeItem("authToken"); 
+     
       
       // Rediriger vers la page de login
       router.push("/");
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
       // Même en cas d'erreur, nettoyer et rediriger
-      localStorage.clear();
       router.push("/");
     }
   };
