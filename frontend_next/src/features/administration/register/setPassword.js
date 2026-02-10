@@ -104,7 +104,7 @@ const styles = {
     borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "14px",
-    textColor: "black",
+    color: "black",
   },
   button: {
     width: "100%",
