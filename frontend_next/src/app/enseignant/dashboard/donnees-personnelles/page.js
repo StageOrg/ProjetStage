@@ -4,7 +4,7 @@ import DonneesPersonnellesProf from "@/features/enseignant/dashboard/donnees-per
 
 export default function PageDonneesPersonnellesProf() {
   return (
-    <main className="w-full">
+    <main className="w-full text-black">
       <DonneesPersonnellesProf />
     </main>
   );

@@ -4,7 +4,7 @@ import DonneesPersonnelles from "@/features/etudiant/dashboard/donnees-personnel
 
 export default function PageDonneesPersonnelles() {
   return (
-      <main className="p-6">
+      <main className="p-6 text-black">
         <DonneesPersonnelles />
       </main>
     );

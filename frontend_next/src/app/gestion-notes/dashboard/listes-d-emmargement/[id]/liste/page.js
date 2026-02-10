@@ -6,7 +6,7 @@ export default function PageCoursProf({ params }) {
   const { id } = React.use(params);
 
   return (
-    <main className=" w-full ">
+    <main className=" w-full text-black">
       <ListeEtudiantsUE ueId={id} />
     </main>
   );

@@ -4,7 +4,7 @@ import ArticlesPubliesProf from "@/features/enseignant/dashboard/articles/Articl
 
 export default function PageArticlesPubliesProf() {
   return (
-    <main className="w-full">
+    <main className="w-full text-black">
       <ArticlesPubliesProf />
     </main>
   );
