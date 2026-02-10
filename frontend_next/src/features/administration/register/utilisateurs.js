@@ -59,7 +59,7 @@ export default function ListeUtilisateurs() {
   };
 
   return (
-    <div className="p-6 bg-white shadow rounded-lg">
+    <div className="p-6 bg-white shadow rounded-lg text-black">
         <div className="mb-6  gap-2 h-30 flex justify-horizontal ">
             <button
             onClick={() => router.push('/administration/dashboard/nouvel-utilisateur')}
