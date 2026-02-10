@@ -99,8 +99,8 @@ export default function ListeUtilisateurs() {
       {/* ✅ Tableau */}
       {!loading && !error && (
         <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 font-semibold text-black">
-            <thead className="bg-gray-100 text-sm">
+          <table className="min-w-full border border-gray-200  text-black">
+            <thead className="bg-white text-sm">
               <tr>
                 <th className="px-4 py-2 border">Nom</th>
                 <th className="px-4 py-2 border">Prénom</th>
@@ -115,15 +115,15 @@ export default function ListeUtilisateurs() {
             <tbody className="text-sm ">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-gray-400">
+                  <td colSpan="6" className="text-center py-4 text-black">
                     Aucun utilisateur trouvé
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border font-semibold text-black">{user.last_name}</td>
-                    <td className="px-4 py-2 border font-semibold text-black">{user.first_name}</td>
+                    <td className="px-4 py-2 border font-semibold  text-black">{user.last_name}</td>
+                    <td className="px-4 py-2 border font-semibold  text-black">{user.first_name}</td>
                     <td className="px-4 py-2 border font-semibold text-black">{user.email}</td>
                     <td className="px-4 py-2 border font-semibold text-black">{user.sexe}</td>
                     <td className="px-4 py-2 border font-semibold text-black">{user.telephone}</td>
