@@ -52,8 +52,8 @@ export default function SetPasswordForm({ token }) {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>🎉 Bienvenue</h2>
+    <div style={styles.container} >
+      <h2>Bienvenue</h2>
       <p>Veuillez définir votre mot de passe</p>
 
       <form onSubmit={handleSubmit} style={styles.form}>
@@ -104,6 +104,7 @@ const styles = {
     borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "14px",
+    textColor: "black",
   },
   button: {
     width: "100%",
