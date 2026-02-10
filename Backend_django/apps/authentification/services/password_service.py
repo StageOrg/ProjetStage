@@ -5,7 +5,6 @@ from ..models import PasswordSetupToken
 def send_password_setup_email(user):
     token_obj = PasswordSetupToken.objects.create(user=user)
 
-    #link = f"http://localhost:3000/set-password/{token_obj.token}"
     link = f"https://epl.univ-lome.tg/set-password/{token_obj.token}"
 
 

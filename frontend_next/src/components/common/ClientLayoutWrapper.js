@@ -6,8 +6,6 @@ export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
   const showHeader = !(
     pathname.startsWith("/etudiant")
-    /* pathname.startsWith("/enseignant") ||
-    pathname.startsWith("/administration") */
   );
  // const showHeader = true;
   return (

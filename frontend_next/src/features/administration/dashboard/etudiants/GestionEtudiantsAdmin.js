@@ -130,8 +130,8 @@ export default function GestionEtudiantsAdmin() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">Gestion des Étudiants</h2>
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <h2 className="text-2xl font-bold mb-4 text-black">Gestion des Étudiants</h2>
+      <div className="bg-white p-4 rounded-lg shadow mb-6  text-black">
         <div className="flex flex-wrap gap-4 mb-4 items-center">
           <div className="flex items-center border rounded-lg p-2 bg-gray-50">
             <FaSearch className="text-gray-400 mr-2" />
@@ -140,7 +140,7 @@ export default function GestionEtudiantsAdmin() {
               placeholder="Rechercher..."
               value={filters.search}
               onChange={(e) => changerFiltre("search", e.target.value)}
-              className="outline-none bg-transparent"
+              className="outline-none bg-transparent text-black"
             />
           </div>
           <select
@@ -158,7 +158,7 @@ export default function GestionEtudiantsAdmin() {
           <select
             value={filters.filiere}
             onChange={(e) => changerFiltre("filiere", e.target.value)}
-            className="border p-2 rounded-lg"
+            className="border p-2 rounded-lg text-black"
             disabled={!filters.parcours}
           >
             <option value="">-- Toutes les filières --</option>
@@ -171,7 +171,7 @@ export default function GestionEtudiantsAdmin() {
           <select
             value={filters.annee_etude}
             onChange={(e) => changerFiltre("annee_etude", e.target.value)}
-            className="border p-2 rounded-lg"
+            className="border p-2 rounded-lg  text-black"
             disabled={!filters.parcours}
           >
             <option value="">-- Toutes les années --</option>
@@ -221,12 +221,12 @@ export default function GestionEtudiantsAdmin() {
               {etudiants.length > 0 ? (
                 etudiants.map((etudiant, index) => (
                   <tr key={etudiant.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{index + 1}</td>
-                    <td className="p-3">{etudiant.num_carte || '-'}</td>
-                    <td className="p-3">{getNom(etudiant)}</td>
-                    <td className="p-3">{getPrenom(etudiant)}</td>
-                    <td className="p-3">{getEmail(etudiant)}</td>
-                    <td className="p-3">{getTelephone(etudiant)}</td>
+                    <td className="p-3  text-black">{index + 1}</td>
+                    <td className="p-3  text-black">{etudiant.num_carte || '-'}</td>
+                    <td className="p-3  text-black">{getNom(etudiant)}</td>
+                    <td className="p-3  text-black">{getPrenom(etudiant)}</td>
+                    <td className="p-3 text-black">{getEmail(etudiant)}</td>
+                    <td className="p-3 text-black">{getTelephone(etudiant)}</td>
                     <td className="p-3 flex gap-2">
                       <button
                         onClick={() => alert(`Modifier ${getPrenom(etudiant)} ${getNom(etudiant)}`)}

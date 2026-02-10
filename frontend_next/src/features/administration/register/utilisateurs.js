@@ -73,14 +73,14 @@ export default function ListeUtilisateurs() {
             }} />
        
         </div>
-      <h2 className="text-xl font-bold mb-4 mt-10 text-center">Liste des utilisateurs</h2>
+      <h2 className="text-xl font-bold mb-4 mt-10 text-center text-black">Liste des utilisateurs</h2>
        
       {/* ✅ Filtre par rôle */}
       <div className="mb-4">
         <select
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
-          className="border px-4 py-2 rounded-md"
+          className="border px-4 py-2 rounded-md  text-black"
         >
           <option value="">Tous les rôles</option>
           {rolesDisponibles.map((role, idx) => (
@@ -99,7 +99,7 @@ export default function ListeUtilisateurs() {
       {/* ✅ Tableau */}
       {!loading && !error && (
         <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200">
+          <table className="min-w-full border border-gray-200 font-semibold text-black">
             <thead className="bg-gray-100 text-sm">
               <tr>
                 <th className="px-4 py-2 border">Nom</th>
@@ -112,7 +112,7 @@ export default function ListeUtilisateurs() {
               </tr>
             </thead>
 
-            <tbody className="text-sm">
+            <tbody className="text-sm ">
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-4 text-gray-400">
@@ -122,11 +122,11 @@ export default function ListeUtilisateurs() {
               ) : (
                 filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border">{user.last_name}</td>
-                    <td className="px-4 py-2 border">{user.first_name}</td>
-                    <td className="px-4 py-2 border">{user.email}</td>
-                    <td className="px-4 py-2 border">{user.sexe}</td>
-                    <td className="px-4 py-2 border">{user.telephone}</td>
+                    <td className="px-4 py-2 border font-semibold text-black">{user.last_name}</td>
+                    <td className="px-4 py-2 border font-semibold text-black">{user.first_name}</td>
+                    <td className="px-4 py-2 border font-semibold text-black">{user.email}</td>
+                    <td className="px-4 py-2 border font-semibold text-black">{user.sexe}</td>
+                    <td className="px-4 py-2 border font-semibold text-black">{user.telephone}</td>
                     <td className="px-4 py-2 border font-semibold text-blue-600">
                       {user.role}
                     </td>

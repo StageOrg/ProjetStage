@@ -25,7 +25,7 @@ export default function GestionEnseignants() {
   );
 
   return (
-    <div className="flex-1 p-8 bg-gradient-to-br from-blue-50 via-white to-blue-100 space-y-8">
+    <div className="flex-1 p-8 bg-gradient-to-br from-blue-50 via-white to-blue-100 space-y-8  text-black">
       
       {/* Barre supérieure avec bouton + filtres */}
       <div className="bg-white shadow-lg rounded-lg p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
