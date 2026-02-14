@@ -10,10 +10,10 @@ export default function ConfirmationModal({ isOpen, data, onConfirm, onCancel, l
 
   return (
     <div
-      className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
       onClick={handleOverlayClick}
     >
-      <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-xl relative">
+      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl relative">
         {/* Bouton close (X en haut droite) */}
         <button
           onClick={onCancel}
@@ -25,10 +25,10 @@ export default function ConfirmationModal({ isOpen, data, onConfirm, onCancel, l
         </button>
 
         {/* Titre */}
-        <h3 className="text-lg font-bold mb-4 text-center pr-6">Confirmer l'inscription ?</h3>
+        <h3 className="text-base sm:text-lg font-bold mb-4 text-center pr-6">Confirmer l'inscription ?</h3>
 
         {/* Résumé données */}
-        <div className="space-y-3 mb-6 text-sm bg-gray-50 p-4 rounded-lg">
+        <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 text-xs sm:text-sm bg-gray-50 p-3 sm:p-4 rounded-lg">
           <div className="flex justify-between">
             <span className="font-semibold text-gray-700">Type d'étudiant :</span>
             <span className="text-gray-900">{data?.type || 'Nouveau'}</span>
@@ -65,21 +65,21 @@ export default function ConfirmationModal({ isOpen, data, onConfirm, onCancel, l
         </div>
 
         {/* Message de confirmation */}
-        <p className="text-sm text-gray-600 mb-6 text-center">
+        <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 text-center">
           Êtes-vous sûr de vouloir finaliser votre inscription avec ces informations ?
         </p>
 
         {/* Boutons */}
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
           <button
             onClick={onCancel}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors font-medium"
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors font-medium text-sm sm:text-base w-full sm:w-auto"
           >
             Annuler
           </button>
           <button
             onClick={() => onConfirm(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition-colors font-medium"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition-colors font-medium text-sm sm:text-base w-full sm:w-auto"
           >
             Confirmer
           </button>

@@ -17,12 +17,12 @@ export default function TableauEditable({
   onEditChange = () => {},
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border-separate border-spacing-y-2 text-sm text-blue-900">
+    <div className="overflow-x-auto shadow-md rounded-lg">
+      <table className="min-w-full border-separate border-spacing-y-2 text-xs sm:text-sm text-blue-900">
         <thead>
           <tr className="bg-white/90 text-blue-800 text-center shadow-md">
             {colonnes.map((col, idx) => (
-              <th key={idx} className="px-4 py-2 border-b border-teal-400">{col}</th>
+              <th key={idx} className="px-2 sm:px-4 py-2 border-b border-teal-400 text-xs sm:text-sm">{col}</th>
             ))}
           </tr>
         </thead>
@@ -43,7 +43,7 @@ export default function TableauEditable({
                 const value = etudiant[colKey];
 
                 return (
-                  <td key={colIndex} className="px-4 py-2">
+                  <td key={colIndex} className="px-2 sm:px-4 py-2">
                     {editIndex === index && isEditable ? (
                       <input
                         type="number"
@@ -51,7 +51,7 @@ export default function TableauEditable({
                         onChange={(e) =>
                           onEditChange(index, colKey, e.target.value)
                         }
-                        className="w-16 text-center border rounded bg-gray-100 disabled:opacity-50"
+                        className="w-12 sm:w-16 text-center border rounded bg-gray-100 disabled:opacity-50 text-xs sm:text-sm"
                         disabled={!isEditable}
                       />
                     ) : (

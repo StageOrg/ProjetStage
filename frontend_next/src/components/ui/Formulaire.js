@@ -37,15 +37,15 @@ export default function Formulaire({ champs, onSubmit }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-6">
       {champs.map((champ) => (
         <div key={champ.nom}>
-          <label className="block text-black font-semibold mb-2">{champ.label}</label>
+          <label className="block text-black font-semibold mb-2 text-sm sm:text-base">{champ.label}</label>
           <input
             type={champ.type || "text"}
             value={valeurs[champ.nom] || ""}
             onChange={(e) => handleChange(e, champ.nom)}
-            className={`w-full px-4 py-2 rounded-lg border ${
+            className={`w-full px-3 sm:px-4 py-2 rounded-lg border text-sm sm:text-base ${
               erreurs[champ.nom] ? "border-red-500" : "border-gray-200"
             } focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/70`}
             placeholder={champ.placeholder}
@@ -55,7 +55,7 @@ export default function Formulaire({ champs, onSubmit }) {
       ))}
       <button
         type="submit"
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-full shadow transition-all mt-2"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 sm:px-8 rounded-full shadow transition-all mt-2 w-full sm:w-auto"
       >
         Soumettre
       </button>
