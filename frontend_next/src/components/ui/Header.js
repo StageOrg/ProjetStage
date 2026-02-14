@@ -146,7 +146,7 @@ export default function Header() {
   if (loading) return null;
   return (
     <>
-    <header className="w-full bg-white backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
+    <header className="relative z-50">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <Link
@@ -404,7 +404,9 @@ export default function Header() {
                 {role !== "visiteur" ? (
                   <Link
                     href="/logout"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                    }}
                     className="block w-full text-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition"
                   >
                     Déconnexion
@@ -426,7 +428,7 @@ export default function Header() {
     </header>
     {isMobileMenuOpen && (
       <div 
-        className="sm:hidden fixed inset-0 bg-black/50 z-40 top-16"
+        className="sm:hidden fixed inset-0 bg-black/50 z-40"
         onClick={() => setIsMobileMenuOpen(false)}
       />
     )}
