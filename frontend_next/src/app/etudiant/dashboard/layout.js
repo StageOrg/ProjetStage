@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }) {
       <MenuLateralDashboard />
 
       {/* Contenu principal */}
-      <main className="md:ml-56 pt-20 min-h-screen bg-gtransparent font-sans flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 gap-8">
+      <main className="md:ml-56 pt-20 min-h-screen bg-transparent font-sans flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 gap-8">
         {children}
       </main>
     </>
