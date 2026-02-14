@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaTachometerAlt, FaUserGraduate, FaChalkboardTeacher, FaBook, FaClipboardList, FaProjectDiagram, FaFileAlt, FaChartBar, FaSignOutAlt } from "react-icons/fa";
+import { useState } from "react";
+import MobileMenuToggle from "@/components/ui/MobileMenuToggle";
 
 const links = [
   { href: "/administration/dashboard/journal-d-action", label: "Tableau de bord", icon: <FaTachometerAlt /> },
@@ -14,8 +16,15 @@ const links = [
 
 export default function MenuLateralAdmin() {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <aside className="hidden md:flex flex-col gap-4 bg-white/500 backdrop-blur-2xl shadow-2xl w-64 h-screen sticky top-0 z-10 py-0 px-0  border-r border-blue-900">
+    <>
+      <MobileMenuToggle 
+        isOpen={isMobileMenuOpen} 
+        onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+      />
+      <aside className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:sticky flex flex-col gap-4 bg-white/500 backdrop-blur-2xl shadow-2xl w-64 h-screen top-0 z-40 py-0 px-0 border-r border-blue-900 transition-transform duration-300`}>
       <div className="flex-1 flex flex-col overflow-y-auto py-10 px-6">
         <div className="mb-8 flex items-center gap-2 justify-center">
           <span className="font-extrabold text-blue-800 text-2xl tracking-tight drop-shadow">EPL</span>
@@ -46,5 +55,12 @@ export default function MenuLateralAdmin() {
         <div className="text-xs text-gray-400 mt-8 text-center select-none">&copy; EPL {new Date().getFullYear()}</div>
       </div>
     </aside>
+    {isMobileMenuOpen && (
+      <div 
+        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+    )}
+    </>
   );
 } 

@@ -2,9 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaBook, FaFileAlt, FaProjectDiagram, FaUsers,FaUser, FaClipboardList } from "react-icons/fa";
+import { useState } from "react";
+import MobileMenuToggle from "@/components/ui/MobileMenuToggle";
 
 export default function MenuLateralProfPublic({ profId }) {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Générer les liens dynamiques avec l'ID du prof
   const links = [
@@ -16,7 +19,12 @@ export default function MenuLateralProfPublic({ profId }) {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col gap-4 bg-white/70 backdrop-blur-2xl shadow-2xl w-64 h-screen sticky top-0 z-10 py-0 px-0 border-r border-black">
+    <>
+      <MobileMenuToggle 
+        isOpen={isMobileMenuOpen} 
+        onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+      />
+      <aside className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:sticky flex flex-col gap-4 bg-white/70 backdrop-blur-2xl shadow-2xl w-64 h-screen top-0 z-40 py-0 px-0 border-r border-black transition-transform duration-300`}>
       <div className="flex-1 flex flex-col overflow-y-auto py-10 px-6">
         <div className="mb-8 flex items-center gap-2 justify-center">
           <span className="font-extrabold text-black text-2xl tracking-tight drop-shadow">EPL</span>
@@ -44,5 +52,12 @@ export default function MenuLateralProfPublic({ profId }) {
         </div>
       </div>
     </aside>
+    {isMobileMenuOpen && (
+      <div 
+        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+    )}
+    </>
   );
 }

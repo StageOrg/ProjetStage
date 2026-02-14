@@ -10,12 +10,10 @@ export default function DashboardLayout({ children }) {
       </header>
 
       {/* Menu latéral */}
-      <aside className="hidden md:block fixed top-15 left-0 h-screen z-30">
-        <MenuLateralDashboard />
-      </aside>
+      <MenuLateralDashboard />
 
       {/* Contenu principal */}
-      <main className="md:ml-64 pt-20 min-h-screen bg-gtransparent font-sans flex flex-col items-center justify-center px-4 py-12 gap-8">
+      <main className="md:ml-56 pt-20 min-h-screen bg-transparent font-sans flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 gap-8">
         {children}
       </main>
     </>

@@ -43,7 +43,7 @@ export default function HeroSlider() {
   }, []);
 
   return (
-    <div className="relative h-[700px] w-full overflow-hidden">
+    <div className="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] w-full overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -75,22 +75,22 @@ export default function HeroSlider() {
           </div> */}
 
           {/* Contenu centré */}
-          <div className="absolute inset-0 flex items-center justify-center text-white px-6 z-30">
-            <div className="flex items-center gap-10 bg-transparent p-6">
+          <div className="absolute inset-0 flex items-center justify-center text-white px-4 sm:px-6 z-30">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-10 bg-transparent p-4 md:p-6 max-w-5xl">
               {/* Colonne gauche */}
-              <div className="text-right">
-                <h2 className="text-3xl lg:text-4xl font-bold max-w-md">
+              <div className="text-center md:text-right">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold max-w-md whitespace-pre-line">
                   {slide.title}
                 </h2>
               </div>
 
-              {/* Barre verticale */}
-              <div className="w-[3px] h-50 bg-white opacity-100"></div>
+              {/* Barre verticale - cachée sur mobile */}
+              <div className="hidden md:block w-[3px] h-50 bg-white opacity-100"></div>
 
               {/* Colonne droite */}
-              <div className="text-left">
+              <div className="text-center md:text-left">
                 <Link href={slide.link}>
-                  <span className="inline-block bg-orange-600 px-5 py-2 rounded hover:bg-blue-600 transition font-semibold">
+                  <span className="inline-block bg-orange-600 px-4 sm:px-5 py-2 rounded hover:bg-blue-600 transition font-semibold text-sm sm:text-base">
                     En savoir plus
                   </span>
                 </Link>
@@ -103,16 +103,18 @@ export default function HeroSlider() {
       {/* Boutons de navigation */}
       <button
         onClick={prevSlide}
-        className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-transparent text-white p-3 rounded-full shadow-lg hover:bg-blue-900 transition z-40 border border-white"
+        className="absolute left-2 sm:left-6 top-1/2 transform -translate-y-1/2 bg-transparent text-white p-2 sm:p-3 rounded-full shadow-lg hover:bg-blue-900 transition z-40 border border-white"
+        aria-label="Diapositive précédente"
       >
-        <FaChevronLeft className="text-4xl" />
+        <FaChevronLeft className="text-2xl sm:text-4xl" />
       </button>
 
       <button
         onClick={nextSlide}
-        className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-transparent text-white p-3 rounded-full shadow-lg hover:bg-blue-900 transition z-40 border border-white"
+        className="absolute right-2 sm:right-6 top-1/2 transform -translate-y-1/2 bg-transparent text-white p-2 sm:p-3 rounded-full shadow-lg hover:bg-blue-900 transition z-40 border border-white"
+        aria-label="Diapositive suivante"
       >
-        <FaChevronRight className="text-4xl" />
+        <FaChevronRight className="text-2xl sm:text-4xl" />
       </button>
     </div>
   );
