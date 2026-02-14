@@ -3,6 +3,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FaSignOutAlt, FaUser, FaChartBar, FaClipboardList } from "react-icons/fa";
 import { authAPI } from "@/services/authService";
+import { useState } from "react";
+import MobileMenuToggle from "@/components/ui/MobileMenuToggle";
 
 const links = [
   {
@@ -25,6 +27,7 @@ const links = [
 export default function MenuLateralDashboard() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -43,7 +46,12 @@ export default function MenuLateralDashboard() {
   };
 
   return (
-    <aside className="hidden md:flex flex-col gap-4 bg-white/70 backdrop-blur-2xl shadow-2xl w-56 h-screen sticky top-0 z-10 py-0 px-0 border-r border-blue-700">
+    <>
+      <MobileMenuToggle 
+        isOpen={isMobileMenuOpen} 
+        onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+      />
+      <aside className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:sticky flex flex-col gap-4 bg-white/70 backdrop-blur-2xl shadow-2xl w-56 h-screen top-0 z-40 py-0 px-0 border-r border-blue-700 transition-transform duration-300`}>
       <div className="flex-1 flex flex-col overflow-y-auto py-8 px-4">
         <div className="mb-6 flex items-center gap-2 justify-center">
           <span className="font-extrabold text-blue-800 text-xl tracking-tight drop-shadow">
@@ -87,5 +95,12 @@ export default function MenuLateralDashboard() {
         </div>
       </div>
     </aside>
+    {isMobileMenuOpen && (
+      <div 
+        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+    )}
+    </>
   );
 }

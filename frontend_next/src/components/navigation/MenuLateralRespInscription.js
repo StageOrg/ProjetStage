@@ -13,6 +13,7 @@ import {
   FaUserSlash,
   FaBalanceScale
 } from "react-icons/fa";
+import MobileMenuToggle from "@/components/ui/MobileMenuToggle";
 
 // Simulation des services (à remplacer par les vrais imports)
 const authAPI = {
@@ -66,6 +67,7 @@ const mainLinks = [
 export default function MenuLateralRespInscription() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(
     pathname?.includes('/statistique') || false
   );
@@ -92,7 +94,12 @@ export default function MenuLateralRespInscription() {
   const isStatisticsActive = pathname?.includes('/statistique');
 
   return (
-    <aside className="hidden md:flex flex-col gap-3 bg-white backdrop-blur-2xl shadow-2xl w-64 h-screen sticky top-0 z-10 py-0 px-0 border-r border-blue-500/50">
+    <>
+      <MobileMenuToggle 
+        isOpen={isMobileMenuOpen} 
+        onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+      />
+      <aside className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:sticky flex flex-col gap-3 bg-white backdrop-blur-2xl shadow-2xl w-64 h-screen top-0 z-40 py-0 px-0 border-r border-blue-500/50 transition-transform duration-300`}>
       <div className="flex-1 flex flex-col overflow-y-auto py-8 px-4">
         {/* Header */}
         <div className="mb-6 flex items-center gap-2 justify-center">
@@ -194,5 +201,12 @@ export default function MenuLateralRespInscription() {
         </div>
       </div>
     </aside>
+    {isMobileMenuOpen && (
+      <div 
+        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+    )}
+    </>
   );
 }

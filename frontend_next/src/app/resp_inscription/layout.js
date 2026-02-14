@@ -25,12 +25,10 @@ export default function DashboardLayout({ children }) {
       </header>
 
       {/* Menu latéral */}
-      <aside className=" fixed top-15 left-0 h-screen z-30">
-        <MenuLateralRespInscription />
-      </aside>
+      <MenuLateralRespInscription />
 
       {/* Contenu principal */}
-      <main className="md:ml-64 pt-20  bg-white font-sans flex flex-col  max-w-10xl mx-auto justify-between min-h-screen">
+      <main className="md:ml-64 pt-20  bg-white font-sans flex flex-col  max-w-10xl mx-auto justify-between min-h-screen px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </>

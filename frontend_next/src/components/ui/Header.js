@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { FaChevronDown } from "react-icons/fa";
+import { Menu, X } from "lucide-react";
 import AnneeAcademiqueService from "@/services/anneeAcademiqueService";
 import periodeInscriptionService from "@/services/inscription/periodeInscriptionService";
 import { IoChevronDown } from "react-icons/io5";
@@ -19,6 +20,7 @@ export default function Header() {
   const [annees, setAnnees] = useState([]);
   const [anneeChoisie, setAnneeChoisie] = useState(null);
   const [inscriptionLink, setInscriptionLink] = useState("/etudiant/inscription/etape-1");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const role = user?.role ?? "visiteur";
 
 
@@ -143,6 +145,7 @@ export default function Header() {
   };
   if (loading) return null;
   return (
+    <>
     <header className="w-full bg-white backdrop-blur-md shadow fixed top-0 left-0 z-20 px-4 sm:px-8 py-3 h-16">
       <div className="flex justify-between items-center">
         {/* Logo */}
@@ -152,6 +155,15 @@ export default function Header() {
         >
           <img src="/images/logo-epl.png" className="h-10 w-auto" alt="EPL Logo" />
         </Link>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="sm:hidden text-blue-800 p-2"
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
 
         {/* Menu principal */ }
           <nav className="hidden sm:flex gap-4 sm:gap-6 font-semibold relative items-center">
@@ -278,7 +290,146 @@ export default function Header() {
           )}
 
         </nav>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <nav className="sm:hidden fixed top-16 left-0 right-0 bg-white shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="flex flex-col p-4 space-y-2">
+              {menuItems.map((item) => {
+                const hasChildren = !!item.children;
+                let isActive = pathname === item.href;
+
+                if (
+                  (role === "admin" ||
+                    role === "professeur" ||
+                    role === "secretaire" ||
+                    role === "responsable inscriptions" ||
+                    role === "gestionnaire" ||
+                    role === "resp_notes") &&
+                  item.label === "Personnel"
+                ) {
+                  isActive = true;
+                }
+
+                return (
+                  <div key={item.label}>
+                    {hasChildren ? (
+                      <>
+                        <button
+                          onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
+                          className={`w-full text-left px-3 py-2 rounded transition flex items-center justify-between ${
+                            isActive
+                              ? "text-blue-700 font-bold bg-blue-100/70"
+                              : "text-gray-700 hover:bg-blue-100"
+                          }`}
+                        >
+                          {item.label}
+                          <IoChevronDown 
+                            className={`w-4 h-4 transition-transform duration-200 ${
+                              openDropdown === item.label ? 'rotate-180' : 'rotate-0'
+                            }`}
+                          />
+                        </button>
+                        {openDropdown === item.label && (
+                          <div className="ml-4 mt-1 space-y-1">
+                            {item.children.map((child) => {
+                              if (child.protected) {
+                                return (
+                                  <button
+                                    key={child.label}
+                                    onClick={() => {
+                                      role !== "visiteur"
+                                        ? handleProtectedPersonnel(child.href)
+                                        : handleProtectedRoute(child.href);
+                                      setIsMobileMenuOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 hover:text-blue-800 transition rounded"
+                                  >
+                                    {child.label}
+                                  </button>
+                                );
+                              }
+                              return (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 hover:text-blue-800 transition rounded"
+                                >
+                                  {child.label}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`block px-3 py-2 rounded transition ${
+                          isActive
+                            ? "text-blue-700 font-bold bg-blue-100/70"
+                            : "text-gray-700 hover:bg-blue-100"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Sélecteur d'année académique mobile */}
+              {role !== "visiteur" && role !== "etudiant" && annees.length > 0 && (
+                <div className="pt-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Année académique
+                  </label>
+                  <select
+                    onChange={(e) => onChange(e)}
+                    className="block w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+                  >
+                    {annees.map((annee) => (
+                      <option key={annee.id} value={annee.id}>
+                        {annee.libelle}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Bouton Connexion/Déconnexion mobile */}
+              <div className="pt-2">
+                {role !== "visiteur" ? (
+                  <Link
+                    href="/logout"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full text-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition"
+                  >
+                    Déconnexion
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full text-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 transition"
+                  >
+                    Connexion
+                  </Link>
+                )}
+              </div>
+            </div>
+          </nav>
+        )}
       </div>
     </header>
+    {isMobileMenuOpen && (
+      <div 
+        className="sm:hidden fixed inset-0 bg-black/50 z-40 top-16"
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+    )}
+    </>
   );
 }
